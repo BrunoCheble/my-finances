@@ -1,0 +1,89 @@
+<?php
+namespace App\Http\Controllers;
+
+use App\Http\Requests\FinancialCategoryRequest;
+use App\Models\FinancialCategory;
+use App\Services\GetFinancialMovementService;
+use App\Services\GetFinancialCategoryService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+use Illuminate\Support\Facades\Redirect;
+
+class FinancialCategoryController extends Controller
+{
+    public function index(Request $request): View
+    {
+        $startDate = $request->input('start_date') ?? date('Y-m-01');
+        $endDate = $request->input('end_date') ?? date('Y-m-t');
+
+        $movements = GetFinancialMovementService::execute('', null, null, null, $startDate, $endDate, null, false);
+        $categories = FinancialCategory::get();
+        $categories = GetFinancialCategoryService::execute($movements, $categories);
+        return view('financial-categories.index', compact('categories', 'movements', 'startDate', 'endDate'));
+    }
+
+    public function create(): View
+    {
+        $category = new FinancialCategory();
+        return view('financial-categories.create', compact('category'));
+    }
+
+    public function store(FinancialCategoryRequest $request): RedirectResponse
+    {
+        try {
+            FinancialCategory::create($request->validated());
+        } catch (\Exception $e) {
+            return Redirect::route('financial-categories.index')
+                ->with('error', __('Something went wrong'));
+        }
+
+        return Redirect::route('financial-categories.index')
+            ->with('success', 'Financial Category created successfully');
+    }
+
+    public function show($id): View
+    {
+        $category = FinancialCategory::find($id);
+        return view('financial-categories.show', compact('category'));
+    }
+
+    public function edit($id): View
+    {
+        $category = FinancialCategory::findOrFail($id);
+        return view('financial-categories.edit', compact('category'));
+    }
+
+    public function update(FinancialCategoryRequest $request, FinancialCategory $financial_category): RedirectResponse
+    {
+        try {
+            $financial_category->update($request->validated());
+        } catch (\Exception $e) {
+            return Redirect::route('financial-categories.index')
+                ->with('error', __('Something went wrong'));
+        }
+
+        return Redirect::route('financial-categories.index')
+            ->with('success', 'Financial Category updated successfully');
+    }
+
+    public function destroy($id): RedirectResponse
+    {
+        try {
+            $category = FinancialCategory::findOrFail($id);
+            // if ($category->financials()->count() > 0) {
+            //     return Redirect::route('financial-categories.index')
+            //         ->with('error', __('Financial Category can not be deleted'));
+            // }
+
+            $category->delete();
+
+        } catch (\Exception $e) {
+            return Redirect::route('financial-categories.index')
+                ->with('error', __('Something went wrong'));
+        }
+
+        return Redirect::route('financial-categories.index')->with('success', 'Financial Category deleted successfully.');
+    }
+}
+
