@@ -35,6 +35,9 @@ class FinancialCategorySummaryService
             ->values()
             ->toArray();
 
+        $lastMonth = $allMonths[count($allMonths) - 1];
+        $allMonths[] = 'Previsão';
+
         // Agrupar movimentos por categoria e mês, garantindo que todos os meses existam
         $groupedMovements = $movements->groupBy('category_id')->map(function ($categoryMovements) use ($allMonths) {
             // Agrupar cada categoria pelos meses
@@ -48,6 +51,16 @@ class FinancialCategorySummaryService
             // Garantir que todos os meses estejam presentes (preenchendo com 0 se necessário)
             return collect($allMonths)->mapWithKeys(fn($month) => [$month => $monthlyData[$month] ?? 0]);
         });
+
+        // Adicionar a previsão para cada categoria
+        $expectedTotal = $categories->pluck('expected_total', 'id');
+        $groupedMovements = $groupedMovements->map(
+            function ($months, $category) use ($lastMonth, $expectedTotal) {
+                $expected = $expectedTotal[$category];
+                $months['Previsão'] = $expected != 0 ? $expected : $months[$lastMonth];
+                return $months;
+            }
+        );
 
         // Garantir que TODAS as categorias tenham todos os meses
         $summary = $categories->mapWithKeys(function ($category) use ($groupedMovements, $allMonths) {
@@ -65,11 +78,13 @@ class FinancialCategorySummaryService
         });
 
         $percentage = self::getPercentagesAllMonths($groupedMovements, $allMonths, $summary);
+        $total = self::sumByMonth($groupedMovements, $allMonths, fn($carry, $amount) => $carry + $amount);
 
         return (object) [
             'summary' => $summary,
             'percentages' => $percentage,
-            'allMonths' => $allMonths
+            'allMonths' => $allMonths,
+            'total' => $total
         ];
     }
 

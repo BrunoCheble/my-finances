@@ -1,6 +1,8 @@
 <?php
+
 namespace App\Http\Requests;
 
+use App\Enums\FinancialMovementType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -13,7 +15,7 @@ class FinancialMovementRequest extends FormRequest
 
     public function rules()
     {
-        return [
+        $rules = [
             'description' => 'required|string|max:255',
             'date' => 'required|date',
             'wallet_id' => 'required|exists:wallets,id',
@@ -25,6 +27,15 @@ class FinancialMovementRequest extends FormRequest
                 Rule::in(['expense', 'income', 'refund', 'discount', 'transfer']),
             ]
         ];
+
+        if ($this->input('type') === FinancialMovementType::TRANSFER) {
+            $rules['transfer_to_wallet_id'] = [
+                'required',
+                'different:wallet_id',
+                'exists:wallets,id',
+            ];
+        }
+        return $rules;
     }
 
     public function messages()

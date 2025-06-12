@@ -45,20 +45,25 @@
 
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-white font-bold" style="background-color: {{ $balance->wallet->color }}">
                             {{ $balance->wallet_name }}</td>
-                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right {{ $balance->initial_balance < 0 ? 'text-red-500' : 'text-green-500' }}">
-                            {{ $balance->initial_balance != 0 ? format_currency($balance->initial_balance) : '' }}</td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
+                            {!! $balance->initial_balance != 0 ? colored_format_currency($balance->initial_balance) : '' !!}
+                        </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-red-500 text-right">
-                            {{ $balance->total_expense != 0 ? format_currency($balance->total_expense) : '' }}</td>
+                            {{{ $balance->total_expense != 0 ? format_currency($balance->total_expense) : '' }}}</td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-green-500 text-right">
                             {{ $balance->total_income != 0 ? format_currency($balance->total_income) : '' }}</td>
-                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right {{ $balance->total_unidentified < 0 ? 'text-red-500' : 'text-green-500' }}">
-                            {{ $balance->total_unidentified != 0 ? format_currency($balance->total_unidentified) : '' }}</td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
+                            {!! $balance->total_unidentified != 0 ? colored_format_currency($balance->total_unidentified) : '' !!}
+                        </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold {{ $balance->calculated_balance != $balance->real_balance ? 'text-blue-500' : ($balance->calculated_balance < 0 ? 'text-red-500' : 'text-green-500') }}">
-                            {{ $balance->calculated_balance != 0 ? format_currency($balance->calculated_balance) : '' }}</td>
-                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold {{ $balance->real_balance < 0 ? 'text-red-500' : 'text-green-500' }}">
-                            {{ $balance->real_balance != 0 ? format_currency($balance->real_balance) : '' }}</td>
+                            {{ $balance->calculated_balance != 0 ? format_currency($balance->calculated_balance) : '' }}
+                        </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold">
-                            {!! $balance->calculated_balance != 0 ? colored_format_currency($balance->calculated_balance-$balance->initial_balance) : '' !!}</td>
+                            {!! $balance->real_balance != 0 ? colored_format_currency($balance->real_balance) : '' !!}
+                        </td>
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold">
+                            {!! $balance->calculated_balance != 0 ? colored_format_currency($balance->calculated_balance-$balance->initial_balance) : '' !!}
+                        </td>
                         <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
                             @include('financial-balances.menu.index')
                         </td>

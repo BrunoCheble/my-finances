@@ -70,11 +70,12 @@ class FinancialCategoryController extends Controller
     public function destroy($id): RedirectResponse
     {
         try {
-            $category = FinancialCategory::findOrFail($id);
-            // if ($category->financials()->count() > 0) {
-            //     return Redirect::route('financial-categories.index')
-            //         ->with('error', __('Financial Category can not be deleted'));
-            // }
+            $category = FinancialCategory::find($id);
+
+            if ($category->financials()->exists()) {
+                 return Redirect::route('financial-categories.index')
+                     ->with('error', __('Financial Category can not be deleted'));
+            }
 
             $category->delete();
 

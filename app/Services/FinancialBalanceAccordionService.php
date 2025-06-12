@@ -13,14 +13,13 @@ class FinancialBalanceAccordionService
             ->sortBy('start_date', SORT_REGULAR, true);
 
         $groupedBalances = $balances->groupBy(function ($balance) {
-            return $balance->start_date_formatted . ' - ' . $balance->end_date_formatted;
+            return date_format_custom($balance->start_date) . ' - ' . date_format_custom($balance->end_date);
         })->map(function ($items, $key) {
             return (object) [
                 'title'      => $key,
                 'startDate' => $items->first()->start_date,
                 'endDate'   => $items->first()->end_date,
                 'balances'   => $items,
-                'completed'  => $items->some(fn($balance) => $balance->completed),
             ];
         });
 

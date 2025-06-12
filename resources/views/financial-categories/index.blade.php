@@ -9,6 +9,9 @@
         <div class="max-w-full mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                 <div class="w-full">
+
+                    @include('layouts.alert')
+
                     <div class="sm:flex justify-between items-center">
                         <form action="{{ route('financial-categories.index') }}" class="flex gap-2 items-center"
                             method="GET">
@@ -86,14 +89,19 @@
                                                     class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
                                                     <form
                                                         action="{{ route('financial-categories.destroy', $category->id) }}"
+                                                        class="flex gap-4 justify-end"
                                                         method="POST">
                                                         <a href="{{ route('financial-categories.edit', $category->id) }}"
-                                                            class="text-indigo-600 font-bold hover:text-indigo-900  mr-2">{{ __('Edit') }}</a>
+                                                            class="cursor-pointer bg-blue-500 rounded-full w-8 h-8 flex justify-center items-center text-white">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
                                                         @csrf
                                                         @method('DELETE')
                                                         <a href="{{ route('financial-categories.destroy', $category->id) }}"
-                                                            class="text-red-600 font-bold hover:text-red-900"
-                                                            onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;">{{ __('Delete') }}</a>
+                                                            class="cursor-pointer bg-red-500 rounded-full w-8 h-8 flex justify-center items-center text-white"
+                                                            onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
                                                     </form>
                                                 </td>
                                             </tr>

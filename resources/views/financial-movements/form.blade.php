@@ -1,10 +1,27 @@
-<div class="space-y-6">
+<div class="space-y-6" x-data="{
+    description: '{{ old('description', $financialMovement?->description) }}',
+    type: '{{ old('type', $financialMovement?->type) }}',
+    category_id: '{{ old('category_id', $financialMovement?->category_id) }}',
 
+    async fetchLatestByDescription() {
+        if (!this.description) {
+            return;
+        }
+
+        const params = new URLSearchParams({ search: this.description });
+        const response = await fetch(`/api/financial-movements/latest-type-category?${params.toString()}`);
+        const data = await response.json();
+
+        this.type = data.type;
+        this.category_id = data.category_id;
+    }
+}">
     <div class="flex flex-row gap-4">
         <!-- Date Field -->
         <div>
             <x-input-label for="date" :value="__('Date')" />
-            <x-text-input id="date" name="date" type="date" class="mt-1 block w-full" :value="old('date', $financialMovement?->date)"
+            <x-text-input id="date" name="date" type="date" class="mt-1 block w-full"
+                :value="old('date', $financialMovement?->date)"
                 autocomplete="date" />
             <x-input-error class="mt-2" :messages="$errors->get('date')" />
         </div>
@@ -12,8 +29,16 @@
         <!-- Description Field -->
         <div class="flex-1">
             <x-input-label for="description" :value="__('Description')" />
-            <x-text-input id="description" name="description" type="text" class="mt-1 block w-full" :value="old('description', $financialMovement?->description)"
-                autocomplete="description" placeholder="Description" />
+            <x-text-input
+                id="description"
+                name="description"
+                type="text"
+                class="mt-1 block w-full"
+                x-model="description"
+                x-on:change="fetchLatestByDescription()"
+                autocomplete="description"
+                placeholder="Description"
+            />
             <x-input-error class="mt-2" :messages="$errors->get('description')" />
         </div>
 
@@ -26,34 +51,26 @@
         </div>
     </div>
 
-
     <div class="flex flex-row gap-4">
-
         <!-- Type Field -->
         <div class="flex-1">
             <x-input-label for="type" :value="__('Type')" />
-            @if ($financialMovement?->type)
-                <x-dropdown-select :options="$types" selected="{{ old('type', $financialMovement?->type) }}"
-                    name="type" />
-            @else
-                <x-dropdown-select :options="$types" x-model="selectedType" name="type" />
-            @endif
+            <x-dropdown-select :options="$types" x-model="type" name="type" />
             <x-input-error class="mt-2" :messages="$errors->get('type')" />
         </div>
 
         <!-- Category Field -->
         <div class="flex-1">
             <x-input-label for="category_id" :value="__('Category')" />
-            <x-dropdown-select :options="$categories" selected="{{ old('wallet_id', $financialMovement?->category_id) }}"
-                name="category_id" />
+            <x-dropdown-select :options="$categories" x-model="category_id" name="category_id" />
             <x-input-error class="mt-2" :messages="$errors->get('category_id')" />
         </div>
-
 
         @if (count($wallets) > 1)
             <div>
                 <x-input-label for="wallet_id" :value="__('Wallet')" />
-                <x-dropdown-select :options="$wallets" selected="{{ old('wallet_id', $financialMovement?->wallet_id) ?? $walletSection?->id }}"
+                <x-dropdown-select :options="$wallets"
+                    selected="{{ old('wallet_id', $financialMovement?->wallet_id) ?? $walletSection?->id }}"
                     name="wallet_id" />
                 <x-input-error class="mt-2" :messages="$errors->get('wallet_id')" />
             </div>
@@ -62,6 +79,13 @@
         @endif
     </div>
 
+    <div x-show="type === 'transfer'" class="transition-all duration-200">
+        <x-input-label for="transfer_to_wallet_id" :value="__('Transfer To Wallet')" />
+        <x-dropdown-select :options="$wallets"
+            selected="{{ old('transfer_to_wallet_id', $financialMovement?->destinationMovement?->wallet_id) }}"
+            name="transfer_to_wallet_id" />
+        <x-input-error class="mt-2" :messages="$errors->get('transfer_to_wallet_id')" />
+    </div>
 
     <div class="flex items-center gap-4">
         <x-primary-button>{{ $buttonText ?? 'Submit' }}</x-primary-button>

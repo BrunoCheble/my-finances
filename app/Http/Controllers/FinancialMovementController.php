@@ -11,8 +11,11 @@ use App\Models\FinancialMovement;
 use App\Models\Wallet;
 use App\Services\CalculateFinancialBalanceService;
 use App\Services\GetFinancialMovementService;
+use App\Services\SaveFinancialMovementService;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
 
@@ -52,25 +55,28 @@ class FinancialMovementController extends Controller
         ))->with('i', ($request->input('page', 1) - 1) * 5);
     }
 
-    public function store(FinancialMovementRequest $request): RedirectResponse
+
+    public function store(
+        FinancialMovementRequest $request,
+        SaveFinancialMovementService $saveFinancialMovementService
+    ): JsonResponse
     {
         try {
-            FinancialMovement::create($request->validated());
-            CalculateFinancialBalanceService::execute($request->date,$request->wallet_id);
-
-            return Redirect::route('financial-movements.index')
-                ->with('success', 'Financial Movement created successfully');
+            $movement = $saveFinancialMovementService->execute($request->validated());
+            return response()->json($movement, Response::HTTP_CREATED);
         } catch (\Exception $e) {
-            return Redirect::route('financial-movements.index')
-                ->with('error', __('Something went wrong'));
+            return response()->json(['error' => __('Something went wrong')], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function update(FinancialMovementRequest $request, FinancialMovement $financial_movement): RedirectResponse
+    public function update(
+        FinancialMovementRequest $request,
+        FinancialMovement $financial_movement,
+        SaveFinancialMovementService $saveFinancialMovementService
+    ): RedirectResponse
     {
         try {
-            $financial_movement->update($request->validated());
-            CalculateFinancialBalanceService::execute($request->date,$request->wallet_id);
+            $saveFinancialMovementService->execute($request->validated(), $financial_movement->id);
             return Redirect::route('financial-movements.index')
                 ->with('success', 'Financial Movement updated successfully');
         } catch (\Exception $e) {
@@ -83,12 +89,56 @@ class FinancialMovementController extends Controller
     {
         try {
             $financial_movement->delete();
-            CalculateFinancialBalanceService::execute($financial_movement->date, $financial_movement->wallet_id);
+            //CalculateFinancialBalanceService::execute($financial_movement->date, $financial_movement->wallet_id);
             return Redirect::route('financial-movements.index')
                 ->with('success', 'Financial Movement deleted successfully');
         } catch (\Exception $e) {
             return Redirect::route('financial-movements.index')
                 ->with('error', __('Something went wrong'));
         }
+    }
+
+    public function delete(Request $request): JsonResponse
+    {
+        try {
+            $financial_movement = FinancialMovement::find($request->id);
+            $financial_movement->delete();
+            //CalculateFinancialBalanceService::execute($financial_movement->date, $financial_movement->wallet_id);
+            return response()->json(['success' => 'Financial Movement deleted successfully'], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json(['error' => __('Something went wrong')], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+    public function filter(Request $request): JsonResponse
+    {
+        $financials = GetFinancialMovementService::execute(
+            $request->input('attribute'),
+            $request->input('search'),
+            $request->input('sort'),
+            $request->input('order'),
+            $request->input('date_from'),
+            $request->input('date_to'),
+            $request->input('wallet_id'),
+            false
+        );
+
+        return response()->json($financials);
+    }
+
+    public function fetchLatestTypeAndCategory(Request $request): JsonResponse
+    {
+        $movements = GetFinancialMovementService::execute(
+            FinancialMovementOptions::DESCRIPTION,
+            $request->input('search'),
+            null,
+            null,
+            null,
+            null,
+            null,
+            false,
+            1
+        );
+
+        return response()->json($movements[0] ?? []);
     }
 }

@@ -2,19 +2,24 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Collection;
+
 class GetFinancialCategoryService
 {
-    public static function execute($movements, $categories) {
-        foreach ($movements as $movement) {
-            if (!$movement->category_id) continue;
-            foreach ($categories as &$category) {
-                if ($movement->category_id != $category->id) continue;
+    public static function execute(Collection $movements, Collection $categories)
+    {
+        $groupedMovements = $movements->groupBy('category_id');
 
-                if ($movement->isDebit) {
-                    $category->total_expense += $movement->amount;
-                }
-                else $category->total_income += $movement->amount;
-            }
+        foreach ($categories as $category) {
+            $categoryMovements = $groupedMovements->get($category->id, collect());
+
+            $category->total_expense = $categoryMovements
+                ->where('isDebit', true)
+                ->sum('amount');
+
+            $category->total_income = $categoryMovements
+                ->where('isDebit', false)
+                ->sum('amount');
         }
 
         return $categories;

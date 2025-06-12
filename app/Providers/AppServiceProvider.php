@@ -2,10 +2,14 @@
 
 namespace App\Providers;
 
+use App\Repositories\FinancialBalanceRepository;
+use App\Repositories\FinancialMovementRepository;
+use App\Repositories\Interfaces\FinancialBalanceRepositoryInterface;
+use App\Repositories\Interfaces\FinancialMovementRepositoryInterface;
 use Illuminate\Support\ServiceProvider;
 
-use App\Models\Member;
-use App\Observers\MemberObserver;
+use App\Services\Contracts\SaveFinancialMovementServiceInterface;
+use App\Services\SaveFinancialMovementService;
 use Illuminate\Support\Facades\App;
 
 class AppServiceProvider extends ServiceProvider
@@ -15,7 +19,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(
+            FinancialMovementRepositoryInterface::class,
+            FinancialMovementRepository::class
+        );
+
+        $this->app->bind(
+            FinancialBalanceRepositoryInterface::class,
+            FinancialBalanceRepository::class
+        );
     }
 
     /**

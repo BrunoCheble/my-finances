@@ -28,6 +28,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/financial-balances/recalculate/all/{start_date}/{end_date}', [FinancialBalanceController::class, 'recalculateAll'])->name('financial-balances.recalculateAll');
 
     Route::resource('financial-categories', FinancialCategoryController::class);
+    Route::get('/api/financial-movements/filter', [FinancialMovementController::class, 'filter'])->name('financial-movements.filter');
+    Route::get('/api/financial-movements/latest-type-category', [FinancialMovementController::class, 'fetchLatestTypeAndCategory'])->name('financial-movements.fetchLatestTypeAndCategory');
+    Route::delete('/api/financial-movements/{id}', [FinancialMovementController::class, 'delete'])->name('financial-movements.delete');
     Route::resource('financial-movements', FinancialMovementController::class);
 });
 

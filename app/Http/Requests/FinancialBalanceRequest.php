@@ -24,7 +24,8 @@ class FinancialBalanceRequest extends FormRequest
     public function rules()
     {
         return [
-            'wallet_id' => 'required|exists:wallets,id', // O ID da carteira precisa existir
+            'wallets' => 'required|array|min:1',
+//            'wallet_id' => 'required|exists:wallets,id', // O ID da carteira precisa existir
             'initial_balance' => 'required|numeric', // O saldo inicial precisa ser numérico
             'total_expense' => 'nullable|numeric', // A despesa total é opcional, mas deve ser numérica
             'total_income' => 'nullable|numeric', // A receita total é opcional, mas deve ser numérica

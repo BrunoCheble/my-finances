@@ -21,7 +21,7 @@ class FinancialCategoryRequest extends FormRequest
                 'max:255',
                 Rule::unique('financial_categories')->ignore($categoryId),
             ],
-            'expected_total' => 'nullable|numeric|min:0',
+            'expected_total' => 'nullable|numeric',
             'active' => 'numeric',
         ];
     }

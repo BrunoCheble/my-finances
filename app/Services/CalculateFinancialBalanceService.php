@@ -4,21 +4,41 @@ namespace App\Services;
 
 use App\Enums\FinancialMovementType;
 use App\Models\FinancialBalance;
-use App\Models\FinancialMovement;
-use DateTime;
+use App\Repositories\Interfaces\FinancialBalanceRepositoryInterface;
+use App\Repositories\Interfaces\FinancialMovementRepositoryInterface;
 
 class CalculateFinancialBalanceService
 {
-    static function execute(string $date, int $walletId)
+    private FinancialMovementRepositoryInterface $financialMovementRepository;
+    private FinancialBalanceRepositoryInterface $balanceRepository;
+
+    public function __construct(
+        FinancialMovementRepositoryInterface $financialMovementRepository,
+        FinancialBalanceRepositoryInterface $balanceRepository,
+    ) {
+        $this->financialMovementRepository = $financialMovementRepository;
+        $this->balanceRepository = $balanceRepository;
+    }
+
+    public function execute(string $date, int $walletId)
     {
-        $balance = self::findOrCreate($date, $walletId);
+        $balance = $this->findOrCreate($date, $walletId);
 
-        $financialMovements = FinancialMovement::where('wallet_id', $balance->wallet_id)
-            ->whereBetween('date', [$balance->start_date, $balance->end_date])
-            ->get();
+        $financialMovements = $this->financialMovementRepository->findByWalletAndInterval(
+            $balance->wallet_id,
+            $balance->start_date,
+            $balance->end_date
+        );
 
-        if($financialMovements->isEmpty()) {
+        if ($financialMovements->isEmpty() && $balance->initial_balance == 0 && $balance->real_balance == 0) {
+            return $balance->delete();
+        }
+
+        if ($financialMovements->isEmpty()) {
             $balance->calculated_balance = $balance->real_balance != 0 ? $balance->real_balance : $balance->initial_balance;
+            $balance->total_expense = 0;
+            $balance->total_income = 0;
+            $balance->total_unidentified = 0;
             return $balance->save();
         }
 
@@ -53,12 +73,9 @@ class CalculateFinancialBalanceService
         return $balance->save();
     }
 
-    public static function findOrCreate(string $date, int $walletId)
+    public function findOrCreate(string $date, int $walletId)
     {
-        $balance = FinancialBalance::where('wallet_id', $walletId)
-            ->where('start_date', '<=', $date)
-            ->where('end_date', '>=', $date)
-            ->first();
+        $balance = $this->balanceRepository->findByWalletAndInterval($walletId, $date);
 
         if ($balance) {
             return $balance;

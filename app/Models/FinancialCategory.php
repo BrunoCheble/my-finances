@@ -24,7 +24,7 @@ class FinancialCategory extends Model
      */
     public function financials()
     {
-        return $this->hasMany(FinancialMovement::class);
+        return $this->hasMany(FinancialMovement::class, 'category_id');
     }
 
     /**

@@ -1,9 +1,16 @@
 <?php
 
+if (!function_exists('date_format_custom')) {
+    function date_format_custom($date)
+    {
+        return date('d/m/Y', strtotime($date));
+    }
+}
+
 if (!function_exists('format_currency')) {
     function format_currency($value, $symbol = '€')
     {
-        return $symbol . ' ' . number_format($value, 2, ',', '.');
+        return  number_format($value, 2, ',', '.'). ' ' . $symbol;
     }
 }
 

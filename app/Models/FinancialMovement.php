@@ -18,6 +18,7 @@ class FinancialMovement extends Model
         'category_id',
         'amount',
         'type',
+        'original_movement_id',
     ];
 
     /**
@@ -34,6 +35,16 @@ class FinancialMovement extends Model
     public function category()
     {
         return $this->belongsTo(FinancialCategory::class);
+    }
+
+    public function originalMovement()
+    {
+        return $this->belongsTo(FinancialMovement::class, 'original_movement_id');
+    }
+
+    public function destinationMovement()
+    {
+        return $this->hasOne(FinancialMovement::class, 'original_movement_id');
     }
 
     /**
@@ -58,14 +69,5 @@ class FinancialMovement extends Model
 
     public function getIsDebitAttribute() {
         return $this->type === FinancialMovementType::EXPENSE || $this->type === FinancialMovementType::DISCOUNT || ($this->type === FinancialMovementType::TRANSFER && $this->amount < 0);
-    }
-
-    public function getAmountFormattedAttribute() {
-        $amount = $this->type === FinancialMovementType::TRANSFER && $this->amount < 0 ? $this->amount*-1 : $this->amount;
-        return '€ '.number_format($amount, 2, ',', '.');
-    }
-
-    public function getDateFormattedAttribute() {
-        return date('d/m/Y', strtotime($this->date));
     }
 }

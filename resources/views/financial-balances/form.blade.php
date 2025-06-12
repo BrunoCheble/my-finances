@@ -4,15 +4,20 @@
     <div class="flex gap-4">
 
         @if (count($wallets) > 1)
-        <div class="flex-1">
-                <x-input-label for="wallet_id" :value="__('Wallet')" />
-                <x-dropdown-select style="width: 100%" :options="$wallets" selected="{{ old('wallet_id', $balance?->wallet_id) }}"
-                    name="wallet_id" />
+            <div class="flex-1">
+                <x-input-label for="wallet_id" :value="__('Wallets')" />
+                <x-dropdown-select
+                    style="width: 100%"
+                    :options="$wallets"
+                    :selected="old('wallet_id', $balance?->wallet_id ?? [])"
+                    name="wallets[]"
+                    multiple />
                 <x-input-error class="mt-2" :messages="$errors->get('wallet_id')" />
             </div>
         @else
-            <input type="hidden" name="wallet_id" value="{{ key($wallets) }}">
+            <input type="hidden" name="wallets[]" value="{{ old('wallet_id', key($wallets)) }}">
         @endif
+
 
         <div class="flex-1">
             <x-input-label for="start_date" :value="__('Start Date')" />

@@ -5,16 +5,25 @@ use App\Models\FinancialMovement;
 
 class GetFinancialMovementService
 {
-    static function execute($attribute, $search, $sort, $order, $date_from, $date_to, $wallet, $paginate = true) {
+    static function execute($attribute, $search, $sort, $order, $date_from, $date_to, $wallet, $paginate = true, $limit = null) {
 
         $transacations = FinancialMovement::orderBy($sort ?? 'date', $order ?? 'desc')->orderBy('created_at', 'desc');
 
-        if ($attribute && $search) {
+        $foreignKeys = ['category_id', 'wallet_id'];
+
+        if (in_array($attribute, $foreignKeys) && $search) {
+            $transacations = $transacations->where($attribute, $search);
+        }
+        else if ($attribute && $search) {
             $transacations = $transacations->where($attribute, 'like', '%' . $search . '%');
         }
 
         if ($wallet) {
             $transacations = $transacations->where('wallet_id', $wallet);
+        }
+
+        if ($limit) {
+            $transacations->limit($limit);
         }
 
         if (!$date_from || !$date_to) {
