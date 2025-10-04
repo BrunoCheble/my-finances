@@ -27,6 +27,9 @@ class FinancialBalanceController extends Controller
     public function create(): View
     {
         $balance = new FinancialBalance();
+        $balance->start_date = date('Y-m-01');
+        $balance->end_date = date('Y-m-t');
+
         $wallets = ArrayHelper::toKeyValueArray(Wallet::all(), 'id', 'name');
         return view('financial-balances.create', compact('balance','wallets'));
     }

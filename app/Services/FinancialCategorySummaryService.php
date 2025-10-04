@@ -25,7 +25,7 @@ class FinancialCategorySummaryService
     {
         $movements = FinancialMovement::where('category_id', '!=', null)->get();
 
-        $categories = FinancialCategory::all();
+        $categories = FinancialCategory::orderBy('type')->orderBy('name')->get();
 
         // Obter todos os meses únicos presentes nos movimentos
         $allMonths = $movements->pluck('date')

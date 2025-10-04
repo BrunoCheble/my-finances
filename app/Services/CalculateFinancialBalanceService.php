@@ -70,6 +70,10 @@ class CalculateFinancialBalanceService
         $diff = $balance->total_income - $balance->total_expense + $balance->total_unidentified;
         $balance->calculated_balance = $balance->initial_balance + $diff;
 
+        if ($balance->real_balance == 0) {
+            $balance->real_balance = $balance->calculated_balance;
+        }
+
         return $balance->save();
     }
 

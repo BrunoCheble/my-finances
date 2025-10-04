@@ -14,6 +14,19 @@ class GetFinancialMovementService
         if (in_array($attribute, $foreignKeys) && $search) {
             $transacations = $transacations->where($attribute, $search);
         }
+        else if ($attribute === 'type') {
+            switch ($search) {
+                case 'expense':
+                    $transacations = $transacations->whereIn('type', ['expense', 'refund']);
+                    break;
+                case 'income':
+                    $transacations = $transacations->whereIn('type', ['income', 'discount']);
+                    break;
+                case 'transfer':
+                    $transacations = $transacations->where('type', 'transfer');
+                    break;
+            }
+        }
         else if ($attribute && $search) {
             $transacations = $transacations->where($attribute, 'like', '%' . $search . '%');
         }

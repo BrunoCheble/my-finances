@@ -19,6 +19,7 @@ class FinancialMovement extends Model
         'amount',
         'type',
         'original_movement_id',
+        'include_alert'
     ];
 
     /**

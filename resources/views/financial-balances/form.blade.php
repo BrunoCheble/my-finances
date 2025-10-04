@@ -37,19 +37,19 @@
     <div class="flex justify-between gap-4">
         <div class="flex-1">
             <x-input-label for="initial_balance" :value="__('Initial Balance')" />
-            <x-text-input style="width: 100%" type="text" name="initial_balance" :value="old('initial_balance', $balance?->initial_balance)" />
+            <x-text-input style="width: 100%" type="text" name="initial_balance" :value="old('initial_balance', $balance?->initial_balance ?? 0)" />
             <x-input-error class="mt-2" :messages="$errors->get('initial_balance')" />
         </div>
 
         <div class="flex-1">
             <x-input-label for="total_expense" :value="__('Total Expense')" />
-            <x-text-input style="width: 100%" type="text" name="total_expense" :value="old('total_expense', $balance?->total_expense)" />
+            <x-text-input style="width: 100%" type="text" name="total_expense" :value="old('total_expense', $balance?->total_expense ?? 0)" />
             <x-input-error class="mt-2" :messages="$errors->get('total_expense')" />
         </div>
 
         <div class="flex-1">
             <x-input-label for="total_income" :value="__('Total Income')" />
-            <x-text-input style="width: 100%" type="text" name="total_income" :value="old('total_income', $balance?->total_income)" />
+            <x-text-input style="width: 100%" type="text" name="total_income" :value="old('total_income', $balance?->total_income ?? 0)" />
             <x-input-error class="mt-2" :messages="$errors->get('total_income')" />
         </div>
     </div>
@@ -58,19 +58,19 @@
 
         <div class="flex-1">
             <x-input-label for="total_unidentified" :value="__('Total Unidentified')" />
-            <x-text-input style="width: 100%" type="text" name="total_unidentified" :value="old('total_unidentified', $balance?->total_unidentified)" />
+            <x-text-input style="width: 100%" type="text" name="total_unidentified" :value="old('total_unidentified', $balance?->total_unidentified ?? 0)" />
             <x-input-error class="mt-2" :messages="$errors->get('total_unidentified')" />
         </div>
 
         <div class="flex-1">
             <x-input-label for="calculated_balance" :value="__('Calculated Balance')" />
-            <x-text-input style="width: 100%" type="text" name="calculated_balance" :value="old('calculated_balance', $balance?->calculated_balance)" />
+            <x-text-input style="width: 100%" type="text" name="calculated_balance" :value="old('calculated_balance', $balance?->calculated_balance ?? 0)" />
             <x-input-error class="mt-2" :messages="$errors->get('calculated_balance')" />
         </div>
 
         <div class="flex-1">
             <x-input-label for="real_balance" :value="__('Real Balance')" />
-            <x-text-input style="width: 100%" type="text" name="real_balance" :value="old('real_balance', $balance?->real_balance)" />
+            <x-text-input style="width: 100%" type="text" name="real_balance" :value="old('real_balance', $balance?->real_balance ?? 0)" />
             <x-input-error class="mt-2" :messages="$errors->get('real_balance')" />
         </div>
     </div>

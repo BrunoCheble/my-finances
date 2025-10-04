@@ -1,4 +1,5 @@
 <div x-data="{ open: false }" class="bg-white border border-gray-300 rounded-xl shadow-sm overflow-hidden transition-all">
+    <!-- include modal summary -->
     <button @click="open = !open" class="w-full flex justify-between items-center p-5 text-gray-800 font-medium text-lg hover:bg-gray-50 transition">
         <span>{{ $group->title }}</span>
         <svg :class="open ? 'rotate-180 text-gray-900' : 'rotate-0 text-gray-500'" class="w-6 h-6 transition-transform transform" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -48,11 +49,11 @@
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
                             {!! $balance->initial_balance != 0 ? colored_format_currency($balance->initial_balance) : '' !!}
                         </td>
-                        <td class="whitespace-nowrap px-3 py-4 text-sm text-red-500 text-right">
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-red-500 text-right" x-on:click="window.modalSummary.openModal('{{ $balance->start_date }}', '{{ $balance->end_date }}', 'expense', {{ $balance->wallet_id }})">
                             {{{ $balance->total_expense != 0 ? format_currency($balance->total_expense) : '' }}}</td>
-                        <td class="whitespace-nowrap px-3 py-4 text-sm text-green-500 text-right">
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-green-500 text-right" x-on:click="window.modalSummary.openModal('{{ $balance->start_date }}', '{{ $balance->end_date }}', 'income', {{ $balance->wallet_id }})">
                             {{ $balance->total_income != 0 ? format_currency($balance->total_income) : '' }}</td>
-                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
+                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right" x-on:click="window.modalSummary.openModal('{{ $balance->start_date }}', '{{ $balance->end_date }}', 'transfer', {{ $balance->wallet_id }})">
                             {!! $balance->total_unidentified != 0 ? colored_format_currency($balance->total_unidentified) : '' !!}
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold {{ $balance->calculated_balance != $balance->real_balance ? 'text-blue-500' : ($balance->calculated_balance < 0 ? 'text-red-500' : 'text-green-500') }}">
@@ -78,13 +79,13 @@
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold text-gray-500">
                         {{ format_currency($group->balances->sum('initial_balance')) }}
                     </td>
-                    <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold text-gray-500">
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold text-gray-500" x-on:click="window.modalSummary.openModal('{{ $group->startDate }}', '{{ $group->endDate }}', 'expense')">
                         {{ format_currency($group->balances->sum('total_expense')) }}
                     </td>
-                    <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold text-gray-500">
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold text-gray-500" x-on:click="window.modalSummary.openModal('{{ $group->startDate }}', '{{ $group->endDate }}', 'income')">
                         {{ format_currency($group->balances->sum('total_income')) }}
                     </td>
-                    <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold text-gray-500">
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold text-gray-500" x-on:click="window.modalSummary.openModal('{{ $group->startDate }}', '{{ $group->endDate }}', 'transfer')">
                         {{ format_currency($group->balances->sum('total_unidentified')) }}
                     </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold {{ $group->balances->sum('calculated_balance') != $group->balances->sum('real_balance') ? 'text-blue-500' : ($group->balances->sum('calculated_balance') < 0 ? 'text-red-500' : 'text-green-500') }}">

@@ -87,6 +87,20 @@
         <x-input-error class="mt-2" :messages="$errors->get('transfer_to_wallet_id')" />
     </div>
 
+    <!-- Include Alert using toggle checkbox -->
+    <div class="flex items-center gap-4">
+        <x-input-label for="include_alert" :value="__('Include Alert')" />
+        <input
+            type="checkbox"
+            id="include_alert"
+            name="include_alert"
+            value="1"
+            @if(old('include_alert', $financialMovement?->include_alert)) checked @endif
+            class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+        />
+        <x-input-error class="mt-2" :messages="$errors->get('include_alert')" />
+    </div>
+
     <div class="flex items-center gap-4">
         <x-primary-button>{{ $buttonText ?? 'Submit' }}</x-primary-button>
     </div>

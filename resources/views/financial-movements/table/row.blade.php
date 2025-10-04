@@ -3,7 +3,13 @@
         <td class="whitespace-nowrap px-3 py-2 text-sm" style="color: {{ $financial->wallet?->color }}">{{ $financial->wallet?->name }}</td>
     @endif
     <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">{{ date_format_custom($financial->date) }}</td>
-    <td style="width: 300px;" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">{{ $financial->description }}</td>
+    <td style="width: 300px;" class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+        <!-- create a icon if alert_message is not null -->
+        @if ($financial->include_alert)
+            <i class="fa fa-exclamation-triangle text-yellow-500 mr-2"></i>
+        @endif
+        {{ $financial->description }}
+    </td>
     <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">{{ $financial->category?->name }}</td>
 
     <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">{{ $financial->type_name }}</td>

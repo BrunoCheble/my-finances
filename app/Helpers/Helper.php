@@ -41,7 +41,7 @@ if (!function_exists('colored_format_percentage')) {
 if (!function_exists('diff_percentage')) {
     function diff_percentage($value1, $value2)
     {
-        $percentage = $value1 == 0 ? -100 : (($value1 - $value2) / $value1) * 100;
+        $percentage = $value2 == 0 ? -100 : (($value1 - $value2) / $value2) * 100;
         $icon = $percentage > 0 ? 'fa-arrow-up' : 'fa-arrow-down';
         return '<span class="text-xs '.($percentage > 0 ? 'text-green-500' : 'text-red-500').'">' . number_format($percentage, 2) . '% <i class="fa ' . $icon . '"></i></span>';
     }

@@ -25,7 +25,8 @@ class FinancialMovementRequest extends FormRequest
                 'required',
                 'string',
                 Rule::in(['expense', 'income', 'refund', 'discount', 'transfer']),
-            ]
+            ],
+            'include_alert' => 'nullable|numeric',
         ];
 
         if ($this->input('type') === FinancialMovementType::TRANSFER) {

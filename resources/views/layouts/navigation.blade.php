@@ -52,6 +52,16 @@
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
+                        <form method="POST" action="{{ route('backup.save') }}">
+                            @csrf
+
+                            <x-dropdown-link :href="route('backup.save')"
+                                    onclick="event.preventDefault();
+                                                this.closest('form').submit();">
+                                {{ __('Save Backup') }}
+                            </x-dropdown-link>
+                        </form>
+
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf

@@ -1,6 +1,7 @@
 <div x-data="{
     showModal: false,
     selectedAttribute: '',
+    selectedSortby: 'date',
     searchOptions: {
         type: {{ json_encode($types) }},
         category_id: {{ json_encode($categories) }},
@@ -26,7 +27,7 @@
 
             <form action="{{ route('financial-movements.index') }}" method="GET" class="space-y-4">
                 <!-- Date Range -->
-                <div class="flex items-center gap-4 mb-4">
+                <div class="flex items-center flex-wrap gap-4 mb-4">
                     <div>
                         <x-input-label for="date_from" :value="__('From')" />
                         <x-text-input id="date_from" name="date_from" type="date" class="mt-1 block w-full"
@@ -36,6 +37,17 @@
                         <x-input-label for="date_to" :value="__('To')" />
                         <x-text-input id="date_to" name="date_to" type="date" class="mt-1 block w-full"
                             :value="old('date_to', request('date_to'))" autocomplete="date_to" />
+                    </div>
+
+                    <div>
+                        <x-input-label for="sort" :value="__('Sort by')" />
+                        <x-dropdown-select id="sort" name="sort" x-model="selectedSortby" :selected="request('sort')"
+                            :options="[
+                                'date' => 'date',
+                                'id' => 'id',
+                                'category_id' => 'category_id',
+                                'wallet_id' => 'wallet_id',
+                            ]" class="mt-1 w-full" />
                     </div>
 
                     <div>

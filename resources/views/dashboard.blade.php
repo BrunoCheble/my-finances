@@ -2,14 +2,56 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <x-slot name="header">
+        <div class="flex justify-between items-center">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Wallets') }}
+            {{ __('Dashboard') }}
         </h2>
+        <!-- CHANGE MONTH AND YEAR -->
+        <x-dropdown-select
+                :options="$filter"
+                name="month"
+                selected="{{ request('month', date('Y-m')) }}"
+                onchange="window.location.href = '/dashboard?month=' + this.value"
+            />
+            </div>
     </x-slot>
 
     <div class="py-12">
         <div class="max-w-full mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+
+                @if ($alerts['spending_spike_alert'])
+                    @foreach ($alerts['spending_spike_alert'] as $alert)
+                        @if ($alert['severity'] === 'warning')
+                            <div class="p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
+                        @else
+                            <div class="p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
+                        @endif
+                            <p>{!! $alert['message'] !!}</p>
+                        </div>
+                    @endforeach
+                @endif
+
+                @if ($alerts['category_imbalance_alert'])
+                    @foreach ($alerts['category_imbalance_alert'] as $alert)
+                        @if ($alert['severity'] === 'warning')
+                            <div class="p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
+                        @else
+                            <div class="p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
+                        @endif
+                            <p>{!! $alert['message'] !!}</p>
+                        </div>
+                    @endforeach
+                @endif
+
+                @if ($alerts['custom_alert'])
+                    @foreach ($alerts['custom_alert'] as $alert)
+                        <div class="p-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700">
+                            <p>{!! $alert['message'] !!}</p>
+                        </div>
+                    @endforeach
+                @endif
+
                 <div x-data="{ table: 'currency' }" class="p-6 bg-white border-b border-gray-200">
                     <div class="">
                         <canvas id="financialChart"></canvas>
@@ -23,8 +65,9 @@
                         const balanceChange = labels.map(m => monthlyData[m].balance_change);
                         const totalExpenses = labels.map(m => monthlyData[m].total_expenses);
                         const totalIncome = labels.map(m => monthlyData[m].total_income);
+                        const totalIncomeWithUnidentified = labels.map(m => parseFloat(monthlyData[m].total_income) + parseFloat(monthlyData[m].total_unidentified));
                         const totalUnidentified = labels.map(m => monthlyData[m].total_unidentified);
-
+                        console.log(totalIncomeWithUnidentified)
                         new Chart(document.getElementById("financialChart"), {
                             type: "line",
                             data: {
@@ -58,6 +101,12 @@
                                         data: totalUnidentified,
                                         borderColor: "#FFCE56",
                                         fill: false
+                                    },
+                                    {
+                                        label: "Total Income + Unidentified",
+                                        data: totalIncomeWithUnidentified,
+                                        borderColor: "#9C27B0",
+                                        fill: false
                                     }
                                 ]
                             },
@@ -86,9 +135,14 @@
 
                         <x-modal name="modal-movements" x-show="open" focusable>
                             <div class="bg-white w-full max-w-3xl rounded-lg shadow-lg p-6 space-y-6">
-                                <h2 class="text-lg font-bold text-gray-900">{{ __('Create') }}</h2>
+                                <h2 class="text-lg font-bold text-gray-900">
+                                    <span x-text="titleCategory"></span>
+                                </h2>
                                 <!-- Tabela -->
                                 <div class="overflow-y-auto h-96">
+
+
+                                    <canvas id="movementsChart"></canvas>
                                     <table class="w-full text-sm text-left text-gray-700">
                                         <thead>
                                             <tr class="bg-gray-100 text-xs uppercase">
@@ -99,7 +153,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <template x-for="item in items" :key="item.id">
+                                            <template x-for="item in rows" :key="item.id">
                                                 <tr class="border-t">
                                                     <td class="px-3 py-2" x-text="item.date"></td>
                                                     <td class="px-3 py-2" x-text="item.description"></td>
@@ -145,10 +199,10 @@
                                 </thead>
                                 <tbody class="divide-y divide-gray-200">
                                     @foreach ($categorySummary->summary as $category => $item)
-                                        <tr>
+                                        <tr class="hover:bg-gray-300">
                                             <!-- Categoria fixa -->
                                             <td
-                                                class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 sticky left-0 bg-white w-72">
+                                                class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 sticky left-0 w-72">
                                                 {{ $item->category }}
                                             </td>
                                             <!-- Totais por mês -->
@@ -181,7 +235,6 @@
                             </table>
                         </div>
                     </div>
-
                     <div x-show="table === 'percentage'" class="overflow-x-auto mt-8">
                         <table class="min-w-max divide-y divide-gray-300">
                             <thead>
@@ -229,9 +282,11 @@
             return {
                 open: false,
                 items: [],
+                rows: [],
                 titleCategory: '',
                 titleMonthYear: '',
                 totalAmount: '',
+                total: 0,
 
                 async openModal(monthYear, category, categoryName) {
                     try {
@@ -259,7 +314,7 @@
                         const response = await fetch(url);
                         const data = await response.json();
 
-                        let total = 0;
+                        this.total = 0;
 
                         // Formata os dados
                         this.items = data.map(item => {
@@ -271,7 +326,7 @@
                             const signedValue = isExpense ? -rawValue : rawValue;
 
                             // Acumular total
-                            total += signedValue;
+                            this.total += signedValue;
 
                             // Converte a data para dd/mm/yyyy
                             const formattedDate = new Date(item.date).toLocaleDateString('pt-PT');
@@ -289,18 +344,71 @@
                             };
                         });
 
-                        // Salva o total formatado
-                        this.totalAmount = total.toLocaleString('pt-PT', {
-                            style: 'currency',
-                            currency: 'EUR'
-                        });
-
-                        // Disparar o evento para abrir o modal
-                        this.$dispatch('open-modal', 'modal-movements');
+                        this.rows = JSON.parse(JSON.stringify(this.items));
+                        this.createChart();
 
                     } catch (err) {
                         console.error("Erro ao buscar dados:", err);
                     }
+                },
+
+                createChart() {
+                    // Salva o total formatado
+                    this.totalAmount = this.total.toLocaleString('pt-PT', {
+                        style: 'currency',
+                        currency: 'EUR'
+                    });
+
+                    // Disparar o evento para abrir o modal
+                    this.$dispatch('open-modal', 'modal-movements');
+
+                    // Agrupa por date e soma os valores
+                    this.items = this.items.reduce((acc, item) => {
+                        const existing = acc.find(i => i.date === item.date);
+                        if (existing) {
+                            existing.amount = (parseFloat(existing.amount.replace('€', '').replace(',', '.')) + parseFloat(item.amount.replace('€', '').replace(',', '.'))).toLocaleString('pt-PT', {
+                                style: 'currency',
+                                currency: 'EUR'
+                            });
+                        } else {
+                            acc.push(item);
+                        }
+                        return acc;
+                    }, []);
+
+                    // Configurar o gráfico
+                    const ctx = document.getElementById('movementsChart').getContext('2d');
+
+                    // Destrua o gráfico anterior, se existir
+                    if (Chart.getChart('movementsChart')) {
+                        Chart.getChart('movementsChart').destroy();
+                    }
+
+                    const chartData = {
+                        labels: this.items.map(item => item.date),
+                        datasets: [{
+                            label: this.total < 0 ? 'Despesas' : 'Receitas',
+                            data: this.items.map(item => this.total < 0 ? -parseFloat(item.amount.replace('€', '').replace(',', '.')) : parseFloat(item.amount.replace('€', '').replace(',', '.'))),
+                            borderWidth: 1,
+                            borderColor: this.total < 0 ? 'red' : 'green',
+                            backgroundColor: this.total < 0 ? 'rgba(255, 99, 132, 0.2)' : 'rgba(75, 192, 192, 0.2)',
+                        }]
+                    };
+                    // Inverter o eixo y
+                    chartData.datasets[0].data = chartData.datasets[0].data.reverse();
+
+                    const chartOptions = {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    };
+                    const chart = new Chart(ctx, {
+                        type: 'line',
+                        data: chartData,
+                        options: chartOptions
+                    });
                 },
 
                 closeModal() {

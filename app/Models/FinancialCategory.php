@@ -17,6 +17,7 @@ class FinancialCategory extends Model
         'name',
         'expected_total',
         'active',
+        'type'
     ];
 
     /**

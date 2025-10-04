@@ -11,6 +11,15 @@
         <x-input-error class="mt-2" :messages="$errors->get('expected_total')" />
     </div>
     <div>
+        <x-input-label for="type" :value="__('Type')" />
+        <x-dropdown-select
+            :options="['expense' => __('Expense'), 'income' => __('Income')]"
+            selected="{{ old('type', $category?->type) }}"
+            name="type"
+        />
+        <x-input-error class="mt-2" :messages="$errors->get('active')" />
+    </div>
+    <div>
         <x-input-label for="active" :value="__('Active')" />
         <x-dropdown-select
             :options="['1' => __('Yes'), '0' => __('No')]"

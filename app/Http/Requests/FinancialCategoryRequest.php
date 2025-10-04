@@ -23,6 +23,11 @@ class FinancialCategoryRequest extends FormRequest
             ],
             'expected_total' => 'nullable|numeric',
             'active' => 'numeric',
+            'type' => [
+                'required',
+                'string',
+                Rule::in(['expense', 'income']),
+            ],
         ];
     }
 
@@ -34,6 +39,7 @@ class FinancialCategoryRequest extends FormRequest
             'expected_total.numeric' => 'The expected total value must be numeric.',
             'expected_total.min' => 'The expected total value cannot be negative.',
             'active.boolean' => 'The active field must be true or false.',
+            'type.required' => 'The category type is required.',
         ];
     }
 }
