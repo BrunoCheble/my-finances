@@ -4,9 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\HasUserScope;
 
 class FinancialCategory extends Model
 {
+    use HasUserScope;
     use HasFactory;
 
     protected $primaryKey = 'id'; // Altere se a chave for diferente de 'id'

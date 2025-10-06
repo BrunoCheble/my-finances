@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use App\Enums\FinancialMovementType;
+use App\Traits\HasUserScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class FinancialMovement extends Model
 {
+    use HasUserScope;
     use HasFactory;
     protected $perPage = 20;
 

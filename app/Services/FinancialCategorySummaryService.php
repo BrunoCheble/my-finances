@@ -35,7 +35,7 @@ class FinancialCategorySummaryService
             ->values()
             ->toArray();
 
-        $lastMonth = $allMonths[count($allMonths) - 1];
+        $lastMonth = count($allMonths) > 0 ? $allMonths[count($allMonths) - 1] : null;
         $allMonths[] = 'Previsão';
 
         // Agrupar movimentos por categoria e mês, garantindo que todos os meses existam

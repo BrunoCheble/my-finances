@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\HasUserScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Wallet extends Model
 {
+    use HasUserScope;
     use HasFactory;
 
     // Campos que podem ser preenchidos em massa
