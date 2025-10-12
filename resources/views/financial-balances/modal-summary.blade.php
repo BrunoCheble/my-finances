@@ -66,7 +66,9 @@
                 if (walletId) {
                     params.append('wallet_id', walletId);
                 }
-                const url = `/api/financial-movements/filter?${params.toString()}`;
+
+                const baseUrl = "{{ route('financial-movements.filter') }}";
+                const url = `${baseUrl}?${params.toString()}`;
 
                 const response = await fetch(url);
                 const data = await response.json();

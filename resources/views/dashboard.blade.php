@@ -309,7 +309,8 @@
                             order: 'asc',
                         });
 
-                        const url = `/api/financial-movements/filter?${params.toString()}`;
+                        const baseUrl = "{{ route('financial-movements.filter') }}";
+                        const url = `${baseUrl}?${params.toString()}`;
 
                         // Fazer a requisição GET
                         const response = await fetch(url);
