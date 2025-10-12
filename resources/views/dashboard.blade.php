@@ -11,7 +11,7 @@
                 :options="$filter"
                 name="month"
                 selected="{{ request('month', date('Y-m')) }}"
-                onchange="window.location.href = '/dashboard?month=' + this.value"
+                onchange="{{ route('dashboard').'?month=' }}this.value"
             />
             </div>
     </x-slot>
