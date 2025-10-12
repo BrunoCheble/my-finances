@@ -8,11 +8,12 @@
         </h2>
         <!-- CHANGE MONTH AND YEAR -->
         <x-dropdown-select
-                :options="$filter"
-                name="month"
-                selected="{{ request('month', date('Y-m')) }}"
-                onchange="{{ route('dashboard').'?month=' }}this.value"
-            />
+            :options="$filter"
+            name="month"
+            selected="{{ request('month', date('Y-m')) }}"
+            onchange="window.location.href='{{ route('dashboard') }}?month=' + this.value"
+        />
+
             </div>
     </x-slot>
 
