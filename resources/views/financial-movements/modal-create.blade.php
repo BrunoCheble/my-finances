@@ -122,7 +122,9 @@
             lastMovements: [],
 
             deleteMovement(id) {
-                fetch(`/api/financial-movements/${id}`, {
+                const baseUrl = "{{ url('/api/financial-movements') }}";
+                const url = `${baseUrl}/${id}`;
+                fetch(`${url}`, {
                         method: 'DELETE',
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
