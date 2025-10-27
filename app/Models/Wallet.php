@@ -41,19 +41,4 @@ class Wallet extends Model
     {
         return $query->where('active', true);
     }
-
-    /**
-     * Calcula o saldo atual de uma carteira
-     * Esse método pode ser utilizado, por exemplo, para calcular o saldo final
-     * baseado nas transações e saldos registrados
-     */
-    public function getCurrentBalance()
-    {
-        // O saldo atual pode ser calculado de várias formas, mas uma ideia seria somar
-        // os saldos das transações e saldos financeiros.
-        $balance = $this->financialBalances()->latest()->first(); // Pega o último saldo registrado
-
-        // Se um saldo for encontrado, retorna o saldo real, senão, retorna o saldo inicial
-        return $balance ? $balance->real_balance : 0;
-    }
 }

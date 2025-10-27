@@ -31,9 +31,6 @@
                         {{ __('Calculated Balance') }}</th>
                     <th scope="col"
                         class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">
-                        {{ __('Real Balance') }}</th>
-                    <th scope="col"
-                        class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">
                         {{ __('Evolution') }}</th>
                     <th scope="col"
                         class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -56,11 +53,8 @@
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-right" x-on:click="window.modalSummary.openModal('{{ $balance->start_date }}', '{{ $balance->end_date }}', 'transfer', {{ $balance->wallet_id }})">
                             {!! $balance->total_unidentified != 0 ? colored_format_currency($balance->total_unidentified) : '' !!}
                         </td>
-                        <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold {{ $balance->calculated_balance != $balance->real_balance ? 'text-blue-500' : ($balance->calculated_balance < 0 ? 'text-red-500' : 'text-green-500') }}">
-                            {{ $balance->calculated_balance != 0 ? format_currency($balance->calculated_balance) : '' }}
-                        </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold">
-                            {!! $balance->real_balance != 0 ? colored_format_currency($balance->real_balance) : '' !!}
+                            {!! $balance->calculated_balance != 0 ? colored_format_currency($balance->calculated_balance) : '' !!}
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold">
                             {!! $balance->calculated_balance != 0 ? colored_format_currency($balance->calculated_balance-$balance->initial_balance) : '' !!}
@@ -90,9 +84,6 @@
                     </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold {{ $group->balances->sum('calculated_balance') != $group->balances->sum('real_balance') ? 'text-blue-500' : ($group->balances->sum('calculated_balance') < 0 ? 'text-red-500' : 'text-green-500') }}">
                         <span class="mr-2">{{ format_currency($group->balances->sum('calculated_balance')) }}</span>
-                    </td>
-                    <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold text-gray-500">
-                        <span class="mr-2">{{ format_currency($group->balances->sum('real_balance')) }}</span>
                     </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold text-gray-500">
                         <span class="mr-2">{!! colored_format_currency($group->balances->sum('calculated_balance')-$group->balances->sum('initial_balance')) !!}</span>

@@ -23,17 +23,21 @@ class FinancialBalanceRequest extends FormRequest
      */
     public function rules()
     {
+        if ($this->isMethod('post')) {
+            return [
+                'wallets' => 'required|array|min:1',
+                'initial_balance' => 'required|numeric',
+                'total_expense' => 'nullable|numeric|default:0',
+                'total_income' => 'nullable|numeric|default:0',
+                'calculated_balance' => 'nullable|numeric|default:0',
+                'total_unidentified' => 'nullable|numeric|default:0',
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after_or_equal:start_date',
+            ];
+        }
         return [
-            'wallets' => 'required|array|min:1',
-//            'wallet_id' => 'required|exists:wallets,id', // O ID da carteira precisa existir
-            'initial_balance' => 'required|numeric', // O saldo inicial precisa ser numérico
-            'total_expense' => 'nullable|numeric', // A despesa total é opcional, mas deve ser numérica
-            'total_income' => 'nullable|numeric', // A receita total é opcional, mas deve ser numérica
-            'real_balance' => 'nullable|numeric', // O saldo real é opcional, mas deve ser numérico
-            'calculated_balance' => 'nullable|numeric', // O saldo calculado é opcional, mas deve ser numérico
-            'total_unidentified' => 'nullable|numeric', // Despesas ou receitas não identificadas, opcional
-            'start_date' => 'required|date', // A data de início é obrigatória e deve ser uma data válida
-            'end_date' => 'required|date|after_or_equal:start_date', // A data de término deve ser válida e posterior ou igual à data de início
+            'initial_balance' => 'required|numeric',
+            'calculated_balance' => 'nullable|numeric',
         ];
     }
 

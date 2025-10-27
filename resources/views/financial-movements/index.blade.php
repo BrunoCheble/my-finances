@@ -1,10 +1,19 @@
 <x-app-layout>
     <x-slot name="header">
-
-        <h1 class="font-semibold text-xl text-gray-800 leading-tight">
-            <span class="w-4 h-4 rounded-full inline-block" style="background-color: {{ $walletSection?->color ?? '#555' }}"></span>
-            {{ $walletSection?->name ?? 'All Wallets' }}
-        </h1>
+        <div class="flex justify-between items-center">
+            <h1 class="font-semibold text-xl text-gray-800 leading-tight">
+                <span class="w-4 h-4 rounded-full inline-block" style="background-color: {{ $walletSection?->color ?? '#555' }}"></span>
+                {{ $walletSection?->name ?? 'All Wallets' }}
+            </h1>
+            @if ($totalBalance !== null)
+            <div class="flex flex-col items-end">
+                <div class="text-xs text-gray-600">{{ __('Total Balance') }}</div>
+                <div class="text-md font-semibold" >
+                    {{ number_format($totalBalance, 2, ',', '.') }}
+                </div>
+            </div>
+            @endif
+        </div>
     </x-slot>
 
     @include('financial-movements.modal-create')

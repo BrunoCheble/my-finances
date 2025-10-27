@@ -1,21 +1,27 @@
-<div class="space-y-6" x-data="{
-    description: '{{ old('description', $financialMovement?->description) }}',
-    type: '{{ old('type', $financialMovement?->type) }}',
-    category_id: '{{ old('category_id', $financialMovement?->category_id) }}',
+<div class="space-y-6"
+    x-data="{
+        description: '{{ old('description', $financialMovement?->description) }}',
+        type: '{{ old('type', $financialMovement?->type) }}',
+        category_id: '{{ old('category_id', $financialMovement?->category_id) }}',
+        baseUrl: '{{ url('/api/financial-movements/latest-type-category') }}',
 
-    async fetchLatestByDescription() {
-        if (!this.description) {
-            return;
+        async fetchLatestByDescription() {
+            if (!this.description) {
+                return;
+            }
+
+            const params = new URLSearchParams({ search: this.description });
+            const response = await fetch(`${this.baseUrl}?${params.toString()}`);
+            const data = await response.json();
+
+            this.type = data.type;
+            this.category_id = data.category_id;
         }
+    }"
+>
 
-        const params = new URLSearchParams({ search: this.description });
-        const response = await fetch(`/api/financial-movements/latest-type-category?${params.toString()}`);
-        const data = await response.json();
 
-        this.type = data.type;
-        this.category_id = data.category_id;
-    }
-}">
+
     <div class="flex flex-row gap-4">
         <!-- Date Field -->
         <div>

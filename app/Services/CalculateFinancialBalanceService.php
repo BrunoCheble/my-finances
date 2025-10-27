@@ -30,12 +30,12 @@ class CalculateFinancialBalanceService
             $balance->end_date
         );
 
-        if ($financialMovements->isEmpty() && $balance->initial_balance == 0 && $balance->real_balance == 0) {
+        if ($financialMovements->isEmpty() && $balance->initial_balance == 0) {
             return $balance->delete();
         }
 
         if ($financialMovements->isEmpty()) {
-            $balance->calculated_balance = $balance->real_balance != 0 ? $balance->real_balance : $balance->initial_balance;
+            $balance->calculated_balance = $balance->initial_balance;
             $balance->total_expense = 0;
             $balance->total_income = 0;
             $balance->total_unidentified = 0;
@@ -69,10 +69,6 @@ class CalculateFinancialBalanceService
         $balance->total_income = $balance->total_income;
         $diff = $balance->total_income - $balance->total_expense + $balance->total_unidentified;
         $balance->calculated_balance = $balance->initial_balance + $diff;
-
-        if ($balance->real_balance == 0) {
-            $balance->real_balance = $balance->calculated_balance;
-        }
 
         return $balance->save();
     }

@@ -25,6 +25,7 @@ class SaveFinancialBalanceService
 
             if ($old_balance) {
                 $data['initial_balance'] = $old_balance->calculated_balance;
+                $data['calculated_balance'] = $old_balance->calculated_balance;
             }
 
             if (!$balance) $this->repository->create($data);

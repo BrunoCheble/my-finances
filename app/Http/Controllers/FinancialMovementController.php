@@ -6,12 +6,12 @@ use App\Enums\FinancialMovementOptions;
 use App\Enums\FinancialMovementType;
 use App\Helpers\ArrayHelper;
 use App\Http\Requests\FinancialMovementRequest;
+use App\Models\FinancialBalance;
 use App\Models\FinancialCategory;
 use App\Models\FinancialMovement;
 use App\Models\Wallet;
 use App\Services\Cache\DashboardCacheService;
 use App\Services\CalculateFinancialBalanceService;
-use App\Services\FinancialMovementSummaryService;
 use App\Services\GetFinancialMovementService;
 use App\Services\SaveFinancialMovementService;
 use Illuminate\Http\Request;
@@ -44,6 +44,9 @@ class FinancialMovementController extends Controller
         $walletSection = Wallet::find($request->input('wallet_id'));
 
         $availableAttributes = FinancialMovementOptions::options();
+        $totalBalance = $request->input('wallet_id') ? FinancialBalance::where('wallet_id', $request->input('wallet_id'))
+                            ->orderBy('end_date', 'desc')
+                            ->first()?->calculated_balance ?? null : null;
 
         return view('financial-movements.index', compact(
             'financials',
@@ -53,7 +56,8 @@ class FinancialMovementController extends Controller
             'categories',
             'types',
             'availableAttributes',
-            'financialMovement'
+            'financialMovement',
+            'totalBalance'
         ))->with('i', ($request->input('page', 1) - 1) * 5);
     }
 

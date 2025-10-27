@@ -52,9 +52,10 @@ class FinancialBalanceController extends Controller
         return view('financial-balances.edit', compact('balance','wallets'));
     }
 
-    public function update(FinancialBalanceRequest $request, FinancialBalance $financial_balance)
+    public function update(FinancialBalanceRequest $request, FinancialBalance $financial_balance, CalculateFinancialBalanceService $calculateFinancialBalanceService)
     {
         $financial_balance->update($request->validated());
+        $calculateFinancialBalanceService->execute($financial_balance->start_date, $financial_balance->wallet_id);
         return redirect()->route('financial-balances.index')->with('success', 'Financial Balance updated successfully.');
     }
 
