@@ -203,7 +203,7 @@
                                         <tr class="hover:bg-gray-300">
                                             <!-- Categoria fixa -->
                                             <td
-                                                class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 sticky left-0 w-72">
+                                                class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 sticky left-0 bg-white">
                                                 {{ $item->category }}
                                             </td>
                                             <!-- Totais por mês -->

@@ -23,8 +23,8 @@
 
                     <div class="space-y-4">
                         <!-- Accordion Item -->
-                        @foreach ($groups as $group)
-                            @include('financial-balances.accordion-item.index')
+                        @foreach ($groups as $key => $group)
+                            @include('financial-balances.accordion-item.index', ['group' => $group, 'key' => $key])
                         @endforeach
                     </div>
 

@@ -1,4 +1,4 @@
-<div x-data="{ open: false }" class="bg-white border border-gray-300 rounded-xl shadow-sm overflow-hidden transition-all">
+<div x-data="{ open: {{ $key == 0 ? 'true' : 'false'}} }" class="bg-white border border-gray-300 rounded-xl shadow-sm overflow-hidden transition-all">
     <!-- include modal summary -->
     <button @click="open = !open" class="w-full flex justify-between items-center p-5 text-gray-800 font-medium text-lg hover:bg-gray-50 transition">
         <span>{{ $group->title }}</span>
