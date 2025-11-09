@@ -82,7 +82,7 @@
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold text-gray-500" x-on:click="window.modalSummary.openModal('{{ $group->startDate }}', '{{ $group->endDate }}', 'transfer')">
                         {{ format_currency($group->balances->sum('total_unidentified')) }}
                     </td>
-                    <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold {{ $group->balances->sum('calculated_balance') != $group->balances->sum('real_balance') ? 'text-blue-500' : ($group->balances->sum('calculated_balance') < 0 ? 'text-red-500' : 'text-green-500') }}">
+                    <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold {{ $group->balances->sum('calculated_balance') < 0 ? 'text-red-500' : 'text-green-500' }}">
                         <span class="mr-2">{{ format_currency($group->balances->sum('calculated_balance')) }}</span>
                     </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold text-gray-500">

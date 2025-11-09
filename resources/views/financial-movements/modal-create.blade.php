@@ -168,6 +168,11 @@
                     })
                     .then(response => response.json())
                     .then(data => {
+                        if (Array.isArray(data) === false && data.errors) {
+                            this.errorMessages = Object.values(data.errors).flat();
+                            return;
+                        }
+
                         for (let i = 0; i < data.length; i++) {
                             data[i].wallet_id = this.wallets[data[i].wallet_id];
                             data[i].category_id = this.categories[data[i].category_id];
@@ -194,7 +199,9 @@
                             this.lastMovements.push(data[i]);
                         }
                         this.notification = 'Financial movement saved successfully!';
+                        // reset form fields but keep date field value
                         form.reset();
+                        form.querySelector('input[name="date"]').value = formData.get('date');
                     })
                     .catch(error => {
                         console.error('Error:', error);

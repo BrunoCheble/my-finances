@@ -34,8 +34,22 @@ class CalculateFinancialBalanceService
             $balance->end_date
         );
 
-        if ($financialMovements->isEmpty() && $balance->initial_balance == 0) {
+        if (
+            $financialMovements->isEmpty() &&
+            $balance->initial_balance == 0 &&
+            $balance->calculated_balance == 0
+        ) {
             return $balance->delete();
+        }
+
+        if (
+            $financialMovements->isEmpty() &&
+            $balance->total_unidentified == 0 &&
+            $balance->total_income == 0 &&
+            $balance->total_expense == 0 &&
+            $balance->calculated_balance != $balance->initial_balance
+        ) {
+            return true;
         }
 
         if ($financialMovements->isEmpty()) {
@@ -62,16 +76,16 @@ class CalculateFinancialBalanceService
                     $balance->total_income += $movement->amount;
                     break;
                 case FinancialMovementType::REFUND:
-                    $balance->total_expense -= $movement->amount;
+                    $balance->total_expense += $movement->amount;
                     break;
                 case FinancialMovementType::DISCOUNT:
-                    $balance->total_income -= $movement->amount;
+                    $balance->total_income += $movement->amount;
                     break;
             }
         }
 
         $balance->total_income = $balance->total_income;
-        $diff = $balance->total_income - $balance->total_expense + $balance->total_unidentified;
+        $diff = $balance->total_income + $balance->total_expense + $balance->total_unidentified;
         $balance->calculated_balance = $balance->initial_balance + $diff;
 
         return $balance->save();

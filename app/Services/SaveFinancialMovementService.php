@@ -21,6 +21,10 @@ class SaveFinancialMovementService
     {
         $data['include_alert'] = isset($data['include_alert']) ? (bool)$data['include_alert'] : false;
 
+        if ($data['type'] === 'expense' || $data['type'] === 'discount') {
+            $data['amount'] = $data['amount'] * -1;
+        }
+
         if ($id) {
             $this->repository->removeDestinationMovement($id);
         }

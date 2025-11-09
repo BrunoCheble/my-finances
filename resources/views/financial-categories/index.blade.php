@@ -77,8 +77,8 @@
                                                     {{ $category->total_expense ? format_currency($category->total_expense) : '-' }}
                                                 </td>
                                                 <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
-                                                    {!! $category->total_income - $category->total_expense != 0
-                                                        ? colored_format_currency($category->total_income - $category->total_expense)
+                                                    {!! $category->total_income + $category->total_expense != 0
+                                                        ? colored_format_currency($category->total_income + $category->total_expense)
                                                         : '-' !!}</td>
                                                 <td
                                                     class="whitespace-nowrap px-3 py-4 text-sm text-right text-gray-500">

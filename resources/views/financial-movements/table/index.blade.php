@@ -42,10 +42,8 @@
     function deleteSelected() {
         return {
             selected: [],
-
             deleteSelectedMovements() {
                 this.selected = Array.from(document.querySelectorAll('input[name="selected_financials[]"]:checked')).map(cb => cb.value);
-                console.log(this.selected);
                 if (this.selected.length === 0) return;
                 if (!confirm('Are you sure you want to delete the selected movements?')) return;
 

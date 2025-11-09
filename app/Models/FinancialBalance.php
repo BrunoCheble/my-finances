@@ -18,7 +18,6 @@ class FinancialBalance extends Model
         'total_income',
         'total_unidentified',
         'calculated_balance',
-        'real_balance',
         'start_date',
         'end_date',
     ];

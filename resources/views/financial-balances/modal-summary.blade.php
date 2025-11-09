@@ -50,11 +50,12 @@
             totalAmount: '',
             total: 0,
             open: false,
+            wallets: @json($wallets),
             init() {
                 window.modalSummary = this;
             },
             async openModal(startDate, endDate, type, walletId = undefined) {
-                this.titleCategory = `Movimentações de ${startDate} a ${endDate}`;
+                this.titleCategory = `Movimentações de ${new Date(startDate).toLocaleDateString('pt-PT')} a ${new Date(endDate).toLocaleDateString('pt-PT')}`;
 
                 const params = new URLSearchParams({
                     date_from: startDate,
@@ -77,10 +78,10 @@
 
                 this.items = data.map(item => {
                     const rawAmount = parseFloat(item.amount);
-                    const isExpense = item.type === 'discount' || item.type === 'refund';
+                    const isExpense = (item.type === 'expense' ||  item.type === 'discount') || item.type === 'transfer' && rawAmount < 0;
 
                     const rawValue = parseFloat(item.amount);
-                    const signedValue = isExpense ? -rawValue : rawValue;
+                    const signedValue = rawValue;
 
                     this.total += signedValue;
 
@@ -89,7 +90,7 @@
                     return {
                         id: item.id,
                         date: formattedDate,
-                        wallet: item.wallet_id,
+                        wallet: this.wallets[item.wallet_id] ? this.wallets[item.wallet_id] : 'N/A',
                         description: item.description,
                         amount: signedValue.toLocaleString('pt-PT', {
                             style: 'currency',

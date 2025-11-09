@@ -22,7 +22,7 @@
     <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">{{ $financial->category?->name }}</td>
 
     <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">{{ $financial->type_name }}</td>
-    <td class="whitespace-nowrap px-3 py-2 text-sm text-right {{ $financial->isDebit ? 'text-red-500' : 'text-green-500' }}">{{ format_currency(abs($financial->amount)) }} </td>
+    <td class="whitespace-nowrap px-3 py-2 text-sm text-right {{ $financial->isDebit ? 'text-red-500' : 'text-green-500' }}">{{ format_currency($financial->amount) }} </td>
 
     <td style="width: 100px;" class="whitespace-nowrap py-2 pl-4 pr-3 text-sm font-medium text-gray-900">
         @include('financial-movements.menu.index')
