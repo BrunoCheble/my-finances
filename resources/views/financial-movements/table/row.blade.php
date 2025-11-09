@@ -1,4 +1,13 @@
 <tr class="even:bg-gray-50">
+    <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+        <input
+            type="checkbox"
+            name="selected_financials[]"
+            value="{{ $financial->id }}"
+            x-model="selected"
+            class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+        >
+    </td>
     @if (!$walletSection)
         <td class="whitespace-nowrap px-3 py-2 text-sm" style="color: {{ $financial->wallet?->color }}">{{ $financial->wallet?->name }}</td>
     @endif

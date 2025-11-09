@@ -26,31 +26,31 @@
                 <thead>
                     <tr>
                         <th scope="col"
-                            class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                             {{ __('Wallet') }}
                         </th>
                         <th scope="col"
-                            class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                             {{ __('Date') }}
                         </th>
                         <th scope="col"
-                            class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                             {{ __('Description') }}
                         </th>
                         <th scope="col"
-                            class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                             {{ __('Category') }}
                         </th>
                         <th scope="col"
-                            class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                             {{ __('Type') }}
                         </th>
                         <th scope="col"
-                            class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">
+                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">
                             {{ __('Amount') }}
                         </th>
                         <th scope="col"
-                            class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">
+                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">
                         </th>
                     </tr>
                 </thead>
@@ -58,31 +58,31 @@
                     <template x-for="movement in lastMovements" :key="movement.id">
                         <tr>
                             <td
-                                class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 <span x-text="movement.wallet_id"></span>
                             </td>
                             <td
-                                class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 <span x-text="movement.date"></span>
                             </td>
                             <td
-                                class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 <span x-text="movement.description"></span>
                             </td>
                             <td
-                                class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 <span x-text="movement.category_id"></span>
                             </td>
                             <td
-                                class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 <span x-text="movement.type"></span>
                             </td>
                             <td
-                                class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">
+                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">
                                 <span x-text="movement.amount"></span>
                             </td>
                             <td
-                                class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                                 <button class="bg-green-500 rounded-full text-white w-6 h-6 shadow-lg"
                                     @click.prevent="deleteMovement(movement.id)">
                                     <span class="fa fa-trash"></span>
@@ -120,6 +120,9 @@
             notification: '',
             errorMessages: [],
             lastMovements: [],
+            wallets: @json($wallets),
+            categories: @json($categories),
+            types: @json($types),
 
             deleteMovement(id) {
                 const baseUrl = "{{ url('/api/financial-movements') }}";
@@ -166,9 +169,32 @@
                     .then(response => response.json())
                     .then(data => {
                         for (let i = 0; i < data.length; i++) {
+                            data[i].wallet_id = this.wallets[data[i].wallet_id];
+                            data[i].category_id = this.categories[data[i].category_id];
+                            data[i].type = this.types[data[i].type];
+
+                            if (data[i].description.length > 10) {
+                                data[i].description = data[i].description.substring(0, 10) + '...';
+                            }
+                            if (data[i].wallet_id.length > 10) {
+                                data[i].wallet_id = data[i].wallet_id.substring(0, 10) + '...';
+                            }
+                            if (data[i].category_id.length > 10) {
+                                data[i].category_id = data[i].category_id.substring(0, 10) + '...';
+                            }
+                            if (data[i].type.length > 10) {
+                                data[i].type = data[i].type.substring(0, 10) + '...';
+                            }
+
+                            data[i].amount = parseFloat(data[i].amount).toLocaleString('pt-PT', {
+                                style: 'currency',
+                                currency: 'EUR'
+                            });
+                            data[i].date = new Date(data[i].date).toLocaleDateString('pt-PT');
                             this.lastMovements.push(data[i]);
                         }
                         this.notification = 'Financial movement saved successfully!';
+                        form.reset();
                     })
                     .catch(error => {
                         console.error('Error:', error);

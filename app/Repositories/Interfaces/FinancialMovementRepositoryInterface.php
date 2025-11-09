@@ -12,6 +12,8 @@ interface FinancialMovementRepositoryInterface
 
     public function find(int $id): ?FinancialMovement;
 
+    public function findByIds(array $ids);
+
     public function where($column, $operator = null, $value = null, $boolean = 'and');
 
     public function findByWalletAndInterval(int $walletId, string $startDate, string $endDate);

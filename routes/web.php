@@ -31,6 +31,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('financial-categories', FinancialCategoryController::class);
     Route::get('/api/financial-movements/filter', [FinancialMovementController::class, 'filter'])->name('financial-movements.filter');
     Route::get('/api/financial-movements/latest-type-category', [FinancialMovementController::class, 'fetchLatestTypeAndCategory'])->name('financial-movements.fetchLatestTypeAndCategory');
+    Route::post('/api/financial-movements/bulk-delete', [FinancialMovementController::class, 'bulkDelete'])->name('financial-movements.bulk-delete');
     Route::delete('/api/financial-movements/{id}', [FinancialMovementController::class, 'delete'])->name('financial-movements.delete');
     Route::resource('financial-movements', FinancialMovementController::class);
 

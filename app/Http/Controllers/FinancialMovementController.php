@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Enums\FinancialMovementOptions;
 use App\Enums\FinancialMovementType;
 use App\Helpers\ArrayHelper;
+use App\Http\Requests\FinancialMovementBulkDeleteRequest;
 use App\Http\Requests\FinancialMovementRequest;
 use App\Models\FinancialBalance;
 use App\Models\FinancialCategory;
 use App\Models\FinancialMovement;
 use App\Models\Wallet;
+use App\Services\BulkDeleteFinancialMovementService;
 use App\Services\Cache\DashboardCacheService;
 use App\Services\CalculateFinancialBalanceService;
 use App\Services\GetFinancialMovementService;
@@ -135,6 +137,27 @@ class FinancialMovementController extends Controller
             $calculateFinancialBalanceService->execute($financial_movement->date, $financial_movement->wallet_id);
             $dashboardCacheService->clearRelatedCaches($financial_movement->date);
             return response()->json(['success' => 'Financial Movement deleted successfully'], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json(['error' => __('Something went wrong')], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function bulkDelete(
+        FinancialMovementBulkDeleteRequest $request,
+        BulkDeleteFinancialMovementService $bulkDeleteFinancialMovementService,
+        DashboardCacheService $dashboardCacheService,
+        CalculateFinancialBalanceService $calculateFinancialBalanceService
+    ): JsonResponse
+    {
+        try {
+            $ids = $request->input('ids', []);
+
+            $movements = $bulkDeleteFinancialMovementService->execute($ids);
+            $balances = $calculateFinancialBalanceService->executeForMultipleBalances($movements);
+            foreach ($balances as $balance) {
+                $dashboardCacheService->clearRelatedCaches($balance->start_date);
+            }
+            return response()->json(['success' => 'Selected Financial Movements deleted successfully'], Response::HTTP_OK);
         } catch (\Exception $e) {
             return response()->json(['error' => __('Something went wrong')], Response::HTTP_INTERNAL_SERVER_ERROR);
         }

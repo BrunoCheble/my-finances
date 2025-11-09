@@ -23,7 +23,11 @@ class CalculateFinancialBalanceService
     public function execute(string $date, int $walletId)
     {
         $balance = $this->findOrCreate($date, $walletId);
+        return $this->recalculate($balance);
+    }
 
+    private function recalculate($balance)
+    {
         $financialMovements = $this->financialMovementRepository->findByWalletAndInterval(
             $balance->wallet_id,
             $balance->start_date,
@@ -73,6 +77,15 @@ class CalculateFinancialBalanceService
         return $balance->save();
     }
 
+    public function executeForMultipleBalances($movements)
+    {
+        $financialBalances = $this->balanceRepository->findByMovements($movements);
+        foreach ($financialBalances as $balance) {
+            $this->recalculate($balance);
+        }
+        return $financialBalances;
+    }
+
     public function findOrCreate(string $date, int $walletId)
     {
         $balance = $this->balanceRepository->findByWalletAndInterval($walletId, $date);
@@ -80,12 +93,13 @@ class CalculateFinancialBalanceService
         if ($balance) {
             return $balance;
         }
+        $previousBalance = $this->balanceRepository->findPreviousByWalletAndDate($walletId, $date);
 
         $balance = new FinancialBalance();
         $balance->wallet_id = $walletId;
         $balance->start_date = date('Y-m-01', strtotime($date));
         $balance->end_date = date('Y-m-t', strtotime($date));
-        $balance->initial_balance = 0;
+        $balance->initial_balance = $previousBalance ? $previousBalance->calculated_balance : 0;
         $balance->total_expense = 0;
         $balance->total_income = 0;
         $balance->total_unidentified = 0;

@@ -30,6 +30,11 @@ class FinancialMovementRepository implements FinancialMovementRepositoryInterfac
         return FinancialMovement::find($id);
     }
 
+    public function findByIds(array $ids)
+    {
+        return FinancialMovement::whereIn('id', $ids)->get();
+    }
+
     public function where($column, $operator = null, $value = null, $boolean = 'and')
     {
         return FinancialMovement::where($column, $operator, $value, $boolean);
