@@ -44,7 +44,7 @@ class FinancialCategorySummaryService
             $monthlyData = $categoryMovements->groupBy(fn($movement) => Carbon::parse($movement->date)->format('m/Y'))
                 ->map(fn($monthlyMovements) =>
                     $monthlyMovements->reduce(fn($carry, $movement) =>
-                        $carry + ($movement->isDebit ? -$movement->amount : $movement->amount), 0
+                        $carry + $movement->amount, 0
                     )
                 );
 
