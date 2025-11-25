@@ -5,7 +5,6 @@ namespace App\Services\Alerts;
 use App\Models\FinancialCategory;
 use App\Models\FinancialMovement;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class SpendingSpikeAlert
@@ -40,6 +39,7 @@ class SpendingSpikeAlert
             $totals = $months->pluck('total')->sort()->values();
             $count = $totals->count();
 
+            $totals = $totals->map(fn($x) => abs($x));
             if ($count === 0) return [$categoryId => (object)['average' => 0]];
 
             $median = $count % 2
@@ -53,7 +53,7 @@ class SpendingSpikeAlert
         $alerts = [];
         foreach ($movementsThisMonth as $categoryId => $current) {
             $avg = $pastAverages[$categoryId]->average ?? null;
-
+            $current->total = abs($current->total);
             if ($avg && $current->total > $avg) {
                 $formattedAvg = number_format($avg, 2, ',', '.');
                 $formattedTotal = number_format($current->total, 2, ',', '.');

@@ -175,7 +175,7 @@
 
                         for (let i = 0; i < data.length; i++) {
                             data[i].wallet_id = this.wallets[data[i].wallet_id];
-                            data[i].category_id = this.categories[data[i].category_id];
+                            data[i].category_id = data[i].category_id ? this.categories[data[i].category_id] : 'N/A';
                             data[i].type = this.types[data[i].type];
 
                             if (data[i].description.length > 10) {

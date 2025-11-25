@@ -22,7 +22,7 @@ class CategoryImbalanceAlert
             ->get()
             ->keyBy('category_id');
 
-        $totalGeneral = $movementsThisMonth->sum('total');
+        $totalGeneral = abs($movementsThisMonth->sum('total'));
 
         if ($totalGeneral == 0) {
             return null; // sem despesas no mês
@@ -32,6 +32,7 @@ class CategoryImbalanceAlert
         $alerts = [];
 
         foreach ($movementsThisMonth as $categoryId => $data) {
+            $data->total = abs($data->total);
             $percent = ($data->total / $totalGeneral) * 100;
 
             if ($percent >= 30) {
