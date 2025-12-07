@@ -19,7 +19,9 @@ class FinancialCategoryRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('financial_categories')->ignore($categoryId),
+                Rule::unique('financial_categories')
+                    ->ignore($categoryId)
+                    ->where(fn ($query) => $query->where('user_id', auth()->id())),
             ],
             'expected_total' => 'nullable|numeric',
             'active' => 'numeric',

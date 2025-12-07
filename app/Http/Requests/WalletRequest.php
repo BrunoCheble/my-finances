@@ -18,7 +18,9 @@ class WalletRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('wallets')->ignore($this->route('wallet')),
+                Rule::unique('wallets')
+                    ->ignore($this->route('wallet'))
+                    ->where(fn ($query) => $query->where('user_id', auth()->id())),
             ],
             'color' => 'nullable|string|max:255',
             'active' => 'boolean',
