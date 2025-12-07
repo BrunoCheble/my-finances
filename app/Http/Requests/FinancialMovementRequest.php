@@ -24,7 +24,14 @@ class FinancialMovementRequest extends FormRequest
             'type' => [
                 'required',
                 'string',
-                Rule::in(['expense', 'income', 'refund', 'discount', 'transfer']),
+                Rule::in([
+                    FinancialMovementType::EXPENSE,
+                    FinancialMovementType::INCOME,
+                    FinancialMovementType::REFUND,
+                    FinancialMovementType::DISCOUNT,
+                    FinancialMovementType::TRANSFER,
+                    FinancialMovementType::LOAN,
+                ]),
             ],
             'include_alert' => 'nullable|numeric',
         ];

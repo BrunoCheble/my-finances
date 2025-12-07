@@ -2,7 +2,7 @@
 
     <x-modal name="modal-create" :show="false" focusable>
         <div class="bg-white w-full max-w-3xl rounded-lg shadow-lg p-6 space-y-6">
-            <h2 class="text-lg font-bold text-gray-900">{{ __('Create') }}</h2>
+            <h2 class="text-lg font-bold text-gray-900">{{ __('Create a new movement') }}</h2>
 
             <template x-if="errorMessages.length">
                 <div class="bg-red-500 text-white p-4 rounded shadow-lg">

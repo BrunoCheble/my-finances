@@ -17,7 +17,7 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $month = $request->input('month') ?? date('Y-m');
-        DashboardCacheService::clearMonth($month); // Limpa cache();
+
         $data = DashboardCacheService::get($month, function () use ($month) {
             $monthlySummary = FinancialBalanceSummaryService::getMonthlySummary();
             $categorySummary = FinancialCategorySummaryService::execute();

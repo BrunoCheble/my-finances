@@ -22,6 +22,7 @@ class WalletRequest extends FormRequest
             ],
             'color' => 'nullable|string|max:255',
             'active' => 'boolean',
+            'type' => 'string|in:debit,credit',
         ];
     }
 
@@ -31,6 +32,7 @@ class WalletRequest extends FormRequest
             'name.required' => 'The wallet name is required.',
             'name.unique' => 'A wallet with this name already exists.',
             'active.boolean' => 'The active field must be true or false.',
+            'type.in' => 'The type must be either debit or credit.',
         ];
     }
 }

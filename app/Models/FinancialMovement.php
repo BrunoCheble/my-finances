@@ -71,6 +71,10 @@ class FinancialMovement extends Model
     }
 
     public function getIsDebitAttribute() {
-        return $this->type === FinancialMovementType::EXPENSE || $this->type === FinancialMovementType::DISCOUNT || ($this->type === FinancialMovementType::TRANSFER && $this->amount < 0);
+        return
+            $this->type === FinancialMovementType::EXPENSE ||
+            $this->type === FinancialMovementType::DISCOUNT ||
+            ($this->type === FinancialMovementType::TRANSFER && $this->amount < 0) ||
+            ($this->type === FinancialMovementType::LOAN && $this->amount < 0);
     }
 }

@@ -7,7 +7,7 @@
 
     <div>
         <x-input-label for="color" :value="__('Color')" />
-        <x-text-input id="color" name="color" type="text" class="mt-1 block w-full" :value="old('color', $wallet?->color)" autocomplete="color" placeholder="color" />
+        <x-text-input id="color" name="color" type="color" class="mt-1 block w-full" :value="old('color', $wallet?->color)" autocomplete="color" placeholder="color" />
         <x-input-error class="mt-2" :messages="$errors->get('color')" />
     </div>
 
@@ -21,7 +21,17 @@
         <x-input-error class="mt-2" :messages="$errors->get('active')" />
     </div>
 
+    <div>
+        <x-input-label for="type" :value="__('Type Account')" />
+        <x-dropdown-select
+            :options="['debit' => __('Debit'), 'credit' => __('Credit')]"
+            selected="{{ old('type', $wallet?->type) }}"
+            name="type"
+        />
+        <x-input-error class="mt-2" :messages="$errors->get('type')" />
+    </div>
+
     <div class="flex items-center gap-4">
-        <x-primary-button>Submit</x-primary-button>
+        <x-primary-button>{{ __('Submit') }}</x-primary-button>
     </div>
 </div>

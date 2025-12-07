@@ -16,6 +16,7 @@ class Wallet extends Model
         'name',
         'color',
         'active',
+        'type',
     ];
 
     /**

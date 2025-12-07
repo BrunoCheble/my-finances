@@ -9,6 +9,7 @@
         <div class="max-w-full mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                 <div class="w-full">
+                    @include('layouts.alert')
                     <div class="sm:flex sm:items-center">
                         <div class="sm:flex-auto">
                             <h1 class="text-base font-semibold leading-6 text-gray-900">{{ __('Wallets') }}</h1>
@@ -26,9 +27,10 @@
                                     <thead>
                                     <tr>
 
-									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Name</th>
-                                    <th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Color</th>
-									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Active</th>
+									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Name') }}</th>
+                                    <th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Color') }}</th>
+									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Type') }}</th>
+									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Actived') }}</th>
 
                                         <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"></th>
                                     </tr>
@@ -41,7 +43,8 @@
 										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                             <div class="w-4 h-4 rounded-full" style="background-color: {{ $wallet->color }}"></div>
                                         </td>
-										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ $wallet->active }}</td>
+										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ $wallet->type == 'debit' ? __('Debit') : __('Credit') }}</td>
+										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ $wallet->active ? __('Yes') : __('No') }}</td>
 
                                             <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
                                                 <form action="{{ route('wallets.destroy', $wallet->id) }}" method="POST">

@@ -3,7 +3,7 @@
         <div class="flex justify-between items-center">
             <h1 class="font-semibold text-xl text-gray-800 leading-tight">
                 <span class="w-4 h-4 rounded-full inline-block" style="background-color: {{ $walletSection?->color ?? '#555' }}"></span>
-                {{ $walletSection?->name ?? 'All Wallets' }}
+                {{ $walletSection?->name ?? __('All Wallets') }}
             </h1>
             @if ($totalBalance !== null)
             <div class="flex flex-col items-end">

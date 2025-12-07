@@ -54,9 +54,9 @@ class WalletController extends Controller
         try {
             $wallet = Wallet::findOrFail($id);
 
-            // if ($wallet->financialMovements()->count() > 0) {
-            //     return redirect()->route('wallets.index')->with('error', 'Wallet has financial movements, cannot delete.');
-            // }
+            if ($wallet->financialMovements()->count() > 0) {
+                 return redirect()->route('wallets.index')->with('error', 'Wallet has financial movements, cannot delete.');
+            }
 
             $wallet->delete();
 

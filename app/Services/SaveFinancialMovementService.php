@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\FinancialMovementType;
 use App\Models\FinancialMovement;
 use App\Repositories\Interfaces\FinancialMovementRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
@@ -21,8 +22,25 @@ class SaveFinancialMovementService
     {
         $data['include_alert'] = isset($data['include_alert']) ? (bool)$data['include_alert'] : false;
 
-        if ($data['type'] === 'expense' || $data['type'] === 'discount') {
-            $data['amount'] = $data['amount'] * -1;
+        switch ($data['type']) {
+            case FinancialMovementType::DISCOUNT:
+            case FinancialMovementType::EXPENSE:
+                $data['amount'] = $data['amount'] * -1;
+                break;
+            case FinancialMovementType::INCOME:
+            case FinancialMovementType::REFUND:
+                $data['amount'] = abs($data['amount']);
+                break;
+            case FinancialMovementType::TRANSFER:
+                $data['category_id'] = null;
+                break;
+            case FinancialMovementType::LOAN:
+                $data['category_id'] = null;
+                $data['transfer_to_wallet_id'] = null;
+                $data['include_alert'] = true;
+                break;
+            default:
+                throw new \InvalidArgumentException("Invalid financial movement type: " . $data['type']);
         }
 
         if ($id) {

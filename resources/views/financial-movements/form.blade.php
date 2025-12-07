@@ -66,7 +66,7 @@
         </div>
 
         <!-- Category Field -->
-        <div class="flex-1">
+        <div class="flex-1" x-show="type !== 'transfer' && type !== 'loan'" x-cloak>
             <x-input-label for="category_id" :value="__('Category')" />
             <x-dropdown-select :options="$categories" x-model="category_id" name="category_id" />
             <x-input-error class="mt-2" :messages="$errors->get('category_id')" />
@@ -83,18 +83,19 @@
         @else
             <input type="hidden" name="wallet_id" value="{{ key($wallets) }}">
         @endif
+
+        <div x-show="type === 'transfer'" class="transition-all duration-200" class="flex-1">
+            <x-input-label for="transfer_to_wallet_id" :value="__('Transfer To Wallet')" />
+            <x-dropdown-select :options="$wallets"
+                selected="{{ old('transfer_to_wallet_id', $financialMovement?->destinationMovement?->wallet_id) }}"
+                name="transfer_to_wallet_id" />
+            <x-input-error class="mt-2" :messages="$errors->get('transfer_to_wallet_id')" />
+        </div>
     </div>
 
-    <div x-show="type === 'transfer'" class="transition-all duration-200">
-        <x-input-label for="transfer_to_wallet_id" :value="__('Transfer To Wallet')" />
-        <x-dropdown-select :options="$wallets"
-            selected="{{ old('transfer_to_wallet_id', $financialMovement?->destinationMovement?->wallet_id) }}"
-            name="transfer_to_wallet_id" />
-        <x-input-error class="mt-2" :messages="$errors->get('transfer_to_wallet_id')" />
-    </div>
 
     <!-- Include Alert using toggle checkbox -->
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-4" x-show="type !== 'loan'">
         <x-input-label for="include_alert" :value="__('Include Alert')" />
         <input
             type="checkbox"
@@ -108,6 +109,6 @@
     </div>
 
     <div class="flex items-center gap-4">
-        <x-primary-button>{{ $buttonText ?? 'Submit' }}</x-primary-button>
+        <x-primary-button>{{ $buttonText ?? __('Save') }}</x-primary-button>
     </div>
 </div>

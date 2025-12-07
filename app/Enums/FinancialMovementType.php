@@ -9,6 +9,7 @@ class FinancialMovementType
     public const REFUND = 'refund';
     public const DISCOUNT = 'discount';
     public const TRANSFER = 'transfer';
+    public const LOAN = 'loan';
 
     public static function options()
     {
@@ -18,6 +19,7 @@ class FinancialMovementType
             self::REFUND => __('Refund'),
             self::DISCOUNT => __('Discount'),
             self::TRANSFER => __('Transfer'),
+            self::LOAN => __('Loan'),
         ];
     }
 
