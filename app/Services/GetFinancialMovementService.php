@@ -23,7 +23,7 @@ class GetFinancialMovementService
                     $transacations = $transacations->whereIn('type', ['income', 'discount']);
                     break;
                 case 'transfer':
-                    $transacations = $transacations->where('type', 'transfer');
+                    $transacations = $transacations->whereIn('type', ['transfer', 'loan']);
                     break;
             }
         }

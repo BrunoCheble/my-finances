@@ -66,6 +66,7 @@ class CalculateFinancialBalanceService
 
         foreach ($financialMovements as $movement) {
             switch ($movement->type) {
+                case FinancialMovementType::LOAN:
                 case FinancialMovementType::TRANSFER:
                     $balance->total_unidentified += $movement->amount;
                     break;

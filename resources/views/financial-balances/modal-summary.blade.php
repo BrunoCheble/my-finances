@@ -45,6 +45,7 @@
 <script>
     function modalSummaryMovements() {
         return {
+            types: @json($types),
             titleCategory: 'Movimentações',
             rows: [],
             totalAmount: '',
@@ -78,7 +79,7 @@
 
                 this.items = data.map(item => {
                     const rawAmount = parseFloat(item.amount);
-                    const isExpense = (item.type === 'expense' ||  item.type === 'discount') || item.type === 'transfer' && rawAmount < 0;
+                    const isExpense = (item.type === 'expense' ||  item.type === 'discount') || item.type === 'transfer' && rawAmount < 0 || item.type === 'loan' && rawAmount < 0;
 
                     const rawValue = parseFloat(item.amount);
                     const signedValue = rawValue;
@@ -97,7 +98,7 @@
                             currency: 'EUR'
                         }),
                         isExpense,
-                        type: item.type
+                        type: this.types[item.type] ? this.types[item.type] : item.type
                     };
                 });
 

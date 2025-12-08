@@ -1,5 +1,5 @@
 <div x-data="deleteSelected()">
-    <div>
+    <div class="flex items-center justify-between">
         <button
             id="delete-selected-btn"
             @click="deleteSelectedMovements"
@@ -8,6 +8,16 @@
             :class="selected.length ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-900 cursor-not-allowed'"
         >
             {{ __('Delete Selected') }} <span x-text="selected.length ? `(${selected.length})` : ''" class="ml-2"></span>
+        </button>
+
+        <button
+            id="reload-page-btn"
+            @click="window.location.reload()"
+            title="{{ __('Update Table') }}"
+            class="mb-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+        >
+            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </button>
     </div>
 
@@ -45,7 +55,7 @@
             deleteSelectedMovements() {
                 this.selected = Array.from(document.querySelectorAll('input[name="selected_financials[]"]:checked')).map(cb => cb.value);
                 if (this.selected.length === 0) return;
-                if (!confirm('Are you sure you want to delete the selected movements?')) return;
+                if (!confirm('Tem certeza que deseja excluir essas movimentações?')) return;
 
                 const baseUrl = "{{ url('/api/financial-movements/bulk-delete') }}";
 

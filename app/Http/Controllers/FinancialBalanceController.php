@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FinancialMovementType;
 use Illuminate\Http\Request;
 use App\Helpers\ArrayHelper;
 use App\Models\FinancialBalance;
@@ -21,7 +22,8 @@ class FinancialBalanceController extends Controller
 
         $groups = FinancialBalanceAccordionService::execute();
         $wallets = ArrayHelper::toKeyValueArray(Wallet::all(), 'id', 'name');
-        return view('financial-balances.index', compact('groups','wallets', 'startDate', 'endDate'));
+        $types = FinancialMovementType::options();
+        return view('financial-balances.index', compact('groups', 'wallets', 'types', 'startDate', 'endDate'));
     }
 
     public function create(): View

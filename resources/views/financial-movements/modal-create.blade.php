@@ -1,7 +1,17 @@
-<div x-data="submitForm()">
+<div x-data="submitForm()" @keydown.escape.window="handleModalCloseManual">
 
     <x-modal name="modal-create" :show="false" focusable>
         <div class="bg-white w-full max-w-3xl rounded-lg shadow-lg p-6 space-y-6">
+            <button
+                class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition duration-150 ease-in-out"
+                @click.prevent="handleModalCloseManual"
+                aria-label="{{ __('Close') }}"
+            >
+                <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
             <h2 class="text-lg font-bold text-gray-900">{{ __('Create a new movement') }}</h2>
 
             <template x-if="errorMessages.length">
@@ -22,7 +32,7 @@
 
             <!-- last movements registered -->
             <h2 class="text-lg font-bold text-gray-900 mt-6">{{ __('Last movements registered') }}</h2>
-            <table class="w-full divide-y divide-gray-300">
+            <table id="lastMovements" class="w-full divide-y divide-gray-300">
                 <thead>
                     <tr>
                         <th scope="col"
@@ -112,6 +122,7 @@
     </div>
 </div>
 
+
 <script>
     function submitForm() {
         return {
@@ -123,6 +134,13 @@
             wallets: @json($wallets),
             categories: @json($categories),
             types: @json($types),
+
+            handleModalCloseManual() {
+                if (this.lastMovements.length > 0) {
+                    window.location.reload();
+                }
+                this.$dispatch('close-modal', 'modal-create');
+            },
 
             deleteMovement(id) {
                 const baseUrl = "{{ url('/api/financial-movements') }}";
