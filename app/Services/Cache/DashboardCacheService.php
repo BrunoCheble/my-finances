@@ -14,18 +14,16 @@ class DashboardCacheService
 
     public static function get(string $month, Closure $callback)
     {
-        $userId = auth()->user()->id;
         $version = self::getVersion();
-        $cacheKey = self::makeKey($userId, $month, $version);
+        $cacheKey = self::makeKey($month, $version);
 
         return Cache::remember($cacheKey, now()->addHours(self::TTL_HOURS), $callback);
     }
 
     public static function clearMonth(string $month): void
     {
-        $userId = auth()->user()->id;
         $version = self::getVersion();
-        $cacheKey = self::makeKey($userId, $month, $version);
+        $cacheKey = self::makeKey($month, $version);
         Cache::forget($cacheKey);
     }
 
@@ -42,18 +40,18 @@ class DashboardCacheService
         $start = Carbon::parse($date)->startOfMonth();
         $end = $start->copy()->addMonths(6);
 
-        $userId = auth()->user()->id;
         $version = self::getVersion();
 
         for ($dt = $start; $dt->lessThanOrEqualTo($end); $dt->addMonth()) {
-            $cacheKey = self::makeKey($userId, $dt->format('Y-m'), $version);
+            $cacheKey = self::makeKey($dt->format('Y-m'), $version);
             Cache::forget($cacheKey);
         }
     }
 
-    private static function makeKey(int $userId, string $month, int $version): string
+    private static function makeKey(string $month, int $version): string
     {
-        return sprintf('%s:%s:v%d', self::CACHE_PREFIX, $userId, $month, $version);
+        $userId = auth()->user()->id;
+        return sprintf('%s:%s:%s:v%d', self::CACHE_PREFIX, $userId, $month, $version);
     }
 
     private static function getVersion(): int

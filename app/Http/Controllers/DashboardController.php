@@ -18,6 +18,10 @@ class DashboardController extends Controller
     {
         $month = $request->input('month') ?? date('Y-m');
 
+        if ($request->input('clear_cache')) {
+            DashboardCacheService::clearMonth($month);
+        }
+
         $data = DashboardCacheService::get($month, function () use ($month) {
             $monthlySummary = FinancialBalanceSummaryService::getMonthlySummary();
             $categorySummary = FinancialCategorySummaryService::execute();
