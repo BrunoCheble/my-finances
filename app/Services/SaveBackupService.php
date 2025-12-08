@@ -20,7 +20,8 @@ class SaveBackupService
 
     private function createBackup(): void
     {
-        $backupPath = storage_path('bkps/' . date('Y-m-d'));
+        $userId = auth()->user()->id;
+        $backupPath = storage_path("bkps/$userId/" . date('Y-m-d'));
 
         if (!file_exists($backupPath)) {
             mkdir($backupPath, 0755, true);
@@ -40,7 +41,8 @@ class SaveBackupService
     }
     private function saveToFile(array $data, string $filename): void
     {
-        $filePath = storage_path('bkps/' . date('Y-m-d') . '/' . $filename . '.json');
+        $userId = auth()->user()->id;
+        $filePath = storage_path("bkps/$userId/" . date('Y-m-d') . '/' . $filename . '.json');
         file_put_contents($filePath, json_encode($data, JSON_PRETTY_PRINT));
     }
 }
