@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\FinancialCategoryRequest;
 use App\Models\FinancialCategory;
+use App\Services\Cache\DashboardCacheService;
 use App\Services\GetFinancialMovementService;
 use App\Services\GetFinancialCategoryService;
 use Illuminate\Http\RedirectResponse;
@@ -58,6 +59,7 @@ class FinancialCategoryController extends Controller
     {
         try {
             $financial_category->update($request->validated());
+            DashboardCacheService::clearAllByUser();
         } catch (\Exception $e) {
             return Redirect::route('financial-categories.index')
                 ->with('error', __('Something went wrong'));

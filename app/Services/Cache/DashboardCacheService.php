@@ -27,6 +27,12 @@ class DashboardCacheService
         Cache::forget($cacheKey);
     }
 
+    public static function clearAllByUser(): void
+    {
+        $userId = auth()->user()->id;
+        Cache::increment(self::CACHE_VERSION_KEY . ":$userId");
+    }
+
     public static function clearAll(): void
     {
         Cache::increment(self::CACHE_VERSION_KEY);
@@ -56,6 +62,7 @@ class DashboardCacheService
 
     private static function getVersion(): int
     {
-        return Cache::rememberForever(self::CACHE_VERSION_KEY, fn() => 1);
+        $userId = auth()->user()->id;
+        return Cache::rememberForever(self::CACHE_VERSION_KEY . ":$userId", fn() => 1);
     }
 }
