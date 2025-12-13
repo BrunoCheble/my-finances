@@ -32,6 +32,7 @@ class SaveFinancialMovementService
                 $data['amount'] = abs($data['amount']);
                 break;
             case FinancialMovementType::TRANSFER:
+                $data['amount'] = $data['amount'] * -1;
                 $data['category_id'] = null;
                 break;
             case FinancialMovementType::LOAN:

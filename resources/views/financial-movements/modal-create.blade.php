@@ -112,12 +112,8 @@
 
     <div class="flex fixed bottom-4 z-50 right-4 gap-4">
         <button class="bg-green-500 rounded-full text-white w-12 h-12 shadow-lg"
-            @click.prevent="selectedType = 'income'; $dispatch('open-modal', 'modal-create')">
+            @click.prevent="$dispatch('open-modal', 'modal-create')">
             <span class="fa fa-plus"></span>
-        </button>
-        <button class="bg-red-500 rounded-full text-white w-12 h-12 shadow-lg"
-            @click.prevent="selectedType = 'expense'; $dispatch('open-modal', 'modal-create')">
-            <span class="fa fa-minus"></span>
         </button>
     </div>
 </div>

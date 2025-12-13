@@ -52,7 +52,7 @@
         <div>
             <x-input-label for="amount" :value="__('Amount')" />
             <x-text-input id="amount" name="amount" type="number" step="0.01" class="mt-1 block w-full"
-                :value="old('amount', $financialMovement->type === 'transfer' ? $financialMovement?->amount : abs($financialMovement?->amount))" autocomplete="amount" placeholder="Amount" />
+                :value="old('amount', $financialMovement->type === 'loan' ? $financialMovement?->amount : abs($financialMovement?->amount))" autocomplete="amount" placeholder="Amount" />
             <x-input-error class="mt-2" :messages="$errors->get('amount')" />
         </div>
     </div>
@@ -66,7 +66,7 @@
         </div>
 
         <!-- Category Field -->
-        <div class="flex-1" x-show="type !== 'transfer' && type !== 'loan'" x-cloak>
+        <div x-show="type !== 'transfer' && type !== 'loan'" class="flex-1">
             <x-input-label for="category_id" :value="__('Category')" />
             <x-dropdown-select :options="$categories" x-model="category_id" name="category_id" />
             <x-input-error class="mt-2" :messages="$errors->get('category_id')" />
@@ -74,7 +74,7 @@
 
         @if (count($wallets) > 1)
             <div>
-                <x-input-label for="wallet_id" :value="__('Wallet')" />
+                <x-input-label for="wallet_id" :value="__('From Wallet')" />
                 <x-dropdown-select :options="$wallets"
                     selected="{{ old('wallet_id', $financialMovement?->wallet_id) ?? $walletSection?->id }}"
                     name="wallet_id" />
@@ -84,18 +84,19 @@
             <input type="hidden" name="wallet_id" value="{{ key($wallets) }}">
         @endif
 
-        <div x-show="type === 'transfer'" class="transition-all duration-200" class="flex-1">
-            <x-input-label for="transfer_to_wallet_id" :value="__('Transfer To Wallet')" />
+
+        <div x-show="type === 'transfer'" class="transition-all duration-200">
+            <x-input-label for="transfer_to_wallet_id" :value="__('To Wallet')" />
             <x-dropdown-select :options="$wallets"
                 selected="{{ old('transfer_to_wallet_id', $financialMovement?->destinationMovement?->wallet_id) }}"
                 name="transfer_to_wallet_id" />
             <x-input-error class="mt-2" :messages="$errors->get('transfer_to_wallet_id')" />
         </div>
+
     </div>
 
-
     <!-- Include Alert using toggle checkbox -->
-    <div class="flex items-center gap-4" x-show="type !== 'loan'">
+    <div class="flex items-center gap-4">
         <x-input-label for="include_alert" :value="__('Include Alert')" />
         <input
             type="checkbox"
@@ -109,6 +110,6 @@
     </div>
 
     <div class="flex items-center gap-4">
-        <x-primary-button>{{ $buttonText ?? __('Save') }}</x-primary-button>
+        <x-primary-button>{{ $buttonText ?? 'Submit' }}</x-primary-button>
     </div>
 </div>

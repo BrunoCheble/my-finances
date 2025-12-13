@@ -29,9 +29,9 @@ class FinancialCategorySummaryService
 
         // Obter todos os meses únicos presentes nos movimentos
         $allMonths = $movements->pluck('date')
+            ->sort()
             ->map(fn($date) => Carbon::parse($date)->format('m/Y'))
             ->unique()
-            ->sort()
             ->values()
             ->toArray();
 
