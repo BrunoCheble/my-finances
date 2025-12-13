@@ -69,6 +69,29 @@ class FinancialCategoryController extends Controller
             ->with('success', 'Financial Category updated successfully');
     }
 
+    public function import(Request $request): RedirectResponse
+    {
+        try {
+            $file = $request->file('file');
+            $lines = file($file->getRealPath());
+
+            foreach ($lines as $line) {
+                $data = str_getcsv($line);
+                FinancialCategory::create([
+                    'name' => $data[1],
+                    'type' => $data[0],
+                ]);
+            }
+        } catch (\Exception $e) {
+            dd($e);
+            return Redirect::route('financial-categories.index')
+                ->with('error', __('Something went wrong during import'));
+        }
+
+        return Redirect::route('financial-categories.index')
+            ->with('success', 'Financial Categories imported successfully');
+    }
+
     public function destroy($id): RedirectResponse
     {
         try {
