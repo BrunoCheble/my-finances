@@ -413,6 +413,9 @@
                 }
             }
         }
+
+        const modalBody = document.querySelector('.overflow-x-auto');
+        modalBody.scrollLeft = modalBody.scrollWidth;
     </script>
 
 
