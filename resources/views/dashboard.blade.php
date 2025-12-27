@@ -307,7 +307,9 @@
                         }
                     });
 
-                    fetch('/financial-categories/expected-values/bulk', {
+                    const baseUrl = "{{ route('financial-categories.expected-values.bulk') }}";
+
+                    fetch(baseUrl, {
                             method: 'PUT',
                             headers: {
                                 'Content-Type': 'application/json',

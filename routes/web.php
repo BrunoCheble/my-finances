@@ -30,7 +30,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('financial-categories', FinancialCategoryController::class);
     Route::post('/financial-categories/import', [FinancialCategoryController::class, 'import'])->name('financial-categories.import');
-    Route::put('/financial-categories/expected-values/bulk', [FinancialCategoryController::class, 'updateExpectedValues'])->name('categories.expected-values.bulk');
+    Route::put('/financial-categories/expected-values/bulk', [FinancialCategoryController::class, 'updateExpectedValues'])->name('financial-categories.expected-values.bulk');
 
     Route::get('/api/financial-movements/filter', [FinancialMovementController::class, 'filter'])->name('financial-movements.filter');
     Route::get('/api/financial-movements/latest-type-category', [FinancialMovementController::class, 'fetchLatestTypeAndCategory'])->name('financial-movements.fetchLatestTypeAndCategory');

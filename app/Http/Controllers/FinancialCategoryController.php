@@ -95,7 +95,7 @@ class FinancialCategoryController extends Controller
             ->with('success', 'Financial Categories imported successfully');
     }
 
-    public function updateExpectedValues(Request $request, ExpectedTotalService $expectedValueService): JsonResponse
+    public function updateExpectedValues(Request $request, ExpectedTotalService $expectedTotalService): JsonResponse
     {
         $data = $request->validate([
             'expected_values' => ['required', 'array'],
@@ -103,7 +103,7 @@ class FinancialCategoryController extends Controller
         ]);
 
         try {
-            $expectedValueService->bulkUpdate(
+            $expectedTotalService->bulkUpdate(
                 $data['expected_values'],
                 auth()->id()
             );
