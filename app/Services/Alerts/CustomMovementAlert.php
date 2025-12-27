@@ -22,7 +22,8 @@ class CustomMovementAlert
             $formattedTotal = number_format($customAlert->amount, 2, ',', '.');
             $alerts[] = [
                 'type' => 'custom_movement',
-                'message' => "<b>{$customAlert->description}</b>: €{$formattedTotal}</b>."
+                'message' => "<b>{$customAlert->description}</b>: €{$formattedTotal}</b>.",
+                'severity' => 25,
             ];
         }
         return $alerts;

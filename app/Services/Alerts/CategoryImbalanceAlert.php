@@ -44,7 +44,7 @@ class CategoryImbalanceAlert
                     'category_id' => $categoryId,
                     'message' => "<b>{$categories[$categoryId]->name}</b> representa <b>{$formattedPercent}%</b> (€{$formattedTotal}) dos gastos do mês.",
                     'percent' => $percent,
-                    'severity' => $percent > 40 ? 'danger' : 'warning',
+                    'severity' => 100,
                 ];
             }
         }

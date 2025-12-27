@@ -1,11 +1,14 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\FinancialCategoryRequest;
 use App\Models\FinancialCategory;
 use App\Services\Cache\DashboardCacheService;
+use App\Services\ExpectedTotalService;
 use App\Services\GetFinancialMovementService;
 use App\Services\GetFinancialCategoryService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -92,18 +95,45 @@ class FinancialCategoryController extends Controller
             ->with('success', 'Financial Categories imported successfully');
     }
 
+    public function updateExpectedValues(Request $request, ExpectedTotalService $expectedValueService): JsonResponse
+    {
+        $data = $request->validate([
+            'expected_values' => ['required', 'array'],
+            'expected_values.*' => ['numeric'],
+        ]);
+
+        try {
+            $expectedValueService->bulkUpdate(
+                $data['expected_values'],
+                auth()->id()
+            );
+
+            DashboardCacheService::clearAllByUser();
+
+            return response()->json([
+                'status' => 'success',
+                'message' => __('Expected values updated successfully.')
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => __('Something went wrong')
+            ], 500);
+        }
+    }
+
+
     public function destroy($id): RedirectResponse
     {
         try {
             $category = FinancialCategory::find($id);
 
             if ($category->financials()->exists()) {
-                 return Redirect::route('financial-categories.index')
-                     ->with('error', __('Financial Category can not be deleted'));
+                return Redirect::route('financial-categories.index')
+                    ->with('error', __('Financial Category can not be deleted'));
             }
 
             $category->delete();
-
         } catch (\Exception $e) {
             return Redirect::route('financial-categories.index')
                 ->with('error', __('Something went wrong'));
@@ -112,4 +142,3 @@ class FinancialCategoryController extends Controller
         return Redirect::route('financial-categories.index')->with('success', 'Financial Category deleted successfully.');
     }
 }
-

@@ -61,9 +61,9 @@ class SpendingSpikeAlert
                 $alerts[] = [
                     'type' => 'spending_spike',
                     'category_id' => $categoryId,
-                    'message' => "<b>{$categories[$categoryId]->name}</b>: Mês atual: <b>€{$formattedTotal}</b> | Média: <b>€{$formattedAvg}</b> | Diferença: <b>€{$difference}</b>.",
+                    'message' => "<b>{$categories[$categoryId]->name}</b> - [Mês atual: <b>€{$formattedTotal}</b>] [Média: <b>€{$formattedAvg}</b>] [Diferença: <b>€{$difference}</b>]",
                     'diff' => $current->total - $avg,
-                    'severity' =>  $current->total > $avg * 1.5 ? 'danger' : 'warning',
+                    'severity' =>  $current->total > $avg * 1.5 ? 75 : 50,
                 ];
 
                 // sort alerts by difference in descending order
