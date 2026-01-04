@@ -87,7 +87,7 @@
                     </td>
                     <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold text-gray-500">
                         <span class="mr-2">{!! colored_format_currency($group->balances->sum('calculated_balance')-$group->balances->sum('initial_balance')) !!}</span>
-                        {!! diff_percentage($group->balances->sum('calculated_balance'), $group->balances->sum('initial_balance')) !!}
+                        {!! diff_percentage($group->balances->sum('initial_balance'), $group->balances->sum('calculated_balance')) !!}
                     </td>
                     <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
                         <form action="{{ route('financial-balances.recalculateAll', ['start_date' => $group->startDate, 'end_date' => $group->endDate]) }}" class="flex justify-end" method="POST">

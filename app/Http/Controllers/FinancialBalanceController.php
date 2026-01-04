@@ -19,11 +19,22 @@ class FinancialBalanceController extends Controller
     {
         $startDate = $request->input('start_date') ?? date('Y-m-01');
         $endDate = $request->input('end_date') ?? date('Y-m-t');
+        $year = $request->input('year') ?? null;
 
-        $groups = FinancialBalanceAccordionService::execute();
+        $groups = FinancialBalanceAccordionService::execute($year);
+        $summary = FinancialBalanceAccordionService::getSummary($groups);
         $wallets = ArrayHelper::toKeyValueArray(Wallet::all(), 'id', 'name');
         $types = FinancialMovementType::options();
-        return view('financial-balances.index', compact('groups', 'wallets', 'types', 'startDate', 'endDate'));
+
+
+        $filter = $groups->map(fn($group) => \DateTime::createFromFormat('Y-m-d', $group->startDate)->format('Y'))
+            ->unique()
+            ->sort()
+            ->mapWithKeys(fn($value) => [
+                $value => $value
+            ])->all();
+
+        return view('financial-balances.index', compact('groups', 'summary', 'wallets', 'types', 'startDate', 'endDate', 'filter'));
     }
 
     public function create(): View

@@ -14,9 +14,8 @@ class CategoryImbalanceAlert
         $start = Carbon::createFromDate($yearPart, $monthPart, 1);
         $end = $start->copy()->endOfMonth();
 
-        // Buscar total por categoria no mês
         $movementsThisMonth = FinancialMovement::where('type', 'expense')
-            ->whereBetween('date', [$start, $end])
+            ->whereBetween('date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
             ->selectRaw('category_id, SUM(amount) as total')
             ->groupBy('category_id')
             ->get()

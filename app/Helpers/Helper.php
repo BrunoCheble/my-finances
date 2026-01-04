@@ -39,10 +39,27 @@ if (!function_exists('colored_format_percentage')) {
 }
 
 if (!function_exists('diff_percentage')) {
-    function diff_percentage($value1, $value2)
+    function diff_percentage($start, $end)
     {
-        $percentage = $value2 == 0 ? -100 : (($value1 - $value2) / $value2) * 100;
-        $icon = $percentage > 0 ? 'fa-arrow-up' : 'fa-arrow-down';
-        return '<span class="text-xs '.($percentage > 0 ? 'text-green-500' : 'text-red-500').'">' . number_format($percentage, 2) . '% <i class="fa ' . $icon . '"></i></span>';
+        if ($start == 0) {
+            if ($end > 0) {
+                return '<span class="text-xs text-green-500"><i class="fa fa-arrow-up"></i></span>';
+            } elseif ($end < 0) {
+                return '<span class="text-xs text-red-500"><i class="fa fa-arrow-down"></i></span>';
+            } else {
+                return '<span class="text-xs text-gray-400">—</span>';
+            }
+        }
+
+        $percentage = (($end - $start) / abs($start)) * 100;
+
+        $isPositive = $percentage >= 0;
+        $icon = $isPositive ? 'fa-arrow-up' : 'fa-arrow-down';
+        $color = $isPositive ? 'text-green-500' : 'text-red-500';
+
+        return '<span class="text-xs ' . $color . '">'
+            . ($isPositive ? '+' : '') . number_format(abs($percentage), 2, ',', '.') . '% <i class="fa ' . $icon . '"></i>
+        </span>';
     }
+
 }
