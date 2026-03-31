@@ -376,7 +376,7 @@
                         const [month, year] = monthYear.split("/");
                         const date = new Date(`${year}-${month}-01`);
                         const dateFrom = date.toISOString().slice(0, 10);
-                        const dateTo = new Date(`${year}-${month}-31`).toISOString().slice(0, 10);
+                        const dateTo = new Date(date.getFullYear(), date.getMonth() + 1, 0).toISOString().slice(0, 10);
 
                         const params = new URLSearchParams({
                             attribute: 'category_id',
