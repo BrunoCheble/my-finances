@@ -31,6 +31,12 @@
         <x-input-error class="mt-2" :messages="$errors->get('type')" />
     </div>
 
+    <div class="flex-1">
+        <x-input-label for="reserved_amount" :value="__('Reserved amount')" />
+        <x-text-input style="width: 100%" type="text" name="reserved_amount" :value="old('reserved_amount', $wallet?->reserved_amount ?? 0)" />
+        <x-input-error class="mt-2" :messages="$errors->get('reserved_amount')" />
+    </div>
+
     <div class="flex items-center gap-4">
         <x-primary-button>{{ __('Submit') }}</x-primary-button>
     </div>

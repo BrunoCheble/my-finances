@@ -25,6 +25,7 @@ class WalletRequest extends FormRequest
             'color' => 'nullable|string|max:255',
             'active' => 'boolean',
             'type' => 'string|in:debit,credit',
+            'reserved_amount' => 'nullable|numeric',
         ];
     }
 

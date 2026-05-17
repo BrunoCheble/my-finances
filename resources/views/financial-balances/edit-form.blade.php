@@ -15,6 +15,6 @@
         @endif
     </div>
     <div class="flex items-center gap-4">
-        <x-primary-button>Submit</x-primary-button>
+        <x-primary-button><?= __('Submit') ?></x-primary-button>
     </div>
 </div>

@@ -25,7 +25,28 @@ class FinancialBalanceAccordionService
             ];
         });
 
-        return $groupedBalances->values();
+        $result = $groupedBalances->values();
+
+        if (!$result) {
+            return;
+        }
+
+        $result[0]->balances
+            ->filter(fn ($b) => $b->wallet->reserved_amount != 0)
+            ->each(function ($balance) {
+                $reserved = $balance->wallet->reserved_amount;
+                $balance->calculated_balance += $reserved;
+                $balance->reserved_amount = $reserved;
+            });
+
+        return $result;
+    }
+
+    public static function getYears()
+    {
+        return FinancialBalance::selectRaw('DISTINCT YEAR(start_date) as year')
+            ->orderBy('year', 'desc')
+            ->pluck('year');
     }
 
     public static function getSummary($groups)

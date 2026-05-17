@@ -26,13 +26,9 @@ class FinancialBalanceController extends Controller
         $wallets = ArrayHelper::toKeyValueArray(Wallet::all(), 'id', 'name');
         $types = FinancialMovementType::options();
 
-
-        $filter = $groups->map(fn($group) => \DateTime::createFromFormat('Y-m-d', $group->startDate)->format('Y'))
-            ->unique()
-            ->sort()
-            ->mapWithKeys(fn($value) => [
-                $value => $value
-            ])->all();
+        $filter = FinancialBalanceAccordionService::getYears()->mapWithKeys(fn($value) => [
+            $value => $value
+        ])->all();
 
         return view('financial-balances.index', compact('groups', 'summary', 'wallets', 'types', 'startDate', 'endDate', 'filter'));
     }

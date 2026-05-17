@@ -28,6 +28,7 @@
                                     <tr>
 
 									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Name') }}</th>
+									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Reserved amnount') }}</th>
                                     <th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Color') }}</th>
 									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Type') }}</th>
 									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Actived') }}</th>
@@ -40,6 +41,7 @@
                                         <tr class="even:bg-gray-50">
 
 										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ $wallet->name }}</td>
+										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ format_currency($wallet->reserved_amount) }}</td>
 										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                             <div class="w-4 h-4 rounded-full" style="background-color: {{ $wallet->color }}"></div>
                                         </td>

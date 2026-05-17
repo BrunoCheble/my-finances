@@ -17,6 +17,7 @@ class Wallet extends Model
         'color',
         'active',
         'type',
+        'reserved_amount',
     ];
 
     /**

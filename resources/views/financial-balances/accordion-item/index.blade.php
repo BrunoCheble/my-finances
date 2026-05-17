@@ -55,6 +55,9 @@
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold">
                             {!! $balance->calculated_balance != 0 ? colored_format_currency($balance->calculated_balance) : '' !!}
+                            @if($balance->reserved_amount)
+                            <i class="fa fa-circle-info" title="{{ __('Reserved amount: :amount', ['amount' => format_currency($balance->reserved_amount)]) }}"></i>
+                            @endif
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold">
                             {!! $balance->calculated_balance != 0 ? colored_format_currency($balance->calculated_balance-$balance->initial_balance) : '' !!}
