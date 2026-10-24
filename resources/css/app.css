@@ -79,3 +79,17 @@
         @apply whitespace-nowrap tabular-nums;
     }
 }
+
+/* Desktop sidebar collapsed to an icon rail (class set on <html> before paint, see layouts/app) */
+@media (min-width: 1024px) {
+    .sidebar-collapsed .sidebar { width: 4rem; }
+    .sidebar-collapsed .app-shell { padding-left: 4rem; }
+    .sidebar-collapsed .sidebar-label {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
+    }
+    .sidebar-collapsed .sidebar-link { justify-content: center; padding-left: 0; padding-right: 0; }
+    .sidebar-collapsed .sidebar-brand { padding-left: 0; padding-right: 0; justify-content: center; }
+    .sidebar-collapsed .sidebar-popup { right: auto; width: 14rem; }
+    .sidebar-collapsed .sidebar-toggle-icon { transform: rotate(180deg); }
+}

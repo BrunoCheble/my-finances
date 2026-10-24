@@ -14,6 +14,9 @@
         <!-- font awesome -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
 
+        <!-- remembered sidebar state, applied before the first paint -->
+        <script>try { if (localStorage.getItem('sidebar') === 'collapsed') document.documentElement.classList.add('sidebar-collapsed'); } catch (e) {}</script>
+
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
@@ -24,7 +27,7 @@
 
         @include('layouts.navigation')
 
-        <div class="min-h-screen lg:pl-64">
+        <div class="app-shell min-h-screen transition-[padding] duration-200 lg:pl-64">
             @if (isset($header))
                 <header class="border-b border-slate-200 bg-white">
                     <div class="px-4 py-5 sm:px-6 lg:px-8">

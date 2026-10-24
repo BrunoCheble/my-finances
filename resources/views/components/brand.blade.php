@@ -11,5 +11,5 @@
 
 <span {{ $attributes->merge(['class' => 'inline-flex items-center gap-2.5']) }}>
     <x-application-logo class="{{ $mark }} shrink-0" />
-    <span class="{{ $text }} font-bold tracking-tight text-slate-900">Escudo</span>
+    <span class="sidebar-label {{ $text }} font-bold tracking-tight text-slate-900">Escudo</span>
 </span>

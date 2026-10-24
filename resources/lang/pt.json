@@ -585,5 +585,7 @@
     "Do these balances match your banks at the end of the month?": "Estes saldos batem com os dos seus bancos no fim do mês?",
     "If one does not match, close this and adjust that wallet first.": "Se algum não bater, feche e ajuste essa conta primeiro.",
     "All match: confirm": "Todos batem: conferir",
-    "Reconciled": "Conferido"
+    "Reconciled": "Conferido",
+    "Collapse menu": "Recolher menu",
+    "Expand menu": "Expandir menu"
 }
