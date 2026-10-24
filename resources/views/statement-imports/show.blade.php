@@ -98,6 +98,37 @@
                 </template>
             </div>
 
+            @php
+                $suggestedReserved = $statementImport->suggestedReservedAmount();
+                $currentReserved = (float) $statementImport->wallet->reserved_amount;
+            @endphp
+            @if ($suggestedReserved !== null && ($suggestedReserved != 0 || $currentReserved != 0))
+                <div class="p-4 sm:px-8 bg-white shadow sm:rounded-lg flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div class="flex-1 text-sm text-gray-700">
+                        <p class="font-semibold text-gray-900">{{ __('Held amount (valor cativo)') }}</p>
+                        @if ($suggestedReserved != 0)
+                            <p>{{ __('On :date the bank was holding :amount (accounting balance minus available balance).', ['date' => date_format_custom($statementImport->period_end), 'amount' => format_currency(-$suggestedReserved)]) }}</p>
+                        @else
+                            <p>{{ __('On :date the bank had no held amount.', ['date' => date_format_custom($statementImport->period_end)]) }}</p>
+                        @endif
+                        <p class="text-gray-500">{{ __('Reserved amount of :wallet now: :amount', ['wallet' => $statementImport->wallet->name, 'amount' => format_currency($currentReserved)]) }}</p>
+                    </div>
+                    @if (round($currentReserved, 2) == round($suggestedReserved, 2))
+                        <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">{{ __('Reserved amount is up to date') }}</span>
+                    @elseif (!$statementImport->isLatestForWallet())
+                        <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">{{ __('There is a more recent statement for this wallet') }}</span>
+                    @else
+                        <form method="POST" action="{{ route('statement-imports.reserved-amount', $statementImport) }}">
+                            @csrf
+                            @method('PATCH')
+                            <x-secondary-button type="submit">
+                                {{ $suggestedReserved == 0 ? __('Clear reserved amount') : __('Update reserved amount to :amount', ['amount' => format_currency($suggestedReserved)]) }}
+                            </x-secondary-button>
+                        </form>
+                    @endif
+                </div>
+            @endif
+
             <form method="POST" action="{{ route('statement-imports.update', $statementImport) }}" class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                 @csrf
                 @method('PATCH')

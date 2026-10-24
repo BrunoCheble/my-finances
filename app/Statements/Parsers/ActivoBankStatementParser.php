@@ -91,6 +91,7 @@ class ActivoBankStatementParser implements StatementParser
             openingBalance: $opening,
             closingBalance: $closing,
             account: preg_match('/DEPOSITO A ORDEM:\s*(\d+)/', $text, $match) ? $match[1] : null,
+            availableBalance: preg_match('/^SALDO DISPONIVEL\s+(' . self::AMOUNT . ')/mu', $text, $match) ? self::toFloat($match[1]) : null,
         );
     }
 

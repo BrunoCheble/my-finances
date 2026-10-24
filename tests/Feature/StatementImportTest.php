@@ -224,3 +224,46 @@ it('keeps a virtual wallet (money of someone else held in the bank) consistent o
         // the user's own money didn't change with her movements
         ->and(round($balance($this->bank) + $balance($daughter), 2))->toBe(round(1500 - 30 - 12.30, 2));
 });
+
+it('suggests the reserved amount from the held amount and updates the wallet', function () {
+    // accounting 2237.45, available 2207.45: 30 held by the bank
+    fakeStatementText(str_replace("Saldo disponível\t2.237,45", "Saldo disponível\t2.207,45",
+        file_get_contents(__DIR__ . '/../Fixtures/cgd-statement.txt')));
+    uploadStatement($this, $this->bank);
+    $import = StatementImport::sole();
+
+    expect($import->suggestedReservedAmount())->toBe(-30.0);
+    $this->get(route('statement-imports.show', $import))->assertSee('Valor cativo');
+
+    $this->patch(route('statement-imports.reserved-amount', $import))->assertRedirect()->assertSessionHas('success');
+    expect((float) $this->bank->fresh()->reserved_amount)->toBe(-30.0);
+});
+
+it('clears the reserved amount when the statement has nothing held', function () {
+    $this->bank->update(['reserved_amount' => -30]);
+    uploadStatement($this, $this->bank);
+    $import = StatementImport::sole();
+
+    expect($import->suggestedReservedAmount())->toEqual(0);
+    $this->patch(route('statement-imports.reserved-amount', $import))->assertRedirect();
+    expect((float) $this->bank->fresh()->reserved_amount)->toEqual(0);
+});
+
+it('does not let an older statement overwrite the reserved amount', function () {
+    uploadStatement($this, $this->bank);
+    $older = StatementImport::sole();
+    $older->update(['period_end' => '2026-07-31', 'available_balance' => $older->closing_balance - 10]);
+    uploadStatement($this, $this->bank);
+
+    expect($older->fresh()->isLatestForWallet())->toBeFalse();
+    $this->patch(route('statement-imports.reserved-amount', $older))->assertSessionHas('error');
+    expect((float) $this->bank->fresh()->reserved_amount)->toEqual(0);
+});
+
+it('ignores an available balance above the accounting one (overdraft limit)', function () {
+    fakeStatementText(str_replace("Saldo disponível\t2.237,45", "Saldo disponível\t3.237,45",
+        file_get_contents(__DIR__ . '/../Fixtures/cgd-statement.txt')));
+    uploadStatement($this, $this->bank);
+
+    expect(StatementImport::sole()->suggestedReservedAmount())->toBeNull();
+});

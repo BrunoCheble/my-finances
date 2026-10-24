@@ -259,5 +259,14 @@
     "as income": "como receita",
     "as expense": "como despesa",
     "Creating category...": "A criar categoria...",
-    "Other categories": "Outras categorias"
+    "Other categories": "Outras categorias",
+    "Held amount (valor cativo)": "Valor cativo",
+    "On :date the bank was holding :amount (accounting balance minus available balance).": "Em :date o banco tinha :amount cativos (saldo contabilístico menos saldo disponível).",
+    "On :date the bank had no held amount.": "Em :date o banco não tinha valores cativos.",
+    "Reserved amount of :wallet now: :amount": "Valor reservado atual de :wallet: :amount",
+    "Reserved amount is up to date": "Valor reservado já está atualizado",
+    "There is a more recent statement for this wallet": "Há um extrato mais recente desta conta",
+    "Clear reserved amount": "Zerar valor reservado",
+    "Update reserved amount to :amount": "Atualizar valor reservado para :amount",
+    "Reserved amount of :wallet updated to :amount.": "Valor reservado de :wallet atualizado para :amount."
 }
