@@ -20,6 +20,40 @@
                 </div>
             </template>
 
+            {{-- the category of the last saved movement, in its month --}}
+            <template x-if="categoryStatus">
+                <section class="mx-5 mb-4 rounded-xl border p-4 sm:mx-6" aria-live="polite"
+                    :class="{ 'border-rose-200 bg-rose-50': categoryStatus.level === 'over', 'border-amber-200 bg-amber-50': categoryStatus.level === 'close', 'border-slate-200 bg-slate-50': categoryStatus.level === 'ok' }">
+                    <div class="flex items-baseline justify-between gap-3">
+                        <h3 class="min-w-0 truncate text-sm font-semibold text-slate-900">
+                            <i class="fa-solid fa-tag mr-1 text-xs text-slate-400" aria-hidden="true"></i>
+                            <span x-text="categoryStatus.name"></span>
+                            <span class="font-normal text-slate-500" x-text="'· ' + categoryStatus.month"></span>
+                        </h3>
+                        <p class="amount shrink-0 text-sm">
+                            <span class="font-semibold" :class="categoryStatus.level === 'over' ? 'text-rose-700' : 'text-slate-900'" x-text="money(categoryStatus.total)"></span>
+                            <span class="text-slate-500" x-show="categoryStatus.forecast" x-text="@js(__('of :amount', ['amount' => '__A__'])).replace('__A__', money(categoryStatus.forecast))"></span>
+                        </p>
+                    </div>
+                    <div x-show="categoryStatus.forecast" class="mt-2 h-1.5 overflow-hidden rounded-full bg-white/70 ring-1 ring-inset ring-slate-200" role="progressbar"
+                        :aria-valuenow="categoryStatus.percent" aria-valuemin="0" aria-valuemax="100" aria-label="{{ __('Forecast used') }}">
+                        <div class="h-full rounded-full"
+                            :class="{ 'bg-rose-500': categoryStatus.level === 'over', 'bg-amber-400': categoryStatus.level === 'close', 'bg-brand-500': categoryStatus.level === 'ok' && categoryStatus.type === 'expense', 'bg-emerald-500': categoryStatus.type === 'income' }"
+                            :style="`width: ${Math.min(100, categoryStatus.percent || 0)}%`"></div>
+                    </div>
+                    <p class="mt-2 text-xs" :class="categoryStatus.level === 'over' ? 'text-rose-700' : (categoryStatus.level === 'close' ? 'text-amber-800' : 'text-slate-600')">
+                        <template x-if="categoryStatus.forecast && categoryStatus.left !== null">
+                            <span x-text="categoryStatus.left >= 0
+                                ? @js(__(':amount left.', ['amount' => '__A__'])).replace('__A__', money(categoryStatus.left)) + ' · ' + categoryStatus.percent + '%'
+                                : @js(__(':amount over.', ['amount' => '__A__'])).replace('__A__', money(-categoryStatus.left)) + ' · ' + categoryStatus.percent + '%'"></span>
+                        </template>
+                        <template x-if="!categoryStatus.forecast || categoryStatus.left === null">
+                            <span x-text="categoryStatus.forecast ? categoryStatus.percent + '% ' + @js(__('of the forecast')) : @js(__('no forecast')) + ' · ' + categoryStatus.count + '×'"></span>
+                        </template>
+                    </p>
+                </section>
+            </template>
+
             <form x-ref="financialForm" @submit.prevent="submitForm" method="POST" class="flex flex-1 flex-col"
                 action="{{ route('financial-movements.store') }}" enctype="multipart/form-data">
                 @csrf
@@ -67,9 +101,14 @@
             notification: '',
             errorMessages: [],
             lastMovements: [],
+            categoryStatus: null,
             wallets: @json($wallets),
             categories: @json($categories),
             types: @json($types),
+
+            money(value) {
+                return Number(value).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+            },
 
             init() {
                 // the toast hides itself after a few seconds
@@ -151,6 +190,9 @@
                         }
 
                         this.notification = @json(__('Movement saved.'));
+                        // how the category stands in the month (null for transfers, loans, adjustments)
+                        this.categoryStatus = data.category;
+                        if (data.category) this.notification += '\n' + data.category.text;
 
                         for (let i = 0; i < data['balances'].length; i++) {
                             const balance = data['balances'][i];
