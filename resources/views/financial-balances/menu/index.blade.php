@@ -8,6 +8,9 @@ $menu = $menu ?? ['all'];
 @endif
 
 <div class="flex justify-end gap-1">
+    @unless ($balance->is_reconciled)
+        <x-icon-button icon="circle-check" :label="__('Confirm month')" x-data x-on:click.prevent="$dispatch('open-modal', 'reconcile-{{ $balance->id }}')" />
+    @endunless
     <x-icon-button icon="pen" :label="__('Adjust balance')" x-data x-on:click.prevent="$dispatch('open-modal', 'modal-edit-{{ $balance->id }}')" />
     <form method="POST" action="{{ route('financial-balances.recalculate', $balance->id) }}">
         @method('PATCH')

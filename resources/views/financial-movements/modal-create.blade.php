@@ -88,7 +88,7 @@
 
             deleteMovement(id) {
                 const baseUrl = "{{ url('/api/financial-movements') }}";
-                const url = `${baseUrl}/${id}`;
+                const url = `${baseUrl}/${id}?confirm_reconciled=1`;
                 fetch(`${url}`, {
                         method: 'DELETE',
                         headers: {

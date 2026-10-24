@@ -14,6 +14,7 @@ use App\Services\CalculateFinancialBalanceService;
 use App\Services\FinancialBalanceAccordionService;
 use App\Services\NetWorthHistoryService;
 use App\Services\OpenMonthsService;
+use App\Services\ReconciliationService;
 use Illuminate\Contracts\View\View;
 
 class FinancialBalanceController extends Controller
@@ -42,6 +43,57 @@ class FinancialBalanceController extends Controller
         $history = NetWorthHistoryService::build(NetWorthHistoryService::PERIODS[$period]);
 
         return view('financial-balances.index', compact('groups', 'summary', 'wallets', 'types', 'startDate', 'endDate', 'filter', 'period', 'history'));
+    }
+
+    public function reconcile(FinancialBalance $financial_balance, ReconciliationService $reconciliation)
+    {
+        $reconciliation->reconcile($financial_balance);
+        return $this->backToMonth($financial_balance->start_date, __(':wallet confirmed for :month.', [
+            'wallet' => $financial_balance->wallet_name,
+            'month' => $this->monthName($financial_balance->start_date),
+        ]));
+    }
+
+    /**
+     * Confirms every wallet of the month that isn't confirmed yet (or diverged).
+     */
+    public function reconcileMonth(string $startDate, ReconciliationService $reconciliation)
+    {
+        abort_unless(preg_match('/^\d{4}-\d{2}-01$/', $startDate), 404);
+        $balances = FinancialBalance::where('start_date', $startDate)->get();
+        foreach ($balances as $balance) {
+            $reconciliation->reconcile($balance);
+        }
+        return $this->backToMonth($startDate, __(':month confirmed.', ['month' => $this->monthName($startDate)]));
+    }
+
+    public function unreconcile(FinancialBalance $financial_balance, ReconciliationService $reconciliation)
+    {
+        $reconciliation->unreconcile($financial_balance);
+        return $this->backToMonth($financial_balance->start_date, __('Confirmation removed.'));
+    }
+
+    /**
+     * Creates an adjustment that brings the month back to the confirmed balance.
+     */
+    public function restore(FinancialBalance $financial_balance, ReconciliationService $reconciliation, AdjustFinancialBalanceService $adjust)
+    {
+        $reconciliation->restore($financial_balance, $adjust);
+        DashboardCacheService::clearAllByUser();
+        return $this->backToMonth($financial_balance->start_date, __('Adjustment created: the balance is back to the confirmed value.'));
+    }
+
+    private function backToMonth(string $startDate, string $message)
+    {
+        DashboardCacheService::clearAllByUser();
+        return redirect()->route('financial-balances.index', ['year' => substr($startDate, 0, 4)])
+            ->withFragment('month-' . substr($startDate, 0, 7))
+            ->with('success', $message);
+    }
+
+    private function monthName(string $date): string
+    {
+        return ucfirst(\Carbon\Carbon::parse($date)->translatedFormat('F Y'));
     }
 
 

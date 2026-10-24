@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use App\Enums\FinancialMovementType;
+use App\Models\FinancialMovement;
+use App\Services\ReconciliationService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,6 +37,7 @@ class FinancialMovementRequest extends FormRequest
                 ]),
             ],
             'include_alert' => 'nullable|numeric',
+            'confirm_reconciled' => 'nullable|boolean',
         ];
 
         if ($this->input('type') === FinancialMovementType::LOAN) {
@@ -50,6 +53,56 @@ class FinancialMovementRequest extends FormRequest
             ];
         }
         return $rules;
+    }
+
+    /**
+     * Changing a confirmed month needs an explicit confirmation.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if ($validator->errors()->isNotEmpty() || $this->boolean('confirm_reconciled')) {
+                return;
+            }
+            $balance = self::confirmedBalanceAffected($this->positions());
+            if ($balance) {
+                $validator->errors()->add('confirm_reconciled', __('This changes the confirmed balance of :wallet in :month. Confirm to continue.', [
+                    'wallet' => $balance->wallet?->name,
+                    'month' => ucfirst(\Carbon\Carbon::parse($balance->start_date)->translatedFormat('F Y')),
+                ]));
+            }
+        });
+    }
+
+    /**
+     * Wallet/date pairs the save touches: the new ones and, when editing, the previous ones.
+     */
+    private function positions(): array
+    {
+        $positions = [['wallet_id' => $this->input('wallet_id'), 'date' => $this->input('date')]];
+        if ($this->input('type') === FinancialMovementType::TRANSFER) {
+            $positions[] = ['wallet_id' => $this->input('transfer_to_wallet_id'), 'date' => $this->input('date')];
+        }
+        $existing = $this->route('financial_movement');
+        if ($existing instanceof FinancialMovement) {
+            foreach ([$existing, $existing->destinationMovement] as $movement) {
+                if ($movement) {
+                    $positions[] = ['wallet_id' => $movement->wallet_id, 'date' => $movement->date];
+                }
+            }
+        }
+        return $positions;
+    }
+
+    public static function confirmedBalanceAffected(iterable $positions)
+    {
+        foreach ($positions as $position) {
+            $balance = ReconciliationService::affectedBalance((int) $position['wallet_id'], (string) $position['date']);
+            if ($balance) {
+                return $balance;
+            }
+        }
+        return null;
     }
 
     public function messages()

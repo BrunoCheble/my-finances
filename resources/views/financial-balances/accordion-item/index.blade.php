@@ -3,13 +3,28 @@
     $groupFinal = $group->balances->sum('calculated_balance');
     $groupChange = $groupFinal - $groupInitial;
     $monthTitle = ucfirst(\Carbon\Carbon::parse($group->startDate)->translatedFormat('F Y'));
+    $monthKey = substr($group->startDate, 0, 7);
+    $divergedCount = $group->balances->where('is_diverged', true)->count();
+    $confirmedCount = $group->balances->where('is_reconciled', true)->count();
+    $allConfirmed = $confirmedCount === $group->balances->count();
 @endphp
 
-<div x-data="{ open: {{ $key == 0 ? 'true' : 'false' }} }" class="card overflow-hidden">
+<div id="month-{{ $monthKey }}" x-data="{ open: {{ $key == 0 || $divergedCount ? 'true' : 'false' }} }"
+    x-init="if (location.hash === '#month-{{ $monthKey }}') { open = true; $nextTick(() => $el.scrollIntoView({ block: 'start' })) }"
+    @class(['card scroll-mt-20 overflow-hidden', 'ring-1 ring-rose-300' => $divergedCount])>
     <button type="button" @click="open = !open" :aria-expanded="open"
         class="flex w-full items-center justify-between gap-4 px-4 py-4 text-left hover:bg-slate-50 sm:px-6">
         <span>
-            <span class="block font-semibold text-slate-900">{{ $monthTitle }}</span>
+            <span class="flex flex-wrap items-center gap-2 font-semibold text-slate-900">
+                {{ $monthTitle }}
+                @if ($divergedCount)
+                    <x-badge color="red"><i class="fa-solid fa-lock-open text-[10px]" aria-hidden="true"></i>{{ trans_choice(':count diverged|:count diverged', $divergedCount, ['count' => $divergedCount]) }}</x-badge>
+                @elseif ($allConfirmed)
+                    <x-badge color="green"><i class="fa-solid fa-circle-check text-[10px]" aria-hidden="true"></i>{{ __('Reconciled') }}</x-badge>
+                @elseif ($confirmedCount)
+                    <x-badge>{{ __(':done of :total confirmed', ['done' => $confirmedCount, 'total' => $group->balances->count()]) }}</x-badge>
+                @endif
+            </span>
             <span class="block text-xs text-slate-500">{{ $group->title }}</span>
         </span>
         <span class="flex items-center gap-4">
@@ -80,6 +95,9 @@
                                 @else
                                     <span class="amount text-slate-900">{{ format_currency($balance->calculated_balance) }}</span>
                                 @endif
+                                @if ($balance->is_reconciled)
+                                    <span class="ml-1 inline-block">@include('financial-balances.reconciliation.status')</span>
+                                @endif
                                 @if ($balance->reserved_amount)
                                     <i class="fa-solid fa-circle-info ml-1 text-slate-400" title="{{ __('Reserved amount: :amount', ['amount' => format_currency($balance->reserved_amount)]) }}"
                                         aria-label="{{ __('Reserved amount: :amount', ['amount' => format_currency($balance->reserved_amount)]) }}"></i>
@@ -129,6 +147,7 @@
         {{-- edit/delete modals rendered once, outside the table (hidden on phones) and the cards --}}
         @foreach ($group->balances as $balance)
             @include('financial-balances.menu.modal-edit')
+            @include('financial-balances.reconciliation.modal')
         @endforeach
 
         {{-- phones: one card per wallet --}}
@@ -148,6 +167,9 @@
                             <span class="amount text-sm font-semibold text-slate-900">{{ format_currency($balance->calculated_balance) }}</span>
                         @endif
                     </div>
+                    @if ($balance->is_reconciled)
+                        <div class="mt-1 pl-4">@include('financial-balances.reconciliation.status')</div>
+                    @endif
                     <div class="mt-1 flex items-center justify-between gap-2 pl-4 text-xs text-slate-500">
                         <span>
                             {{ __('Initial balance') }} {{ format_currency($balance->initial_balance) }} ·
@@ -163,7 +185,10 @@
             @endforeach
         </ul>
 
-        <div class="flex justify-end border-t border-slate-200 px-4 py-3 sm:px-6">
+        <div class="flex flex-wrap justify-end gap-2 border-t border-slate-200 px-4 py-3 sm:px-6">
+            @unless ($allConfirmed)
+                <x-button size="sm" icon="circle-check" x-on:click="$dispatch('open-modal', 'reconcile-month-{{ $monthKey }}')">{{ __('Confirm month') }}</x-button>
+            @endunless
             <form action="{{ route('financial-balances.recalculateAll', ['start_date' => $group->startDate, 'end_date' => $group->endDate]) }}" method="POST">
                 @method('PATCH')
                 @csrf
@@ -172,3 +197,36 @@
         </div>
     </div>
 </div>
+
+@unless ($allConfirmed)
+    <x-modal name="reconcile-month-{{ $monthKey }}" maxWidth="md">
+        <form method="POST" action="{{ route('financial-balances.reconcileMonth', $group->startDate) }}" class="space-y-4 p-5 sm:p-6">
+            @csrf
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900">{{ __('Confirm month') }}</h3>
+                    <p class="text-sm text-slate-500">{{ $monthTitle }}</p>
+                </div>
+                <x-icon-button icon="xmark" :label="__('Close')" class="-mr-2 -mt-1" x-on:click="$dispatch('close')" />
+            </div>
+            <p class="text-sm text-slate-600">{{ __('Do these balances match your banks at the end of the month?') }}</p>
+            <ul class="divide-y divide-slate-100 rounded-xl border border-slate-200 text-sm">
+                @foreach ($group->balances as $balance)
+                    <li class="flex items-center justify-between gap-3 px-3 py-2">
+                        <span class="flex min-w-0 items-center gap-2">
+                            <span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background-color: {{ $balance->wallet->color ?? '#94a3b8' }}" aria-hidden="true"></span>
+                            <span class="truncate">{{ $balance->wallet_name }}</span>
+                            @if ($balance->is_reconciled && !$balance->is_diverged)<i class="fa-solid fa-circle-check text-emerald-600" title="{{ __('Reconciled') }}"></i>@endif
+                        </span>
+                        <span class="amount font-semibold text-slate-900">{{ format_currency($balance->getRawOriginal('calculated_balance')) }}</span>
+                    </li>
+                @endforeach
+            </ul>
+            <p class="text-xs text-slate-500">{{ __('If one does not match, close this and adjust that wallet first.') }}</p>
+            <div class="flex justify-end gap-2">
+                <x-button variant="secondary" x-on:click="$dispatch('close')">{{ __('Cancel') }}</x-button>
+                <x-button type="submit" icon="circle-check">{{ __('All match: confirm') }}</x-button>
+            </div>
+        </form>
+    </x-modal>
+@endunless

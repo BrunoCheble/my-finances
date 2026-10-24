@@ -78,21 +78,30 @@
     function deleteSelected() {
         return {
             selected: [],
-            deleteSelectedMovements() {
+            deleteSelectedMovements(confirmed = false) {
                 if (this.selected.length === 0) return;
-                if (!confirm(@json(__('Are you sure you want to delete the selected movements?')))) return;
+                if (!confirmed && !confirm(@json(__('Are you sure you want to delete the selected movements?')))) return;
 
                 fetch(@json(url('/api/financial-movements/bulk-delete')), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest',
                         'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')
                     },
-                    body: JSON.stringify({ ids: this.selected }),
+                    body: JSON.stringify({ ids: this.selected, confirm_reconciled: confirmed }),
                     credentials: 'same-origin'
                 })
-                .then(response => response.json())
+                .then(async response => {
+                    if (response.status === 422) {
+                        const data = await response.json();
+                        const message = data.errors?.confirm_reconciled?.[0];
+                        if (message && confirm(message)) this.deleteSelectedMovements(true);
+                        throw 'cancelled';
+                    }
+                    return response.json();
+                })
                 .then(() => {
                     this.selected.forEach(id => {
                         document.querySelectorAll(`[data-movement="${id}"]`).forEach(el => el.remove());
@@ -100,6 +109,7 @@
                     this.selected = [];
                 })
                 .catch(error => {
+                    if (error === 'cancelled') return;
                     console.error('Error deleting:', error);
                     alert(@json(__('Something went wrong')));
                 });
