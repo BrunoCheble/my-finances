@@ -145,7 +145,7 @@ class FinancialMovementController extends Controller
             $dashboardCacheService->clearAllByUser();
 
             return Redirect::route('financial-movements.index')
-                ->with('success', 'Financial Movement deleted successfully');
+                ->with('success', __('Movement deleted.'));
         } catch (\Exception $e) {
             return Redirect::route('financial-movements.index')
                 ->with('error', __('Something went wrong'));

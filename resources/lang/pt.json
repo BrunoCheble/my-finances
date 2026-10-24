@@ -605,5 +605,11 @@
     "of :forecast forecast (:percent%).": "de :forecast previstos (:percent%).",
     ":amount left.": "Restam :amount.",
     "Category this month": "Categoria no mês",
-    "of the forecast": "da previsão"
+    "of the forecast": "da previsão",
+    "Balance adjusted.": "Saldo ajustado.",
+    "Balance recalculated.": "Saldo recalculado.",
+    "Balance in :month": "Saldo em :month",
+    "1 movement deleted.": "1 movimento excluído.",
+    ":count movements deleted.": ":count movimentos excluídos.",
+    "Could not save the forecasts": "Não foi possível salvar as previsões"
 }

@@ -8,7 +8,6 @@
     <div class="py-12">
         <div class="max-w-full mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                @include('layouts.alert')
                 <h1 class="text-base font-semibold leading-6 text-gray-900">{{ __('New import') }}</h1>
                 <p class="mt-2 text-sm text-gray-700">{{ __('Upload the bank statement PDF. The file is only read to build the preview and is not stored.') }}</p>
 

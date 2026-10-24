@@ -52,8 +52,6 @@
     @include('financial-balances.modal-summary')
 
     <div class="space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        @include('layouts.alert')
-
         @if (!$hasHistory)
             <x-card>
                 <x-empty-state icon="scale-balanced" :title="__('No balances yet')"
@@ -195,7 +193,7 @@
     @if ($hasHistory)
         <script>
             (() => {
-                const money = (value) => Number(value).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+                const money = (value) => Number(value).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
                 const compact = (value) => Number(value).toLocaleString('pt-PT', { notation: 'compact', maximumFractionDigits: 1 });
                 const labels = @json(array_map($monthName, $months));
                 const total = @json($total);

@@ -16,7 +16,6 @@
     </x-slot>
 
     <div class="space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        @include('layouts.alert')
         @if ($errors->any())
             <div class="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700" role="alert">
                 @foreach ($errors->all() as $error)<p>{{ $error }}</p>@endforeach
@@ -107,7 +106,7 @@
                                 @include('loans.fields', ['withPerson' => false, 'uid' => 'r' . $loan->id])
                                 <p x-show="Number(amount) > owed" x-cloak class="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">
                                     <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
-                                    <span x-text="@js(__('The extra :amount will be recorded as loan interest (income).')).replace(':amount', (Number(amount) - owed).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' }))"></span>
+                                    <span x-text="@js(__('The extra :amount will be recorded as loan interest (income).')).replace(':amount', (Number(amount) - owed).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' }))"></span>
                                 </p>
                                 <div class="flex justify-end gap-2">
                                     <x-button variant="secondary" x-on:click="$dispatch('close')">{{ __('Cancel') }}</x-button>

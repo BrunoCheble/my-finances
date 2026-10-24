@@ -51,8 +51,6 @@
     @include('financial-movements.filter')
 
     <div class="space-y-4 px-4 py-6 sm:px-6 lg:px-8">
-        @include('layouts.alert')
-
         {{-- Wallet switcher: horizontal scroll on small screens --}}
         @if (count($wallets) > 1)
             <nav class="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0" aria-label="{{ __('Wallets') }}">

@@ -218,7 +218,7 @@
             saving: false,
             detail: { category: '', month: '', rows: [], total: 0, loading: false },
             money(value) {
-                return Number(value).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+                return Number(value).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
             },
             useAverage(categoryId, average) {
                 this.syncForecast(categoryId, Number(average).toFixed(2));
@@ -267,7 +267,7 @@
                     if (!response.ok) throw await response.json();
                     window.location.reload();
                 } catch (error) {
-                    alert(error.message || @json(__('Something went wrong')));
+                    window.toast({ type: 'error', title: @json(__('Could not save the forecasts')), message: error.message || @json(__('Something went wrong')) });
                     this.saving = false;
                 }
             },

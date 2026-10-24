@@ -93,7 +93,7 @@
                         date: formattedDate,
                         wallet: this.wallets[item.wallet_id] ? this.wallets[item.wallet_id] : 'N/A',
                         description: item.description,
-                        amount: signedValue.toLocaleString('pt-PT', {
+                        amount: signedValue.toLocaleString('de-DE', {
                             style: 'currency',
                             currency: 'EUR'
                         }),
@@ -104,7 +104,7 @@
 
                 this.rows = JSON.parse(JSON.stringify(this.items));
 
-                this.totalAmount = this.total.toLocaleString('pt-PT', {
+                this.totalAmount = this.total.toLocaleString('de-DE', {
                     style: 'currency',
                     currency: 'EUR'
                 });

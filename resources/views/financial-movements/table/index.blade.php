@@ -106,12 +106,14 @@
                     this.selected.forEach(id => {
                         document.querySelectorAll(`[data-movement="${id}"]`).forEach(el => el.remove());
                     });
+                    const count = this.selected.length;
+                    window.toast({ type: 'info', title: count === 1 ? @json(__('1 movement deleted.')) : @json(__(':count movements deleted.')).replace(':count', count) });
                     this.selected = [];
                 })
                 .catch(error => {
                     if (error === 'cancelled') return;
                     console.error('Error deleting:', error);
-                    alert(@json(__('Something went wrong')));
+                    window.toast({ type: 'error', title: @json(__('Something went wrong')) });
                 });
             }
         }

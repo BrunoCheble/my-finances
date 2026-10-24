@@ -51,6 +51,8 @@
                 </header>
             @endif
 
+            @include('layouts.toasts')
+
             <main id="content" tabindex="-1" class="focus:outline-none">
                 {{ $slot }}
             </main>
