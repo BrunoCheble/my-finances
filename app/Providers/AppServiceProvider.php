@@ -20,13 +20,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // The WebAuthn (passkeys) library kept in lib/webauthn (bundled, like in icd-laravel: no Composer needed on the server).
+        // Libraries kept in lib/ (no Composer on the production server, see docs/DEPLOY.md): WebAuthn (passkeys, as in
+        // icd-laravel) and the PDF parser of the statement import. Registered after Composer's autoloader, so a copy in
+        // vendor/ wins when there is one.
         spl_autoload_register(function (string $class) {
-            $prefix = 'lbuchs\\WebAuthn\\';
-            if (str_starts_with($class, $prefix)) {
-                $file = base_path('lib/webauthn/src/' . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php');
-                if (is_file($file)) {
-                    require $file;
+            foreach (['lbuchs\\WebAuthn\\' => 'lib/webauthn/src/', 'Smalot\\PdfParser\\' => 'lib/pdfparser/src/Smalot/PdfParser/'] as $prefix => $folder) {
+                if (str_starts_with($class, $prefix)) {
+                    $file = base_path($folder . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php');
+                    if (is_file($file)) {
+                        require $file;
+                    }
+                    return;
                 }
             }
         });

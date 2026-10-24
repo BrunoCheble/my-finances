@@ -1,0 +1,47 @@
+name: Deploy to production (cPanel)
+
+# On every push to main (and by hand), does what the cPanel "Git Version Control" page does: "Update from Remote".
+# The repository on the server is the site folder itself, so pulling is the deploy (.env, vendor/ and the other
+# ignored files on the server are never touched). Then the app runs its deploy tasks by itself - migrations, one-time
+# commands, caches (see app/Services/DeployTasksService.php) - and this checks how they went. Setup: docs/DEPLOY.md.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: cpanel-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      API: https://${{ secrets.CPANEL_HOST }}:2083/execute
+      AUTH: "Authorization: cpanel ${{ secrets.CPANEL_USER }}:${{ secrets.CPANEL_TOKEN }}"
+      REPO: ${{ secrets.CPANEL_REPO_ROOT }}
+      UP: ${{ vars.APP_URL }}/up
+
+    steps:
+      - name: Update from Remote
+        run: |
+          response=$(curl -sS --fail -H "$AUTH" -G "$API/VersionControl/update" \
+            --data-urlencode "repository_root=$REPO" --data-urlencode "branch=main")
+          echo "$response" | jq '{status, errors, head: .data.last_update}'
+          [ "$(echo "$response" | jq -r '.status')" = "1" ]
+
+      # The first visit after the pull only clears the caches; once the change is 90 s old (OPcache caught up), the
+      # next one runs the migrations, the one-time commands and rebuilds the caches, after answering.
+      - name: Run the deploy tasks
+        run: |
+          curl -sS -o /dev/null -w "%{http_code}\n" "$UP"
+          sleep 100
+          curl -sS -o /dev/null -w "%{http_code}\n" --max-time 300 "$UP"
+          sleep 30
+
+      - name: Check
+        run: |
+          status=$(curl -sS --fail -D - -o /dev/null "$UP" | tr -d '\r' | grep -i '^x-app-deploy:' || true)
+          echo "${status:-no X-App-Deploy header}"
+          echo "$status" | grep -q 'tasks=ok' || { echo "::error::Deploy tasks did not finish ok (see /up and storage/logs)"; exit 1; }
