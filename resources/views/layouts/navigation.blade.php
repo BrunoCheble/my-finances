@@ -3,7 +3,7 @@
         ['route' => 'dashboard', 'active' => 'dashboard', 'icon' => 'chart-pie', 'label' => __('Dashboard')],
         ['route' => 'financial-movements.index', 'active' => 'financial-movements.*', 'icon' => 'arrow-right-arrow-left', 'label' => __('Financial Movements')],
         ['route' => 'statement-imports.index', 'active' => 'statement-imports.*', 'icon' => 'file-import', 'label' => __('Import Statement')],
-        ['route' => 'financial-balances.index', 'active' => 'financial-balances.*', 'icon' => 'scale-balanced', 'label' => __('Financial Balances')],
+        ['route' => 'financial-balances.index', 'active' => 'financial-balances.*', 'icon' => 'chart-line', 'label' => __('Financial Balances')],
         ['route' => 'financial-categories.index', 'active' => 'financial-categories.*', 'icon' => 'tags', 'label' => __('Financial Categories')],
         ['route' => 'wallets.index', 'active' => 'wallets.*', 'icon' => 'wallet', 'label' => __('Wallets')],
     ];
