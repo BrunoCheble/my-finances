@@ -10,7 +10,7 @@ return new class extends Migration
     {
         // remembers which wallet a bank account maps to; the account number
         // itself is not stored, only a hash and its last digits for display
-        Schema::create('statement_accounts', function (Blueprint $table) {
+        if (! Schema::hasTable('statement_accounts')) Schema::create('statement_accounts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users');
             $table->string('bank');
@@ -21,9 +21,11 @@ return new class extends Migration
             $table->unique(['user_id', 'bank', 'account_hash']);
         });
 
-        Schema::table('statement_imports', function (Blueprint $table) {
-            $table->string('account_last4', 4)->nullable()->after('bank');
-        });
+        if (! Schema::hasColumn('statement_imports', 'account_last4')) {
+            Schema::table('statement_imports', function (Blueprint $table) {
+                $table->string('account_last4', 4)->nullable()->after('bank');
+            });
+        }
     }
 
     public function down(): void

@@ -129,11 +129,29 @@ class DeployTasksService
 
             return 'ok';
         } catch (Throwable $error) {
+            $where = $step === 'migrate' ? $this->pendingMigration() : null;
             Artisan::call('optimize:clear');
             report($error);
 
-            // What failed, for the health check (no message: it may hold paths or values).
-            return 'failed:' . $step . ':' . class_basename($error) . '@' . basename($error->getFile()) . ':' . $error->getLine();
+            // What failed, for the health check (no message: it may hold paths or values): for a migration, its name
+            // and the database's error code (e.g. 42000/1091), enough to know what to fix.
+            $code = $error instanceof \Illuminate\Database\QueryException ? ':' . implode('/', array_slice($error->errorInfo ?? [], 0, 2)) : '';
+
+            return 'failed:' . $step . ($where ? '(' . $where . ')' : '') . ':' . class_basename($error) . $code . '@' . basename($error->getFile()) . ':' . $error->getLine();
+        }
+    }
+
+    /** The first migration not run yet: after a failure, the one that failed. */
+    private function pendingMigration(): ?string
+    {
+        try {
+            $migrator = app('migrator');
+            $ran = $migrator->getRepository()->getRan();
+            $files = array_keys($migrator->getMigrationFiles([database_path('migrations')]));
+
+            return array_values(array_diff($files, $ran))[0] ?? null;
+        } catch (Throwable) {
+            return null;
         }
     }
 
