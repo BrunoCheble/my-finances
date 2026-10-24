@@ -1,57 +1,258 @@
+@php
+    $months = $history['months'];
+    $total = $history['total'];
+    $hasHistory = count($months) > 0;
+
+    $current = $hasHistory ? end($total) : 0;
+    $start = $hasHistory ? $total[0] : 0;
+    $change = $current - $start;
+    $changePercent = $start != 0 ? round($change / abs($start) * 100, 1) : null;
+
+    // month over month change (first month is only the starting point)
+    $monthly = [];
+    for ($i = 1; $i < count($months); $i++) {
+        $monthly[$months[$i]] = round($total[$i] - $total[$i - 1], 2);
+    }
+    $best = $monthly ? array_keys($monthly, max($monthly))[0] : null;
+    $worst = $monthly ? array_keys($monthly, min($monthly))[0] : null;
+    $monthName = fn ($month) => ucfirst(\Carbon\Carbon::createFromFormat('Y-m-d', $month . '-01')->translatedFormat('M/y'));
+
+    $periods = ['6m' => __('6 months'), '1y' => __('1 year'), '2y' => __('2 years'), 'all' => __('All')];
+
+    // inline SVG sparkline points for a series
+    $sparkline = function (array $values) {
+        $count = count($values);
+        if ($count < 2) {
+            return '';
+        }
+        $min = min($values);
+        $max = max($values);
+        $range = ($max - $min) ?: 1;
+        return collect($values)->map(fn ($value, $i) => round($i / ($count - 1) * 100, 2) . ',' . round(28 - ($value - $min) / $range * 24, 2))->implode(' ');
+    };
+@endphp
+
 <x-app-layout>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
     <x-slot name="header">
-
-        <div class="flex justify-between items-center">
-
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Financial Balances') }}
-            </h2>
-
-            <div class="flex gap-4 items-center">
-                <x-dropdown-select :options="$filter" name="year" selected="{{ request('year', date('Y')) }}"
-                    onchange="window.location.href='{{ route('financial-balances.index') }}?year=' + this.value" />
-
-                <a type="button" href="{{ route('financial-balances.create') }}"
-                    class="block rounded-md bg-indigo-600 px-3 py-2 text-right text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                    <i class="fa fa-plus mr-2"></i> {{ __('Add new') }}
-                </a>
-            </div>
-        </div>
+        <x-page-header :title="__('Net worth')" :subtitle="__('How your money evolves over time, wallet by wallet.')">
+            <x-slot name="actions">
+                <nav class="inline-flex rounded-lg bg-slate-100 p-1 text-sm font-medium" aria-label="{{ __('Period') }}">
+                    @foreach ($periods as $key => $label)
+                        <a href="{{ route('financial-balances.index', array_merge(request()->except('period'), ['period' => $key])) }}"
+                            @class(['rounded-md px-3 py-1.5', 'bg-white text-slate-900 shadow-sm' => $period === $key, 'text-slate-600 hover:text-slate-900' => $period !== $key])
+                            @if ($period === $key) aria-current="page" @endif>{{ $label }}</a>
+                    @endforeach
+                </nav>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
     @include('financial-balances.modal-summary')
 
-    <div class="py-12">
-        <div class="max-w-full mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="w-full">
-                    @include('layouts.alert')
+    <div class="space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+        @if (!$hasHistory)
+            <x-card>
+                <x-empty-state icon="scale-balanced" :title="__('No balances yet')"
+                    :description="__('Register movements or import a statement and the evolution shows up here.')" />
+            </x-card>
+        @else
+            {{-- Headline numbers --}}
+            <section aria-label="{{ __('Summary') }}" class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+                <x-stat :label="__('Your net worth')" :value="$current" icon="shield-halved" tone="brand">
+                    <x-slot name="footer">
+                        @if ($summary['third_party'] != 0)
+                            {{ __('In banks') }}: {{ format_currency($summary['in_banks']) }}
+                        @else
+                            {{ __('Today') }}
+                        @endif
+                    </x-slot>
+                </x-stat>
+                <x-stat :label="__('Change in period')" :value="$change" icon="chart-line" :colored="true" :sign="true">
+                    <x-slot name="footer">
+                        @if ($changePercent !== null)
+                            <span @class(['font-medium', 'text-emerald-700' => $change >= 0, 'text-rose-700' => $change < 0])>{{ $change >= 0 ? '▲' : '▼' }} {{ number_format(abs($changePercent), 1, ',', '.') }}%</span>
+                        @endif
+                        {{ __('since :month', ['month' => $monthName($months[0])]) }}
+                    </x-slot>
+                </x-stat>
+                <x-stat :label="__('Best month')" :value="$best ? $monthly[$best] : 0" icon="arrow-trend-up" tone="green" :colored="true" :sign="true">
+                    <x-slot name="footer">{{ $best ? $monthName($best) : '—' }}</x-slot>
+                </x-stat>
+                <x-stat :label="__('Worst month')" :value="$worst ? $monthly[$worst] : 0" icon="arrow-trend-down" :tone="$worst && $monthly[$worst] < 0 ? 'red' : 'slate'" :colored="true" :sign="true">
+                    <x-slot name="footer">{{ $worst ? $monthName($worst) : '—' }}</x-slot>
+                </x-stat>
+            </section>
 
-                    <div class="space-y-4">
-                        <!-- create a total summary, using the variable total_unidentified, total_initial, total_calculated -->
-                        <div class="flex justify-end gap-8">
-                            <div class="text-right">
-                                <div class="text-sm text-gray-500">{{ __('Total Evolution') }}</div>
-                                <div class="text-lg font-bold">
-                                    <span class="mr-2">{!! colored_format_currency($summary['total_calculated']-$summary['total_initial']) !!}</span>
-                                    {!! diff_percentage($summary['total_initial'], $summary['total_calculated']) !!}
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-sm text-gray-500">{{ __('Total Unidentified') }}</div>
-                                <div class="text-lg font-bold">
-                                    {!! colored_format_currency($summary['total_unidentified']) !!}
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Accordion Item -->
-                        @foreach ($groups as $key => $group)
-                            @include('financial-balances.accordion-item.index', ['group' => $group, 'key' => $key])
-                        @endforeach
+            <div class="grid gap-6 lg:grid-cols-3">
+                {{-- Evolution --}}
+                <section class="card p-4 sm:p-6 lg:col-span-2" aria-labelledby="evolution-title">
+                    <h2 id="evolution-title" class="text-base font-semibold text-slate-900">{{ __('Net worth evolution') }}</h2>
+                    <p class="text-sm text-slate-500">{{ __('End of each month') }}</p>
+                    <div class="relative mt-4 h-64 sm:h-80">
+                        <canvas id="netWorthChart" role="img" aria-label="{{ __('Net worth at the end of each month; the table below has the same data.') }}"></canvas>
                     </div>
+                </section>
 
+                {{-- By wallet --}}
+                <section class="card p-4 sm:p-6" aria-labelledby="wallets-title">
+                    <h2 id="wallets-title" class="text-base font-semibold text-slate-900">{{ __('By wallet') }}</h2>
+                    <ul class="mt-4 divide-y divide-slate-100">
+                        @foreach ($history['wallets'] as $wallet)
+                            @php
+                                $last = end($wallet->values);
+                                $walletChange = $last - $wallet->values[0];
+                            @endphp
+                            <li class="flex items-center gap-3 py-3">
+                                <span class="h-2.5 w-2.5 shrink-0 rounded-full" style="background-color: {{ $wallet->color }}" aria-hidden="true"></span>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-baseline justify-between gap-2">
+                                        <p class="truncate text-sm font-medium text-slate-800">{{ $wallet->name }}</p>
+                                        @if ($wallet->third_party)
+                                            <span class="amount text-sm font-semibold text-purple-700">{{ format_currency(-$last) }}</span>
+                                        @else
+                                            <x-money :value="$last" :colored="false" :sign="false" class="text-sm font-semibold text-slate-900" />
+                                        @endif
+                                    </div>
+                                    <div class="mt-1 flex items-center justify-between gap-2">
+                                        <p class="truncate text-xs text-slate-500">
+                                            @if ($wallet->third_party)
+                                                {{ __('Kept for someone else') }}
+                                            @elseif ($walletChange != 0)
+                                                <x-money :value="$walletChange" /> {{ __('in the period') }}
+                                            @else
+                                                {{ __('No change in the period') }}
+                                            @endif
+                                        </p>
+                                        <svg viewBox="0 0 100 30" preserveAspectRatio="none" class="h-5 w-16 shrink-0" aria-hidden="true">
+                                            <polyline points="{{ $sparkline($wallet->values) }}" fill="none" stroke="{{ $wallet->third_party ? 'rgb(var(--c-purple-600))' : 'var(--chart-brand)' }}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
+            </div>
+
+            {{-- Monthly change --}}
+            @if ($monthly)
+                <section class="card p-4 sm:p-6" aria-labelledby="monthly-title">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <h2 id="monthly-title" class="text-base font-semibold text-slate-900">{{ __('Month over month change') }}</h2>
+                            <p class="text-sm text-slate-500">{{ __('How much your net worth grew or shrank each month') }}</p>
+                        </div>
+                        <ul class="flex items-center gap-4 text-sm text-slate-600">
+                            <li class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm bg-[color:var(--chart-income)]" aria-hidden="true"></span>{{ __('Grew') }}</li>
+                            <li class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm bg-[color:var(--chart-expense)]" aria-hidden="true"></span>{{ __('Shrank') }}</li>
+                        </ul>
+                    </div>
+                    <div class="relative mt-4 h-56">
+                        <canvas id="monthlyChart" role="img" aria-label="{{ __('Net worth change per month; the table below has the same data.') }}"></canvas>
+                    </div>
+                </section>
+            @endif
+
+            <table class="sr-only">
+                <caption>{{ __('Net worth evolution') }}</caption>
+                <thead><tr><th>{{ __('Month') }}</th><th>{{ __('Net worth') }}</th><th>{{ __('Change') }}</th></tr></thead>
+                <tbody>
+                    @foreach ($months as $i => $month)
+                        <tr><td>{{ $monthName($month) }}</td><td>{{ format_currency($total[$i]) }}</td><td>{{ isset($monthly[$month]) ? format_currency($monthly[$month]) : '' }}</td></tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
+        {{-- Monthly detail (existing balances, with edit / recalculate) --}}
+        <section aria-labelledby="detail-title" class="space-y-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <h2 id="detail-title" class="text-base font-semibold text-slate-900">{{ __('Monthly detail') }}</h2>
+                    <p class="text-sm text-slate-500">{{ __('Every active wallet in every month, with the balance carried over. Edit to adjust to the real balance.') }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label for="year" class="sr-only">{{ __('Year') }}</label>
+                    <select id="year" class="input w-44" onchange="window.location.href='{{ route('financial-balances.index') }}?period={{ $period }}&year=' + this.value">
+                        <option value="">{{ __('All years') }}</option>
+                        @foreach ($filter as $value => $label)
+                            <option value="{{ $value }}" @selected((string) request('year') === (string) $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
                 </div>
             </div>
-        </div>
+
+            @foreach ($groups as $key => $group)
+                @include('financial-balances.accordion-item.index', ['group' => $group, 'key' => $key])
+            @endforeach
+        </section>
     </div>
+
+    @if ($hasHistory)
+        <script>
+            (() => {
+                const money = (value) => Number(value).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+                const compact = (value) => Number(value).toLocaleString('pt-PT', { notation: 'compact', maximumFractionDigits: 1 });
+                const labels = @json(array_map($monthName, $months));
+                const total = @json($total);
+                const monthly = @json(array_values($monthly));
+
+                const charts = [];
+
+                // (re)drawn with the colors of the current theme
+                const render = () => {
+                    charts.splice(0).forEach((chart) => chart.destroy());
+                    const ink = window.chartInk();
+                    Chart.defaults.font.family = 'Figtree, ui-sans-serif, system-ui, sans-serif';
+                    Chart.defaults.color = ink.muted;
+                    const axes = {
+                        x: { grid: { display: false }, border: { display: false }, ticks: { maxTicksLimit: 8 } },
+                        y: { grid: { color: ink.grid }, border: { display: false }, ticks: { callback: (v) => compact(v) + ' €', maxTicksLimit: 5 } },
+                };
+                const tooltip = {
+                    backgroundColor: ink.tooltip, padding: 10, cornerRadius: 8,
+                    callbacks: { label: (ctx) => ' ' + money(ctx.parsed.y) },
+                };
+
+                charts.push(new Chart(document.getElementById('netWorthChart'), {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: @json(__('Net worth')), data: total,
+                            borderColor: ink.brand, borderWidth: 2, tension: 0.3,
+                            pointRadius: total.length > 24 ? 0 : 3, pointHoverRadius: 6, pointHitRadius: 14, pointBackgroundColor: ink.brand,
+                            fill: true, backgroundColor: ink.brandFill,
+                        }],
+                    },
+                    options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false }, tooltip }, scales: axes },
+                }));
+
+                const monthlyCanvas = document.getElementById('monthlyChart');
+                if (monthlyCanvas) {
+                    charts.push(new Chart(monthlyCanvas, {
+                        type: 'bar',
+                        data: {
+                            labels: labels.slice(1),
+                            datasets: [{
+                                label: @json(__('Change')), data: monthly,
+                                backgroundColor: monthly.map((v) => v >= 0 ? ink.income : ink.expense),
+                                borderRadius: 4, maxBarThickness: 22,
+                            }],
+                        },
+                        options: {
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false }, tooltip: { ...tooltip, callbacks: { label: (ctx) => ' ' + (ctx.parsed.y > 0 ? '+' : '') + money(ctx.parsed.y) } } },
+                            scales: axes,
+                        },
+                    }));
+                }
+                };
+                render();
+                window.addEventListener('theme-changed', render);
+            })();
+        </script>
+    @endif
 </x-app-layout>

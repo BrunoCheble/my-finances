@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\FinancialMovementType;
+use App\Services\ReconciliationService;
 use App\Traits\HasUserScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,30 @@ class FinancialMovement extends Model
     use HasFactory;
     protected $perPage = 20;
 
+    protected static function booted()
+    {
+        // keep a trace of changes that alter a balance the user already confirmed
+        static::created(fn (FinancialMovement $movement) => ReconciliationService::log($movement, 'created'));
+        static::updated(function (FinancialMovement $movement) {
+            if ($movement->wasChanged(['amount', 'date', 'wallet_id'])) {
+                ReconciliationService::log($movement, 'updated');
+            }
+        });
+        static::deleted(fn (FinancialMovement $movement) => ReconciliationService::log($movement, 'deleted'));
+
+        // delete the transfer mirror without relying on the database's ON DELETE CASCADE
+        static::deleting(function (FinancialMovement $movement) {
+            $movement->destinationMovement?->delete();
+        });
+
+        // a deleted repayment can reopen a loan
+        static::deleted(function (FinancialMovement $movement) {
+            if ($movement->loan_id) {
+                app(\App\Services\LoanService::class)->refresh(\App\Models\Loan::find($movement->loan_id));
+            }
+        });
+    }
+
     protected $fillable = [
         'description',
         'date',
@@ -21,7 +46,8 @@ class FinancialMovement extends Model
         'amount',
         'type',
         'original_movement_id',
-        'include_alert'
+        'include_alert',
+        'loan_id',
     ];
 
     /**
@@ -38,6 +64,11 @@ class FinancialMovement extends Model
     public function category()
     {
         return $this->belongsTo(FinancialCategory::class);
+    }
+
+    public function loan()
+    {
+        return $this->belongsTo(Loan::class);
     }
 
     public function originalMovement()
@@ -75,6 +106,7 @@ class FinancialMovement extends Model
             $this->type === FinancialMovementType::EXPENSE ||
             $this->type === FinancialMovementType::DISCOUNT ||
             ($this->type === FinancialMovementType::TRANSFER && $this->amount < 0) ||
-            ($this->type === FinancialMovementType::LOAN && $this->amount < 0);
+            ($this->type === FinancialMovementType::LOAN && $this->amount < 0) ||
+            ($this->type === FinancialMovementType::ADJUSTMENT && $this->amount < 0);
     }
 }

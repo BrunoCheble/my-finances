@@ -24,7 +24,7 @@ class WalletRequest extends FormRequest
             ],
             'color' => 'nullable|string|max:255',
             'active' => 'boolean',
-            'type' => 'string|in:debit,credit',
+            'type' => 'string|in:debit,credit,third_party',
             'reserved_amount' => 'nullable|numeric',
         ];
     }

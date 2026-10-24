@@ -1,3 +1,125 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    /* chart colors (canvas can't use the Tailwind classes) */
+    :root {
+        --chart-muted: #64748b;
+        --chart-grid: #eef2f6;
+        --chart-tooltip: #0f172a;
+        --chart-income: #059669;
+        --chart-expense: #e34948;
+        --chart-brand: #2479bf;
+        --chart-brand-fill: rgba(36, 121, 191, 0.08);
+    }
+    .dark {
+        color-scheme: dark;
+        --chart-muted: #94a3b8;
+        --chart-grid: #243045;
+        --chart-tooltip: #334155;
+        --chart-income: #0fa878;
+        --chart-expense: #c9353d;
+        --chart-brand: #5aa2dc;
+        --chart-brand-fill: rgba(90, 162, 220, 0.14);
+    }
+
+    body {
+        @apply bg-slate-50 text-slate-800;
+    }
+
+    /* dark theme: form controls and focus rings follow the surface */
+    .dark :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]), select, textarea, [type=checkbox], [type=radio]) {
+        background-color: rgb(var(--c-white));
+        border-color: rgb(var(--c-slate-300));
+    }
+    .dark *, .dark ::before, .dark ::after {
+        --tw-ring-offset-color: rgb(var(--c-white));
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+
+    :focus-visible {
+        @apply outline-none ring-2 ring-brand-500 ring-offset-2;
+    }
+
+    /* absolutely positioned children (e.g. sr-only labels) must not escape a
+       horizontal scroller and widen the whole page on phones */
+    .overflow-x-auto {
+        position: relative;
+    }
+}
+
+@layer components {
+    /* buttons */
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold transition
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2
+            disabled:cursor-not-allowed disabled:opacity-50;
+    }
+    .btn-sm {
+        @apply px-2.5 py-1.5 text-xs;
+    }
+    .btn-primary {
+        @apply bg-brand-600 text-white shadow-sm hover:bg-brand-700;
+    }
+    .btn-secondary {
+        @apply bg-white text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50;
+    }
+    .btn-ghost {
+        @apply text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+    }
+    .btn-danger {
+        @apply bg-rose-600 text-white shadow-sm hover:bg-rose-700;
+    }
+    .btn-icon {
+        @apply relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition
+            hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500;
+    }
+
+    /* surfaces */
+    .card {
+        @apply rounded-xl border border-slate-200 bg-white shadow-card;
+    }
+
+    /* forms */
+    .input {
+        @apply rounded-lg border-slate-300 bg-white text-sm shadow-sm placeholder:text-slate-400
+            focus:border-brand-500 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500;
+    }
+    .label {
+        @apply block text-sm font-medium text-slate-700;
+    }
+
+    /* tables */
+    .th {
+        @apply px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500;
+    }
+    .td {
+        @apply px-3 py-3 text-sm text-slate-700;
+    }
+
+    .badge {
+        @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+    }
+
+    .amount {
+        @apply whitespace-nowrap tabular-nums;
+    }
+}
+
+/* Desktop sidebar collapsed to an icon rail (class set on <html> before paint, see layouts/app) */
+@media (min-width: 1024px) {
+    .sidebar-collapsed .sidebar { width: 4rem; }
+    .sidebar-collapsed .app-shell { padding-left: 4rem; }
+    .sidebar-collapsed .sidebar-label {
+        position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
+    }
+    .sidebar-collapsed .sidebar-link { justify-content: center; padding-left: 0; padding-right: 0; }
+    .sidebar-collapsed .sidebar-brand { padding-left: 0; padding-right: 0; justify-content: center; }
+    .sidebar-collapsed .sidebar-popup { right: auto; width: 14rem; }
+    .sidebar-collapsed .sidebar-toggle-icon { transform: rotate(180deg); }
+}

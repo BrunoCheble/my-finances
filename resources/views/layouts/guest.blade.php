@@ -7,68 +7,58 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ config('app.name', 'Laravel') }}</title>
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
+
+    <!-- theme (light / dark / system) applied before the first paint -->
+    <script>try { var t = localStorage.getItem('theme'); if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark'); } catch (e) {}</script>
+
+    @include('layouts.pwa-head')
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body
-    style="background: url('https://scontent.fopo5-2.fna.fbcdn.net/v/t39.30808-6/436933766_730594475945626_4815031691494786999_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=5f2048&_nc_eui2=AeEcIBqn1Q3-rQ-FFsezF48CdBiEXTW6SZB0GIRdNbpJkNQnseZxcls2C8fKDRUjjoUs12jmxKOOGXrMxJPPGHxn&_nc_ohc=dVa2q8vGG5kQ7kNvgHXTLFJ&_nc_ht=scontent.fopo5-2.fna&oh=00_AYCd1UnjVcUR42MmBznCZXXPNWqk6MpK7cMuxSYUy8b0tQ&oe=6674E2A2'); background-size: cover"
-    class="font-sans text-gray-900 antialiased">
-    <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0">
-        <div class="mt-6">
-            <x-application-logo class="w-20 h-20 fill-current text-gray-500" />
-        </div>
+<body class="font-sans text-slate-900 antialiased">
+    <div class="flex min-h-screen">
+        {{-- Brand panel (large screens) --}}
+        <aside class="theme-light relative hidden w-[44%] overflow-hidden bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 lg:flex lg:flex-col lg:justify-between lg:p-12">
+            <svg class="pointer-events-none absolute -right-24 -top-24 h-[28rem] w-[28rem] text-white/5" viewBox="0 0 100 100" aria-hidden="true">
+                <circle cx="50" cy="50" r="50" fill="currentColor" />
+            </svg>
+            <svg class="pointer-events-none absolute -bottom-32 -left-16 h-[24rem] w-[24rem] text-white/5" viewBox="0 0 100 100" aria-hidden="true">
+                <circle cx="50" cy="50" r="50" fill="currentColor" />
+            </svg>
 
-        <div id="app"
-            class="w-full sm:max-w-md mt-6 mb-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
-            {{ $slot }}
-        </div>
+            <div class="relative flex items-center gap-3">
+                <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm"><x-application-logo class="h-9 w-9" /></span>
+                <span class="text-xl font-bold tracking-tight text-white">Escudo</span>
+            </div>
 
-        <style>
-            @keyframes wave-effect {
-                0% {
-                    box-shadow: 0 0 5px 2px rgba(255, 165, 0, 0.2),
-                        /* Laranja claro */
-                        inset 0 0 5px rgba(255, 223, 0, 0.5);
-                    /* Amarelo */
-                }
+            <div class="relative max-w-md">
+                <h1 class="text-3xl font-semibold leading-tight text-white xl:text-4xl">{{ __('Your money, clear and under control.') }}</h1>
+                <p class="mt-4 text-base text-brand-100">{{ __('Import bank statements, follow every wallet and see where your money goes, month by month.') }}</p>
+            </div>
 
-                50% {
-                    box-shadow: 0 0 10px 4px rgba(255, 165, 0, 0.5),
-                        /* Laranja */
-                        inset 0 0 10px rgba(255, 223, 0, 0.7);
-                    /* Amarelo mais forte */
-                }
+            <p class="relative text-sm text-brand-200">© {{ date('Y') }} Escudo</p>
+        </aside>
 
-                100% {
-                    box-shadow: 0 0 5px 2px rgba(255, 165, 0, 0.2),
-                        /* Laranja claro */
-                        inset 0 0 5px rgba(255, 223, 0, 0.5);
-                    /* Amarelo */
-                }
-            }
-
-            #app {
-                position: relative;
-                padding: 2rem;
-                border-radius: 10px;
-                border: 2px solid rgba(255, 165, 0, 0.5);
-                /* Laranja inicial */
-                animation: wave-effect 2s infinite ease-in-out;
-                transition: all 0.3s ease-in-out;
-            }
-
-            /* Adicionar transição para foco */
-            #app:hover {
-                border-color: rgba(255, 165, 0, 1);
-                /* Laranja mais forte ao passar o mouse */
-            }
-        </style>
+        {{-- Form --}}
+        <main class="flex flex-1 items-center justify-center bg-slate-50 px-4 py-12 sm:px-6">
+            <div class="w-full max-w-sm">
+                <div class="mb-8 flex justify-center lg:hidden">
+                    <x-brand size="lg" />
+                </div>
+                <div class="card p-6 sm:p-8">
+                    {{ $slot }}
+                </div>
+            </div>
+        </main>
     </div>
 </body>
 

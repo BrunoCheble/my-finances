@@ -27,8 +27,8 @@ class FinancialBalanceAccordionService
 
         $result = $groupedBalances->values();
 
-        if (!$result) {
-            return;
+        if ($result->isEmpty()) {
+            return $result;
         }
 
         $result[0]->balances
@@ -51,11 +51,24 @@ class FinancialBalanceAccordionService
 
     public static function getSummary($groups)
     {
+        if ($groups->isEmpty()) {
+            return ['net_worth' => 0, 'in_banks' => 0, 'third_party' => 0, 'total_unidentified' => 0, 'total_calculated' => 0, 'total_initial' => 0];
+        }
+
         $totalUnidentified = $groups->flatMap(fn($group) => $group->balances)->sum('total_unidentified');
         $totalCalculated = $groups->first()->balances->sum('calculated_balance');
         $totalInitial = $groups->last()->balances->sum('initial_balance');
 
+        // latest balance of each wallet (a wallet may have no movement in the newest month)
+        $latest = $groups->flatMap(fn ($group) => $group->balances)
+            ->groupBy('wallet_id')
+            ->map(fn ($balances) => $balances->sortByDesc('start_date')->first());
+        $thirdParty = $latest->filter(fn ($balance) => $balance->wallet->is_third_party);
+
         return [
+            'net_worth' => $latest->sum('calculated_balance'),
+            'in_banks' => $latest->reject(fn ($balance) => $balance->wallet->is_third_party)->sum('calculated_balance'),
+            'third_party' => -$thirdParty->sum('calculated_balance'),
             'total_unidentified' => $totalUnidentified,
             'total_calculated' => $totalCalculated,
             'total_initial' => $totalInitial,

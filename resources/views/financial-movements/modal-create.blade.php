@@ -1,22 +1,18 @@
 <div x-data="submitForm()" @keydown.escape.window="handleModalCloseManual">
 
-    <x-modal name="modal-create" :show="false" focusable>
-        <div class="bg-white w-full max-w-3xl rounded-lg shadow-lg p-6 space-y-6">
-            <button
-                class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition duration-150 ease-in-out"
-                @click.prevent="handleModalCloseManual"
-                aria-label="{{ __('Close') }}"
-            >
-                <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-
-            <h2 class="text-lg font-bold text-gray-900">{{ __('Create a new movement') }}</h2>
+    <x-modal name="modal-create" :show="false" sheet>
+        <div class="flex flex-1 flex-col">
+            <div class="flex items-start justify-between gap-4 px-5 pb-4 pt-5 sm:px-6">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-900">{{ __('New movement') }}</h2>
+                    <p class="text-sm text-slate-500">{{ __('The form stays open so you can register several in a row.') }}</p>
+                </div>
+                <x-icon-button icon="xmark" :label="__('Close')" class="-mr-2 -mt-1" x-on:click.prevent="handleModalCloseManual" />
+            </div>
 
             <template x-if="errorMessages.length">
-                <div class="bg-red-500 text-white p-4 rounded shadow-lg">
-                    <ul>
+                <div class="mx-5 mb-4 rounded-lg sm:mx-6 border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700" role="alert">
+                    <ul class="list-disc space-y-1 pl-4">
                         <template x-for="error in errorMessages" :key="error">
                             <li x-text="error"></li>
                         </template>
@@ -24,98 +20,81 @@
                 </div>
             </template>
 
-            <form x-ref="financialForm" @submit.prevent="submitForm" method="POST"
+            {{-- the category of the last saved movement, in its month --}}
+            <template x-if="categoryStatus">
+                <section class="mx-5 mb-4 rounded-xl border p-4 sm:mx-6" aria-live="polite"
+                    :class="{ 'border-rose-200 bg-rose-50': categoryStatus.level === 'over', 'border-amber-200 bg-amber-50': categoryStatus.level === 'close', 'border-slate-200 bg-slate-50': categoryStatus.level === 'ok' }">
+                    <div class="flex items-baseline justify-between gap-3">
+                        <h3 class="min-w-0 truncate text-sm font-semibold text-slate-900">
+                            <i class="fa-solid fa-tag mr-1 text-xs text-slate-400" aria-hidden="true"></i>
+                            <span x-text="categoryStatus.name"></span>
+                            <span class="font-normal text-slate-500" x-text="'· ' + categoryStatus.month"></span>
+                        </h3>
+                        <p class="amount shrink-0 text-sm">
+                            <span class="font-semibold" :class="categoryStatus.level === 'over' ? 'text-rose-700' : 'text-slate-900'" x-text="money(categoryStatus.total)"></span>
+                            <span class="text-slate-500" x-show="categoryStatus.forecast" x-text="@js(__('of :amount', ['amount' => '__A__'])).replace('__A__', money(categoryStatus.forecast))"></span>
+                        </p>
+                    </div>
+                    <div x-show="categoryStatus.forecast" class="mt-2 h-1.5 overflow-hidden rounded-full bg-white/70 ring-1 ring-inset ring-slate-200" role="progressbar"
+                        :aria-valuenow="categoryStatus.percent" aria-valuemin="0" aria-valuemax="100" aria-label="{{ __('Forecast used') }}">
+                        <div class="h-full rounded-full"
+                            :class="{ 'bg-rose-500': categoryStatus.level === 'over', 'bg-amber-400': categoryStatus.level === 'close', 'bg-brand-500': categoryStatus.level === 'ok' && categoryStatus.type === 'expense', 'bg-emerald-500': categoryStatus.type === 'income' }"
+                            :style="`width: ${Math.min(100, categoryStatus.percent || 0)}%`"></div>
+                    </div>
+                    <p class="mt-2 text-xs" :class="categoryStatus.level === 'over' ? 'text-rose-700' : (categoryStatus.level === 'close' ? 'text-amber-800' : 'text-slate-600')">
+                        <template x-if="categoryStatus.forecast && categoryStatus.left !== null">
+                            <span x-text="categoryStatus.left >= 0
+                                ? @js(__(':amount left.', ['amount' => '__A__'])).replace('__A__', money(categoryStatus.left)) + ' · ' + categoryStatus.percent + '%'
+                                : @js(__(':amount over.', ['amount' => '__A__'])).replace('__A__', money(-categoryStatus.left)) + ' · ' + categoryStatus.percent + '%'"></span>
+                        </template>
+                        <template x-if="!categoryStatus.forecast || categoryStatus.left === null">
+                            <span x-text="categoryStatus.forecast ? categoryStatus.percent + '% ' + @js(__('of the forecast')) : @js(__('no forecast')) + ' · ' + categoryStatus.count + '×'"></span>
+                        </template>
+                    </p>
+                </section>
+            </template>
+
+            <form x-ref="financialForm" @submit.prevent="submitForm" method="POST" class="flex flex-1 flex-col"
                 action="{{ route('financial-movements.store') }}" enctype="multipart/form-data">
                 @csrf
-                @include('financial-movements.form')
+                @include('financial-movements.form', ['busy' => 'isLoading', 'cancel' => 'handleModalCloseManual()'])
             </form>
 
-            <!-- last movements registered -->
-            <h2 class="text-lg font-bold text-gray-900 mt-6">{{ __('Last movements registered') }}</h2>
-            <table id="lastMovements" class="w-full divide-y divide-gray-300">
-                <thead>
-                    <tr>
-                        <th scope="col"
-                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            {{ __('Wallet') }}
-                        </th>
-                        <th scope="col"
-                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            {{ __('Date') }}
-                        </th>
-                        <th scope="col"
-                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            {{ __('Description') }}
-                        </th>
-                        <th scope="col"
-                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            {{ __('Category') }}
-                        </th>
-                        <th scope="col"
-                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            {{ __('Type') }}
-                        </th>
-                        <th scope="col"
-                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">
-                            {{ __('Amount') }}
-                        </th>
-                        <th scope="col"
-                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 bg-white">
-                    <template x-for="movement in lastMovements" :key="movement.id">
-                        <tr>
-                            <td
-                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                <span x-text="movement.wallet_id"></span>
-                            </td>
-                            <td
-                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                <span x-text="movement.date"></span>
-                            </td>
-                            <td
-                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                <span x-text="movement.description"></span>
-                            </td>
-                            <td
-                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                <span x-text="movement.category_id"></span>
-                            </td>
-                            <td
-                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                <span x-text="movement.type"></span>
-                            </td>
-                            <td
-                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">
-                                <span x-text="movement.amount"></span>
-                            </td>
-                            <td
-                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                <button class="bg-green-500 rounded-full text-white w-6 h-6 shadow-lg"
-                                    @click.prevent="deleteMovement(movement.id)">
-                                    <span class="fa fa-trash"></span>
-                                </button>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
+            <template x-if="lastMovements.length">
+                <div class="border-t border-slate-200 px-5 pb-5 pt-4 sm:px-6">
+                    <h3 class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        {{ __('Registered now') }}
+                        <span class="badge bg-slate-100 text-slate-600" x-text="lastMovements.length"></span>
+                    </h3>
+                    {{-- newest first; only the last few unless expanded --}}
+                    <ul class="mt-2 divide-y divide-slate-100">
+                        <template x-for="movement in visibleMovements" :key="movement.id">
+                            <li class="flex items-center gap-3 py-2 text-sm">
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate font-medium text-slate-900" x-text="movement.description"></p>
+                                    <p class="truncate text-xs text-slate-500" x-text="movement.date + ' · ' + movement.wallet_id + ' · ' + movement.category_id"></p>
+                                </div>
+                                <span class="amount font-semibold" :class="movement.value < 0 ? 'text-rose-600' : 'text-emerald-600'" x-text="movement.amount"></span>
+                                <x-icon-button icon="trash" tone="danger" :label="__('Delete')" x-on:click.prevent="deleteMovement(movement.id)" />
+                            </li>
+                        </template>
+                    </ul>
+                    <button type="button" x-show="lastMovements.length > recentLimit" @click="showAllRecent = !showAllRecent" :aria-expanded="showAllRecent.toString()"
+                        class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:text-brand-800">
+                        <i class="fa-solid fa-chevron-down text-xs transition" :class="showAllRecent && 'rotate-180'" aria-hidden="true"></i>
+                        <span x-text="showAllRecent ? @js(__('Show less')) : @js(__('Show all :count', ['count' => '__N__'])).replace('__N__', lastMovements.length)"></span>
+                    </button>
+                </div>
+            </template>
         </div>
     </x-modal>
 
-    <template x-if="notification">
-        <div class="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50" x-text="notification"
-            x-show="notification" x-transition></div>
-    </template>
-
-    <div class="flex fixed bottom-4 z-50 right-4 gap-4">
-        <button class="bg-green-500 rounded-full text-white w-12 h-12 shadow-lg"
-            @click.prevent="$dispatch('open-modal', 'modal-create')">
-            <span class="fa fa-plus"></span>
-        </button>
-    </div>
+    {{-- mobile: floating "new movement" button (desktop uses the page header button) --}}
+    <button type="button" class="fixed bottom-5 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg shadow-brand-600/30 hover:bg-brand-700 md:hidden"
+        @click.prevent="$dispatch('open-modal', 'modal-create')">
+        <i class="fa-solid fa-plus text-lg" aria-hidden="true"></i>
+        <span class="sr-only">{{ __('New movement') }}</span>
+    </button>
 </div>
 
 
@@ -124,12 +103,24 @@
         return {
             selectedType: 'income',
             isLoading: false,
-            notification: '',
             errorMessages: [],
             lastMovements: [],
+            recentLimit: 5,
+            showAllRecent: false,
+            categoryStatus: null,
             wallets: @json($wallets),
+            // color and kind of each wallet, for the balances in the toast
+            walletInfo: @json($walletsSidebar->mapWithKeys(fn ($wallet) => [$wallet->id => ['color' => $wallet->color ?? '#94a3b8', 'thirdParty' => $wallet->is_third_party]])),
             categories: @json($categories),
             types: @json($types),
+
+            get visibleMovements() {
+                return this.showAllRecent ? this.lastMovements : this.lastMovements.slice(0, this.recentLimit);
+            },
+
+            money(value) {
+                return Number(value).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+            },
 
             handleModalCloseManual() {
                 if (this.lastMovements.length > 0) {
@@ -140,7 +131,7 @@
 
             deleteMovement(id) {
                 const baseUrl = "{{ url('/api/financial-movements') }}";
-                const url = `${baseUrl}/${id}`;
+                const url = `${baseUrl}/${id}?confirm_reconciled=1`;
                 fetch(`${url}`, {
                         method: 'DELETE',
                         headers: {
@@ -151,16 +142,15 @@
                     .then(response => response.json())
                     .then(data => {
                         this.lastMovements = this.lastMovements.filter(movement => movement.id !== id);
-                        this.notification = 'Financial movement deleted successfully!';
+                        window.toast({ type: 'info', title: @json(__('Movement deleted.')) });
                     }).catch(error => {
                         console.error('Error:', error);
-                        this.notification = 'Unexpected error. Please try again later.';
+                        window.toast({ type: 'error', title: @json(__('Something went wrong')) });
                     });
             },
 
             submitForm() {
                 this.isLoading = true;
-                this.notification = '';
                 this.errorMessages = [];
                 let form = this.$refs.financialForm;
 
@@ -187,39 +177,54 @@
                             return;
                         }
 
-                        for (let i = 0; i < data.length; i++) {
-                            data[i].wallet_id = this.wallets[data[i].wallet_id];
-                            data[i].category_id = data[i].category_id ? this.categories[data[i].category_id] : 'N/A';
-                            data[i].type = this.types[data[i].type];
+                        const batch = [];
+                        for (let i = 0; i < data['movements'].length; i++) {
+                            const movement = data['movements'][i];
+                            movement.value = Number(movement.amount);
 
-                            if (data[i].description.length > 10) {
-                                data[i].description = data[i].description.substring(0, 10) + '...';
-                            }
-                            if (data[i].wallet_id.length > 10) {
-                                data[i].wallet_id = data[i].wallet_id.substring(0, 10) + '...';
-                            }
-                            if (data[i].category_id.length > 10) {
-                                data[i].category_id = data[i].category_id.substring(0, 10) + '...';
-                            }
-                            if (data[i].type.length > 10) {
-                                data[i].type = data[i].type.substring(0, 10) + '...';
-                            }
+                            movement.wallet_id = this.wallets[movement.wallet_id];
+                            movement.category_id = movement.category_id ? this.categories[movement.category_id] : this.types[movement.type];
+                            movement.type = this.types[movement.type];
 
-                            data[i].amount = parseFloat(data[i].amount).toLocaleString('pt-PT', {
+                            movement.amount = parseFloat(movement.amount).toLocaleString('de-DE', {
                                 style: 'currency',
                                 currency: 'EUR'
                             });
-                            data[i].date = new Date(data[i].date).toLocaleDateString('pt-PT');
-                            this.lastMovements.push(data[i]);
+                            movement.date = new Date(movement.date).toLocaleDateString('pt-PT');
+                            batch.push(movement);
                         }
-                        this.notification = 'Financial movement saved successfully!';
-                        // reset form fields but keep date field value
-                        form.reset();
-                        form.querySelector('input[name="date"]').value = formData.get('date');
+                        this.lastMovements.unshift(...batch);
+
+                        // how the category stands in the month (null for transfers, loans, adjustments)
+                        this.categoryStatus = data.category;
+
+                        // the toast: what was saved and the balance of each wallet it touched, in its month
+                        const saved = batch[0];
+                        window.toast({
+                            type: 'success',
+                            title: @json(__('Movement saved.')),
+                            message: saved ? saved.description + ' · ' + saved.amount : '',
+                            rows: data.balances.map((balance) => {
+                                const info = this.walletInfo[balance.wallet_id] || {};
+                                const value = Number(balance.calculated_balance);
+                                const start = new Date(balance.start_date + 'T00:00:00');
+                                const month = start.toLocaleDateString('pt-PT', { month: 'short' }).replace('.', '') + '/' + String(start.getFullYear()).slice(2);
+                                return {
+                                    label: this.wallets[balance.wallet_id],
+                                    color: info.color,
+                                    hint: month,
+                                    // third-party money: what is kept for the person
+                                    value: info.thirdParty ? @json(__('kept')) + ' ' + this.money(-value) : this.money(value),
+                                    tone: info.thirdParty ? 'text-purple-700' : (value < 0 ? 'text-rose-600' : 'text-slate-900'),
+                                };
+                            }),
+                        });
+                        // clear the form for the next entry (keeps date, wallet and type)
+                        window.dispatchEvent(new CustomEvent('movement-form-reset'));
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        this.notification = 'Unexpected error. Please try again later.';
+                        window.toast({ type: 'error', title: @json(__('Something went wrong')) });
                     })
                     .finally(() => this.isLoading = false);
             }

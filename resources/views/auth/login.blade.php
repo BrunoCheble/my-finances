@@ -1,47 +1,86 @@
 <x-guest-layout>
+    <div class="mb-6">
+        <h2 class="text-xl font-semibold text-slate-900">{{ __('Welcome back') }}</h2>
+        <p class="mt-1 text-sm text-slate-500">{{ __('Sign in to your account.') }}</p>
+    </div>
+
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form method="POST" action="{{ route('login') }}">
+    <form method="POST" action="{{ route('login') }}" class="space-y-4">
         @csrf
 
-        <!-- Email Address -->
         <div>
             <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
+            <x-text-input id="email" class="mt-1 block w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
+        <div>
+            <div class="flex items-center justify-between">
+                <x-input-label for="password" :value="__('Password')" />
+                @if (Route::has('password.request'))
+                    <a class="text-sm font-medium text-brand-700 hover:text-brand-800" href="{{ route('password.request') }}">
+                        {{ __('Forgot your password?') }}
+                    </a>
+                @endif
+            </div>
+            <x-text-input id="password" class="mt-1 block w-full" type="password" name="password" required autocomplete="current-password" />
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
-            </label>
-        </div>
+        <label for="remember_me" class="flex items-center gap-2 text-sm text-slate-600">
+            <input id="remember_me" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" name="remember">
+            {{ __('Remember me') }}
+        </label>
 
-        <div class="flex items-center justify-end mt-4">
-            @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
-
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
-        </div>
+        <x-primary-button class="w-full justify-center py-2.5">
+            {{ __('Log in') }}
+        </x-primary-button>
     </form>
+
+    {{-- Fingerprint / Face ID: a passkey registered on the profile, on this device --}}
+    <div x-data="passkeyLogin(@js([
+            'options' => route('passkeys.sign-in.options'),
+            'signIn' => route('passkeys.sign-in'),
+            'texts' => [
+                'cancelled' => __('Cancelled on the device. Try again.'),
+                'already' => __('This device is already registered.'),
+                'failed' => __('The fingerprint could not be checked. Try again.'),
+            ],
+        ]))" x-show="supported" x-cloak>
+        <div class="my-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <span class="h-px flex-1 bg-slate-200"></span>{{ __('or') }}<span class="h-px flex-1 bg-slate-200"></span>
+        </div>
+        <button type="button" @click="signIn()" :disabled="busy"
+            class="btn w-full justify-center bg-slate-900 py-3 text-base text-white hover:bg-slate-800">
+            <i class="fa-solid fa-fingerprint text-xl" aria-hidden="true"></i>
+            <span x-text="busy ? @js(__('Waiting for the device…')) : @js(__('Sign in with fingerprint / Face ID'))"></span>
+        </button>
+        <p class="mt-2 text-center text-sm font-medium text-rose-600" x-show="error" x-text="error" role="alert"></p>
+        <p class="mt-2 text-center text-xs text-slate-400">{{ __('First turn it on in your profile, on this device.') }}</p>
+    </div>
+
+    <script src="{{ asset('js/passkeys.js') }}?v={{ filemtime(public_path('js/passkeys.js')) }}"></script>
+    <script>
+        function passkeyLogin({ options, signIn, texts }) {
+            return {
+                supported: window.Passkeys && Passkeys.supported(),
+                busy: false,
+                error: '',
+                async signIn() {
+                    this.busy = true;
+                    this.error = '';
+                    try {
+                        const result = await Passkeys.signIn(options, signIn);
+                        location.href = result.redirect;
+                    } catch (error) {
+                        this.error = Passkeys.message(error, texts);
+                    } finally {
+                        this.busy = false;
+                    }
+                },
+            };
+        }
+    </script>
 </x-guest-layout>

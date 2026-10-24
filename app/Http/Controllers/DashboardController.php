@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Services\Alerts\CategoryImbalanceAlert;
-use App\Services\Alerts\CustomMovementAlert;
 use App\Services\FinancialBalanceSummaryService;
 use App\Services\FinancialCategorySummaryService;
-use App\Services\Alerts\SpendingSpikeAlert;
+use App\Services\Alerts\AlertService;
 use App\Services\Cache\DashboardCacheService;
+use App\Services\CategoryMonthlyService;
+use App\Services\DashboardKpiService;
 use DateTime;
 use Illuminate\Http\Request;
 
@@ -21,30 +21,24 @@ class DashboardController extends Controller
         $data = DashboardCacheService::get($month, function () use ($month) {
             $monthlySummary = FinancialBalanceSummaryService::getMonthlySummary();
             $categorySummary = FinancialCategorySummaryService::execute();
-            $spendingSpikeAlert = SpendingSpikeAlert::check($month);
-            $categoryImbalanceAlert = CategoryImbalanceAlert::check($month);
-            $customAlert = CustomMovementAlert::check($month);
+            $alerts = AlertService::for($month);
 
-            return compact(
-                'monthlySummary',
-                'categorySummary',
-                'spendingSpikeAlert',
-                'categoryImbalanceAlert',
-                'customAlert'
-            );
+            return compact('monthlySummary', 'categorySummary', 'alerts');
         });
 
-        $alerts = [
-            'spending_spike_alert' => isset($data['spendingSpikeAlert']) ? $data['spendingSpikeAlert'] : null,
-            'category_imbalance_alert' => isset($data['categoryImbalanceAlert']) ? $data['categoryImbalanceAlert'] : null,
-            'custom_alert' => isset($data['customAlert']) ? $data['customAlert'] : null,
-        ];
+        $alerts = $data['alerts'] ?? [];
 
         $filter = collect($data['monthlySummary'])->mapWithKeys(fn($value, $key) => [
             $key => \DateTime::createFromFormat('Y-m', $key)->format('m/Y')
         ])->all();
 
+        $range = in_array((int) $request->input('range'), CategoryMonthlyService::RANGES, true) ? (int) $request->input('range') : 6;
+
         return view('dashboard', [
+            'month' => $month,
+            'range' => $range,
+            'categoryTable' => CategoryMonthlyService::build($month, $range),
+            'kpis' => DashboardKpiService::for($month, $data['monthlySummary']),
             'monthlySummary' => $data['monthlySummary'],
             'categorySummary' => $data['categorySummary'],
             'alerts' => $alerts,

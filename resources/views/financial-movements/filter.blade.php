@@ -1,63 +1,62 @@
 <div x-data="filterModal()">
 
     <x-modal name="modal-filter" :show="false" focusable>
-        <div class="bg-white w-full max-w-3xl rounded-lg shadow-lg p-6 space-y-6">
-            <div class="flex justify-between items-center">
-                <h2 class="text-xl font-semibold">{{ __('Filter') }}</h2>
-                <button type="button" class="text-gray-400 hover:text-gray-600"
-                    @click="$dispatch('close-modal', 'modal-filter')">&times;</button>
+        <div class="space-y-5 p-5 sm:p-6">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-slate-900">{{ __('Filter') }}</h2>
+                <x-icon-button icon="xmark" :label="__('Close')" class="-mr-2" x-on:click="$dispatch('close-modal', 'modal-filter')" />
             </div>
 
             <form action="{{ route('financial-movements.index') }}" method="GET" class="space-y-4">
-                <div class="flex items-center flex-wrap gap-4 mb-4">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <!-- Date Range -->
-                    <div class="flex-1">
+                    <div>
                         <x-input-label for="date_from" :value="__('From')" />
                         <x-text-input id="date_from" name="date_from" type="date" class="mt-1 block w-full"
                             :value="old('date_from', request('date_from'))" autocomplete="date_from" />
                     </div>
 
-                    <div class="flex-1">
+                    <div>
                         <x-input-label for="date_to" :value="__('To')" />
                         <x-text-input id="date_to" name="date_to" type="date" class="mt-1 block w-full"
                             :value="old('date_to', request('date_to'))" autocomplete="date_to" />
                     </div>
 
                     <!-- Sort By -->
-                    <div class="flex-1">
+                    <div>
                         <x-input-label for="sort" :value="__('Sort by')" />
                         <x-dropdown-select id="sort" name="sort" x-model="selectedSortby" :selected="request('sort')"
                             :options="[
-                                'date' => 'Date',
-                                'id' => 'ID',
-                                'category_id' => 'Category',
-                                'wallet_id' => 'Wallet',
+                                'date' => __('Date'),
+                                'id' => __('Registration order'),
+                                'category_id' => __('Category'),
+                                'wallet_id' => __('Wallet'),
                             ]"
                             class="mt-1 w-full" />
                     </div>
                 </div>
-                <div class="flex items-center flex-wrap gap-4 mb-4">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <!-- Filter By -->
-                    <div class="flex-1">
+                    <div>
                         <x-input-label for="attribute" :value="__('Filter by')" />
                         <x-dropdown-select id="attribute" name="attribute" x-model="selectedAttribute" :selected="request('attribute')"
                             :options="[
-                                'description' => 'Description',
-                                'type' => 'Type',
-                                'category_id' => 'Category',
-                                'wallet_id' => 'Wallet',
+                                'description' => __('Description'),
+                                'type' => __('Type'),
+                                'category_id' => __('Category'),
+                                'wallet_id' => __('Wallet'),
                             ]"
                             class="mt-1 w-full" />
                     </div>
 
                     <!-- Search -->
-                    <div class="flex-1">
+                    <div>
                         <x-input-label for="search" :value="__('Search')" />
                         <template x-if="searchOptions[selectedAttribute]">
                             <select
                                 id="search"
                                 name="search"
-                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                class="input mt-1 block w-full">
                                 <template x-for="[key, value] in Object.entries(searchOptions[selectedAttribute])" :key="key">
                                     <option :value="key" x-text="value"></option>
                                 </template>
@@ -70,18 +69,17 @@
                     </div>
                 </div>
 
-                <div class="flex justify-end">
-                    <x-primary-button>{{ __('Apply Filters') }}</x-primary-button>
+                <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <x-button variant="secondary" :href="route('financial-movements.index', array_filter(['wallet_id' => request('wallet_id')]))">{{ __('Clear filters') }}</x-button>
+                    <x-primary-button class="justify-center">{{ __('Apply Filters') }}</x-primary-button>
                 </div>
+                @if (request('wallet_id'))
+                    <input type="hidden" name="wallet_id" value="{{ request('wallet_id') }}">
+                @endif
             </form>
         </div>
     </x-modal>
 
-    <!-- Floating Button -->
-    <button type="button" class="fixed bottom-4 left-4 z-50 bg-blue-500 rounded-full text-white w-12 h-12 shadow-lg"
-        @click="$dispatch('open-modal', 'modal-filter')">
-        <i class="fa fa-filter"></i>
-    </button>
 </div>
 
 <script>
@@ -94,9 +92,6 @@
                 category_id: @json($categories),
                 wallet_id: @json($wallets),
             },
-            init() {
-                console.log('Filter modal initialized:', this.searchOptions);
-            }
         };
     }
 </script>

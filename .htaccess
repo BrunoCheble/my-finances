@@ -1,0 +1,20 @@
+# The site's folder on the server is the repository itself (see docs/DEPLOY.md): only public/ is meant for the web.
+# Every request is served from public/, so storage/ (logs, old backups), vendor/, .env and the rest are never
+# reachable. Not used when the domain's document root already points to public/.
+# The folders here are never served as folders: no "add a slash" redirect for them (it would loop with the rule below).
+<IfModule mod_dir.c>
+    DirectorySlash Off
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # trailing slashes go here, measured against public/ (otherwise Laravel's rule would show /public/ in the address)
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 !-d
+    RewriteRule ^(.+)/$ /$1 [L,R=301]
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Without mod_rewrite, nothing of the project is served.
+<IfModule !mod_rewrite.c>
+    Require all denied
+</IfModule>

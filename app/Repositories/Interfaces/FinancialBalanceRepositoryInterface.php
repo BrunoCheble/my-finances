@@ -21,4 +21,6 @@ interface FinancialBalanceRepositoryInterface
     public function findByWalletByEndDate(int $walletId, string $endDate): ?FinancialBalance;
 
     public function findPreviousByWalletAndDate(int $walletId, string $date): ?FinancialBalance;
+
+    public function findNextByWalletAndDate(int $walletId, string $date);
 }

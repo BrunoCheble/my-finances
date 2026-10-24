@@ -1,48 +1,55 @@
 <?php
 
 namespace App\Services;
-use App\Models\FinancialMovement;
-use App\Models\FinancialBalance;
-use App\Models\Wallet;
-use App\Models\FinancialCategory;
 
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * The user's data as one JSON file to download: every table of the app, the rows as stored
+ * (no computed attributes), only the user's. Sessions, passkeys (bound to the device and the
+ * domain) and the like stay out.
+ */
 class SaveBackupService
 {
-    public function execute()
+    public const FORMAT = 1;
+
+    /** Tables with a user_id, in an order that can be restored (parents first). */
+    public const TABLES = [
+        'wallets',
+        'financial_categories',
+        'loans',
+        'financial_movements',
+        'financial_balances',
+        'movement_changes',
+        'statement_accounts',
+        'statement_imports',
+    ];
+
+    public function execute(User $user): array
     {
-        try {
-            $this->createBackup();
-            return ['status' => 'success', 'message' => 'Backup restored successfully.'];
-        } catch (\Exception $e) {
-            return ['status' => 'error', 'message' => 'Failed to restore backup: ' . $e->getMessage()];
+        $tables = [];
+        foreach (self::TABLES as $table) {
+            $tables[$table] = DB::table($table)->where('user_id', $user->id)->orderBy('id')->get()->all();
         }
-    }
+        // lines of the imports have no user_id: they come through their import
+        $importIds = array_map(fn ($import) => $import->id, $tables['statement_imports']);
+        $tables['statement_import_lines'] = $importIds
+            ? DB::table('statement_import_lines')->whereIn('statement_import_id', $importIds)->orderBy('id')->get()->all()
+            : [];
 
-    private function createBackup(): void
-    {
-        $userId = auth()->user()->id;
-        $backupPath = storage_path("bkps/$userId/" . date('Y-m-d'));
-
-        if (!file_exists($backupPath)) {
-            mkdir($backupPath, 0755, true);
-        }
-
-        $tables = [
-            'financial_movements' => FinancialMovement::class,
-            'financial_balances' => FinancialBalance::class,
-            'wallets' => Wallet::class,
-            'categories' => FinancialCategory::class,
+        return [
+            'app' => config('app.name'),
+            'format' => self::FORMAT,
+            'created_at' => now()->toIso8601String(),
+            'user' => ['name' => $user->name, 'email' => $user->email],
+            'counts' => array_map('count', $tables),
+            'tables' => $tables,
         ];
-
-        foreach ($tables as $index => $className) {
-            $data = $className::all()->toArray();
-            $this->saveToFile($data, $index);
-        }
     }
-    private function saveToFile(array $data, string $filename): void
+
+    public static function filename(): string
     {
-        $userId = auth()->user()->id;
-        $filePath = storage_path("bkps/$userId/" . date('Y-m-d') . '/' . $filename . '.json');
-        file_put_contents($filePath, json_encode($data, JSON_PRETTY_PRINT));
+        return 'escudo-backup-' . now()->format('Y-m-d-His') . '.json';
     }
 }
