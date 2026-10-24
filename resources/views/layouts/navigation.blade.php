@@ -70,7 +70,7 @@
 
                 <div x-show="menu" x-cloak x-transition
                     class="sidebar-popup absolute bottom-full left-0 right-0 mb-2 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
-                    @include('layouts.user-menu')
+                    @include('layouts.user-menu', ['menuId' => 'sidebar'])
                 </div>
             </div>
         </div>
@@ -89,7 +89,7 @@
 
     {{-- Mobile / tablet drawer --}}
     <div x-show="drawer" x-cloak class="relative z-40 lg:hidden" role="dialog" aria-modal="true" id="mobile-drawer">
-        <div x-show="drawer" x-transition.opacity class="fixed inset-0 bg-slate-900/40" @click="drawer = false"></div>
+        <div x-show="drawer" x-transition.opacity class="fixed inset-0 bg-black/50" @click="drawer = false"></div>
         <div x-show="drawer"
             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
             x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full"
@@ -110,7 +110,7 @@
                         <span class="block truncate text-xs text-slate-500">{{ $user->email }}</span>
                     </span>
                 </div>
-                @include('layouts.user-menu')
+                @include('layouts.user-menu', ['menuId' => 'drawer'])
             </div>
         </div>
     </div>

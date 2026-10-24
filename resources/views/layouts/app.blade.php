@@ -14,6 +14,19 @@
         <!-- font awesome -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
 
+        <!-- theme (light / dark / system) applied before the first paint -->
+        <script>try { var t = localStorage.getItem('theme'); if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark'); } catch (e) {}</script>
+        <!-- colors for Chart.js, read from the CSS variables of the current theme (inline: page scripts run before the bundle) -->
+        <script>
+            window.chartInk = () => {
+                const style = getComputedStyle(document.documentElement);
+                const read = (name) => style.getPropertyValue('--chart-' + name).trim();
+                return {
+                    muted: read('muted'), grid: read('grid'), tooltip: read('tooltip'),
+                    income: read('income'), expense: read('expense'), brand: read('brand'), brandFill: read('brand-fill'),
+                };
+            };
+        </script>
         <!-- remembered sidebar state, applied before the first paint -->
         <script>try { if (localStorage.getItem('sidebar') === 'collapsed') document.documentElement.classList.add('sidebar-collapsed'); } catch (e) {}</script>
 
