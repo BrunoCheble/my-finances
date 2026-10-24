@@ -38,4 +38,49 @@
             {{ __('Log in') }}
         </x-primary-button>
     </form>
+
+    {{-- Fingerprint / Face ID: a passkey registered on the profile, on this device --}}
+    <div x-data="passkeyLogin(@js([
+            'options' => route('passkeys.sign-in.options'),
+            'signIn' => route('passkeys.sign-in'),
+            'texts' => [
+                'cancelled' => __('Cancelled on the device. Try again.'),
+                'already' => __('This device is already registered.'),
+                'failed' => __('The fingerprint could not be checked. Try again.'),
+            ],
+        ]))" x-show="supported" x-cloak>
+        <div class="my-6 flex items-center gap-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <span class="h-px flex-1 bg-slate-200"></span>{{ __('or') }}<span class="h-px flex-1 bg-slate-200"></span>
+        </div>
+        <button type="button" @click="signIn()" :disabled="busy"
+            class="btn w-full justify-center bg-slate-900 py-3 text-base text-white hover:bg-slate-800">
+            <i class="fa-solid fa-fingerprint text-xl" aria-hidden="true"></i>
+            <span x-text="busy ? @js(__('Waiting for the device…')) : @js(__('Sign in with fingerprint / Face ID'))"></span>
+        </button>
+        <p class="mt-2 text-center text-sm font-medium text-rose-600" x-show="error" x-text="error" role="alert"></p>
+        <p class="mt-2 text-center text-xs text-slate-400">{{ __('First turn it on in your profile, on this device.') }}</p>
+    </div>
+
+    <script src="{{ asset('js/passkeys.js') }}?v={{ filemtime(public_path('js/passkeys.js')) }}"></script>
+    <script>
+        function passkeyLogin({ options, signIn, texts }) {
+            return {
+                supported: window.Passkeys && Passkeys.supported(),
+                busy: false,
+                error: '',
+                async signIn() {
+                    this.busy = true;
+                    this.error = '';
+                    try {
+                        const result = await Passkeys.signIn(options, signIn);
+                        location.href = result.redirect;
+                    } catch (error) {
+                        this.error = Passkeys.message(error, texts);
+                    } finally {
+                        this.busy = false;
+                    }
+                },
+            };
+        }
+    </script>
 </x-guest-layout>

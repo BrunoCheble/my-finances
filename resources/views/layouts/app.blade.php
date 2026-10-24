@@ -53,6 +53,11 @@
 
             @include('layouts.toasts')
 
+            {{-- locks itself after 15 minutes without use: fingerprint / Face ID or password to continue --}}
+            @auth
+                @include('layouts.partials.app-lock')
+            @endauth
+
             <main id="content" tabindex="-1" class="focus:outline-none">
                 {{ $slot }}
             </main>

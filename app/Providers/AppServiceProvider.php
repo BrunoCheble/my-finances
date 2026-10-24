@@ -20,6 +20,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // The WebAuthn (passkeys) library kept in lib/webauthn (bundled, like in icd-laravel: no Composer needed on the server).
+        spl_autoload_register(function (string $class) {
+            $prefix = 'lbuchs\\WebAuthn\\';
+            if (str_starts_with($class, $prefix)) {
+                $file = base_path('lib/webauthn/src/' . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php');
+                if (is_file($file)) {
+                    require $file;
+                }
+            }
+        });
+
         $this->app->bind(
             FinancialMovementRepositoryInterface::class,
             FinancialMovementRepository::class
