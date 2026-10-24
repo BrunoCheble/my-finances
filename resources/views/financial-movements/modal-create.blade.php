@@ -62,19 +62,28 @@
 
             <template x-if="lastMovements.length">
                 <div class="border-t border-slate-200 px-5 pb-5 pt-4 sm:px-6">
-                    <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ __('Registered now') }}</h3>
+                    <h3 class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        {{ __('Registered now') }}
+                        <span class="badge bg-slate-100 text-slate-600" x-text="lastMovements.length"></span>
+                    </h3>
+                    {{-- newest first; only the last few unless expanded --}}
                     <ul class="mt-2 divide-y divide-slate-100">
-                        <template x-for="movement in lastMovements" :key="movement.id">
+                        <template x-for="movement in visibleMovements" :key="movement.id">
                             <li class="flex items-center gap-3 py-2 text-sm">
                                 <div class="min-w-0 flex-1">
                                     <p class="truncate font-medium text-slate-900" x-text="movement.description"></p>
                                     <p class="truncate text-xs text-slate-500" x-text="movement.date + ' · ' + movement.wallet_id + ' · ' + movement.category_id"></p>
                                 </div>
-                                <span class="amount font-semibold text-slate-700" x-text="movement.amount"></span>
+                                <span class="amount font-semibold" :class="movement.value < 0 ? 'text-rose-600' : 'text-emerald-600'" x-text="movement.amount"></span>
                                 <x-icon-button icon="trash" tone="danger" :label="__('Delete')" x-on:click.prevent="deleteMovement(movement.id)" />
                             </li>
                         </template>
                     </ul>
+                    <button type="button" x-show="lastMovements.length > recentLimit" @click="showAllRecent = !showAllRecent" :aria-expanded="showAllRecent.toString()"
+                        class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:text-brand-800">
+                        <i class="fa-solid fa-chevron-down text-xs transition" :class="showAllRecent && 'rotate-180'" aria-hidden="true"></i>
+                        <span x-text="showAllRecent ? @js(__('Show less')) : @js(__('Show all :count', ['count' => '__N__'])).replace('__N__', lastMovements.length)"></span>
+                    </button>
                 </div>
             </template>
         </div>
@@ -96,12 +105,18 @@
             isLoading: false,
             errorMessages: [],
             lastMovements: [],
+            recentLimit: 5,
+            showAllRecent: false,
             categoryStatus: null,
             wallets: @json($wallets),
             // color and kind of each wallet, for the balances in the toast
             walletInfo: @json($walletsSidebar->mapWithKeys(fn ($wallet) => [$wallet->id => ['color' => $wallet->color ?? '#94a3b8', 'thirdParty' => $wallet->is_third_party]])),
             categories: @json($categories),
             types: @json($types),
+
+            get visibleMovements() {
+                return this.showAllRecent ? this.lastMovements : this.lastMovements.slice(0, this.recentLimit);
+            },
 
             money(value) {
                 return Number(value).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
@@ -162,8 +177,10 @@
                             return;
                         }
 
+                        const batch = [];
                         for (let i = 0; i < data['movements'].length; i++) {
                             const movement = data['movements'][i];
+                            movement.value = Number(movement.amount);
 
                             movement.wallet_id = this.wallets[movement.wallet_id];
                             movement.category_id = movement.category_id ? this.categories[movement.category_id] : this.types[movement.type];
@@ -174,14 +191,15 @@
                                 currency: 'EUR'
                             });
                             movement.date = new Date(movement.date).toLocaleDateString('pt-PT');
-                            this.lastMovements.push(movement);
+                            batch.push(movement);
                         }
+                        this.lastMovements.unshift(...batch);
 
                         // how the category stands in the month (null for transfers, loans, adjustments)
                         this.categoryStatus = data.category;
 
                         // the toast: what was saved and the balance of each wallet it touched, in its month
-                        const saved = this.lastMovements[this.lastMovements.length - data.movements.length];
+                        const saved = batch[0];
                         window.toast({
                             type: 'success',
                             title: @json(__('Movement saved.')),
