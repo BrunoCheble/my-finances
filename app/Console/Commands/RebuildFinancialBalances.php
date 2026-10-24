@@ -95,11 +95,14 @@ class RebuildFinancialBalances extends Command
             // initial_balance differs from the previous month's closing
             $amount = $balance->initial_balance - $previousClosing;
 
-            // closing balance typed by hand in a month without movements (old edit screen rule)
+            // closing balance typed by hand in a month without movements (old edit screen rule).
+            // A closing of 0 there is a month opened but still empty (the old "open month" screen), not a balance
+            // typed as zero: reading it as typed zeroed every wallet's last month in production.
             $manualClosing = !$hasMovements
                 && $balance->total_income == 0
                 && $balance->total_expense == 0
-                && $balance->total_unidentified == 0;
+                && $balance->total_unidentified == 0
+                && (float) $balance->calculated_balance != 0;
             if ($manualClosing) {
                 $amount += $balance->calculated_balance - $balance->initial_balance;
             }
