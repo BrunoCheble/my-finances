@@ -1,8 +1,8 @@
 <div x-data="submitForm()" @keydown.escape.window="handleModalCloseManual">
 
-    <x-modal name="modal-create" :show="false" focusable>
-        <div class="p-5 sm:p-6">
-            <div class="mb-5 flex items-start justify-between gap-4">
+    <x-modal name="modal-create" :show="false" sheet>
+        <div class="flex flex-1 flex-col">
+            <div class="flex items-start justify-between gap-4 px-5 pb-4 pt-5 sm:px-6">
                 <div>
                     <h2 class="text-lg font-semibold text-slate-900">{{ __('New movement') }}</h2>
                     <p class="text-sm text-slate-500">{{ __('The form stays open so you can register several in a row.') }}</p>
@@ -11,7 +11,7 @@
             </div>
 
             <template x-if="errorMessages.length">
-                <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700" role="alert">
+                <div class="mx-5 mb-4 rounded-lg sm:mx-6 border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700" role="alert">
                     <ul class="list-disc space-y-1 pl-4">
                         <template x-for="error in errorMessages" :key="error">
                             <li x-text="error"></li>
@@ -20,14 +20,14 @@
                 </div>
             </template>
 
-            <form x-ref="financialForm" @submit.prevent="submitForm" method="POST"
+            <form x-ref="financialForm" @submit.prevent="submitForm" method="POST" class="flex flex-1 flex-col"
                 action="{{ route('financial-movements.store') }}" enctype="multipart/form-data">
                 @csrf
-                @include('financial-movements.form')
+                @include('financial-movements.form', ['busy' => 'isLoading', 'cancel' => 'handleModalCloseManual()'])
             </form>
 
             <template x-if="lastMovements.length">
-                <div class="mt-6 border-t border-slate-200 pt-4">
+                <div class="border-t border-slate-200 px-5 pb-5 pt-4 sm:px-6">
                     <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ __('Registered now') }}</h3>
                     <ul class="mt-2 divide-y divide-slate-100">
                         <template x-for="movement in lastMovements" :key="movement.id">
@@ -160,9 +160,8 @@
                             });
                             this.notification += '\n' + this.wallets[balance.wallet_id] + ': ' + calculated;
                         }
-                        // reset form fields but keep date field value
-                        form.reset();
-                        form.querySelector('input[name="date"]').value = formData.get('date');
+                        // clear the form for the next entry (keeps date, wallet and type)
+                        window.dispatchEvent(new CustomEvent('movement-form-reset'));
                     })
                     .catch(error => {
                         console.error('Error:', error);

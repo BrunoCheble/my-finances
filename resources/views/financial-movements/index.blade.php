@@ -46,6 +46,7 @@
         </x-page-header>
     </x-slot>
 
+    @include('financial-movements.form-script')
     @include('financial-movements.modal-create')
     @include('financial-movements.filter')
 

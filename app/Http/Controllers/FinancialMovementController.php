@@ -14,6 +14,7 @@ use App\Models\Wallet;
 use App\Services\BulkDeleteFinancialMovementService;
 use App\Services\Cache\DashboardCacheService;
 use App\Services\CalculateFinancialBalanceService;
+use App\Services\CategoryOptionsService;
 use App\Services\GetFinancialMovementService;
 use App\Services\SaveFinancialMovementService;
 use Illuminate\Http\Request;
@@ -40,6 +41,7 @@ class FinancialMovementController extends Controller
         $financialMovement = new FinancialMovement();
         $types = FinancialMovementType::options();
         $categories = ArrayHelper::toKeyValueArray(FinancialCategory::all(), 'id', 'name');
+        $categoryOptions = CategoryOptionsService::forPicker();
 
         $walletsSidebar = Wallet::all();
         $wallets = ArrayHelper::toKeyValueArray($walletsSidebar, 'id', 'name');
@@ -59,7 +61,8 @@ class FinancialMovementController extends Controller
             'types',
             'availableAttributes',
             'financialMovement',
-            'totalBalance'
+            'totalBalance',
+            'categoryOptions'
         ))->with('i', ($request->input('page', 1) - 1) * 5);
     }
 
