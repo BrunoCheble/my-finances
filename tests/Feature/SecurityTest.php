@@ -4,7 +4,7 @@ use App\Enums\FinancialMovementType;
 use App\Models\FinancialMovement;
 use App\Models\User;
 use App\Models\Wallet;
-use App\Services\Alerts\CustomMovementAlert;
+use App\Services\Alerts\AlertService;
 use App\Services\GetFinancialMovementService;
 
 beforeEach(function () {
@@ -19,9 +19,9 @@ it('escapes movement descriptions inside dashboard alerts', function () {
         'amount' => -10, 'type' => 'expense', 'include_alert' => true,
     ]);
 
-    $message = CustomMovementAlert::check('2026-10')[0]['message'];
+    $html = view('dashboard.alerts', ['alerts' => AlertService::for('2026-10')])->render();
 
-    expect($message)->not->toContain('<script>')->and($message)->toContain('&lt;script&gt;');
+    expect($html)->not->toContain('<script>alert(1)</script>')->and($html)->toContain('&lt;script&gt;');
 });
 
 it('does not accept a wallet of another user', function () {
