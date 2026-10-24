@@ -13,6 +13,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\Site\SiteController;
 use App\Http\Controllers\StatementImportController;
+use App\Http\Controllers\LoanController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -40,6 +41,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/financial-movements/bulk-delete', [FinancialMovementController::class, 'bulkDelete'])->name('financial-movements.bulk-delete');
     Route::delete('/api/financial-movements/{id}', [FinancialMovementController::class, 'delete'])->name('financial-movements.delete');
     Route::resource('financial-movements', FinancialMovementController::class);
+
+    Route::get('/loans', [LoanController::class, 'index'])->name('loans.index');
+    Route::post('/loans', [LoanController::class, 'store'])->name('loans.store');
+    Route::post('/loans/{loan}/receive', [LoanController::class, 'receive'])->name('loans.receive');
+    Route::patch('/loans/{loan}/write-off', [LoanController::class, 'writeOff'])->name('loans.write-off');
 
     Route::patch('/statement-imports/{statement_import}/reserved-amount', [StatementImportController::class, 'updateReservedAmount'])->name('statement-imports.reserved-amount');
     Route::post('/statement-imports/identify', [StatementImportController::class, 'identify'])->name('statement-imports.identify');

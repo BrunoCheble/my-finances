@@ -26,6 +26,7 @@
                     this.description = '';
                     this.categoryId = '';
                     this.includeAlert = false;
+                    this.loanPerson = '';
                     this.suggestion = '';
                     this.typeTouched = this.categoryTouched = false;
                     this.$nextTick(() => this.$refs.amount.focus());
@@ -60,12 +61,21 @@
                 const text = String(this.amount).trim();
                 return text.includes(',') ? text.replace(/\./g, '').replace(',', '.') : text;
             },
+            get openLoan() {
+                const name = String(this.loanPerson).trim().toLowerCase();
+                return this.openLoans.find(l => l.person.toLowerCase() === name) || null;
+            },
+            money(value) {
+                return Number(value).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+            },
             get amountSign() {
+                if (this.type === 'loan') return this.loanDirection === 'lend' ? '−' : '+';
                 if (['expense', 'discount'].includes(this.type)) return '−';
                 if (['income', 'refund'].includes(this.type)) return '+';
                 return '';
             },
             get amountColor() {
+                if (this.type === 'loan') return 'text-amber-700';
                 if (['expense', 'discount'].includes(this.type)) return 'text-rose-600';
                 if (['income', 'refund'].includes(this.type)) return 'text-emerald-600';
                 return 'text-slate-900';

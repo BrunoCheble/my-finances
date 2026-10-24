@@ -37,6 +37,11 @@ class FinancialMovementRequest extends FormRequest
             'include_alert' => 'nullable|numeric',
         ];
 
+        if ($this->input('type') === FinancialMovementType::LOAN) {
+            $rules['loan_person'] = ['required', 'string', 'max:255'];
+            $rules['loan_direction'] = ['required', Rule::in(['lend', 'receive'])];
+        }
+
         if ($this->input('type') === FinancialMovementType::TRANSFER) {
             $rules['transfer_to_wallet_id'] = [
                 'required',

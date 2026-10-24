@@ -19,6 +19,13 @@ class FinancialMovement extends Model
         static::deleting(function (FinancialMovement $movement) {
             $movement->destinationMovement?->delete();
         });
+
+        // a deleted repayment can reopen a loan
+        static::deleted(function (FinancialMovement $movement) {
+            if ($movement->loan_id) {
+                app(\App\Services\LoanService::class)->refresh(\App\Models\Loan::find($movement->loan_id));
+            }
+        });
     }
 
     protected $fillable = [
@@ -29,7 +36,8 @@ class FinancialMovement extends Model
         'amount',
         'type',
         'original_movement_id',
-        'include_alert'
+        'include_alert',
+        'loan_id',
     ];
 
     /**
@@ -46,6 +54,11 @@ class FinancialMovement extends Model
     public function category()
     {
         return $this->belongsTo(FinancialCategory::class);
+    }
+
+    public function loan()
+    {
+        return $this->belongsTo(Loan::class);
     }
 
     public function originalMovement()

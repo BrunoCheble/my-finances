@@ -30,7 +30,7 @@
                         <th scope="col" class="th text-right">{{ __('Initial balance') }}</th>
                         <th scope="col" class="th text-right">{{ __('Total expenses') }}</th>
                         <th scope="col" class="th text-right">{{ __('Total income') }}</th>
-                        <th scope="col" class="th text-right">{{ __('Transfers') }}</th>
+                        <th scope="col" class="th text-right">{{ __('Transfers and loans') }}</th>
                         <th scope="col" class="th text-right">{{ __('Final balance') }}</th>
                         <th scope="col" class="th text-right">{{ __('Change') }}</th>
                         <th scope="col" class="th"><span class="sr-only">{{ __('Actions') }}</span></th>

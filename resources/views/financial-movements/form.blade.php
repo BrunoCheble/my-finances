@@ -16,6 +16,9 @@
         'walletId' => (string) old('wallet_id', $fm?->wallet_id ?? $walletSection?->id ?? $walletsSidebar->firstWhere('type', '!=', 'third_party')?->id ?? ''),
         'transferToWalletId' => (string) old('transfer_to_wallet_id', $fm?->destinationMovement?->wallet_id ?? ''),
         'includeAlert' => (bool) old('include_alert', $fm?->include_alert),
+        'loanPerson' => old('loan_person', $fm?->loan?->person ?? ''),
+        'loanDirection' => old('loan_direction', $fm?->exists && $fm->type === \App\Enums\FinancialMovementType::LOAN && $fm->amount > 0 ? 'receive' : 'lend'),
+        'openLoans' => $openLoans ?? [],
         'categories' => $categoryOptions,
         'wallets' => $walletsSidebar->map(fn ($wallet) => ['id' => (string) $wallet->id, 'name' => $wallet->name, 'color' => $wallet->color ?? '#94a3b8'])->values(),
         'types' => $types,
@@ -30,6 +33,8 @@
     <input type="hidden" name="wallet_id" :value="walletId">
     <input type="hidden" name="transfer_to_wallet_id" :value="transferToWalletId" :disabled="type !== 'transfer'">
     <input type="hidden" name="include_alert" value="1" :disabled="!includeAlert">
+    <input type="hidden" name="loan_person" :value="loanPerson" :disabled="type !== 'loan'">
+    <input type="hidden" name="loan_direction" :value="loanDirection" :disabled="type !== 'loan'">
 
     <div class="flex-1 space-y-6 px-5 pb-6 sm:px-6">
         {{-- Type --}}
@@ -85,6 +90,26 @@
                 <span x-text="suggestion"></span>
             </p>
             <x-input-error class="mt-2" :messages="$errors->get('description')" />
+        </div>
+
+        {{-- Loan: who and which direction --}}
+        <div x-show="type === 'loan'" x-cloak class="space-y-3 rounded-xl border border-amber-200 bg-amber-50/50 p-4">
+            <div role="radiogroup" aria-label="{{ __('Loan') }}" class="grid grid-cols-2 gap-1 rounded-lg bg-white p-1 ring-1 ring-amber-200">
+                <button type="button" role="radio" :aria-checked="loanDirection === 'lend'" @click="loanDirection = 'lend'"
+                    :class="loanDirection === 'lend' ? 'bg-amber-100 text-amber-900' : 'text-slate-600'" class="rounded-md px-3 py-1.5 text-sm font-semibold">{{ __('I lent') }}</button>
+                <button type="button" role="radio" :aria-checked="loanDirection === 'receive'" @click="loanDirection = 'receive'"
+                    :class="loanDirection === 'receive' ? 'bg-amber-100 text-amber-900' : 'text-slate-600'" class="rounded-md px-3 py-1.5 text-sm font-semibold">{{ __('I received back') }}</button>
+            </div>
+            <div>
+                <x-input-label for="loan-person-{{ $uid }}" :value="__('Person')" />
+                <x-text-input id="loan-person-{{ $uid }}" x-model="loanPerson" list="loan-people-{{ $uid }}" class="mt-1 block w-full" autocomplete="off" :placeholder="__('Who?')" />
+                <datalist id="loan-people-{{ $uid }}">
+                    <template x-for="loan in openLoans" :key="loan.person"><option :value="loan.person"></option></template>
+                </datalist>
+                <p x-show="openLoan" class="mt-1.5 text-xs text-amber-800" x-text="openLoan ? @js(__('Still owes you')) + ' ' + money(openLoan.outstanding) : ''"></p>
+                <x-input-error class="mt-2" :messages="$errors->get('loan_person')" />
+            </div>
+            <p class="text-xs text-slate-600">{{ __('A loan does not change your net worth: the money stays yours as "to receive". Anything paid back above it counts as interest.') }}</p>
         </div>
 
         {{-- Category (searchable, can create) --}}
