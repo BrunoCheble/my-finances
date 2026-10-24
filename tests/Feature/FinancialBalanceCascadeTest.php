@@ -141,6 +141,24 @@ it('converte ajustes manuais antigos em movimentos preservando os saldos', funct
     expect(FinancialMovement::where('type', FinancialMovementType::ADJUSTMENT)->count())->toBe(2);
 });
 
+it('não zera um mês aberto e ainda vazio (o caso de produção)', function () {
+    // September closed at 7817.92; October opened by the old screen: carried initial, no movements, closing 0
+    FinancialMovement::create(['description' => 'Salário', 'date' => '2026-09-05', 'wallet_id' => $this->wallet->id, 'amount' => 7817.92, 'type' => 'income']);
+    FinancialBalance::create([
+        'wallet_id' => $this->wallet->id, 'start_date' => '2026-09-01', 'end_date' => '2026-09-30',
+        'initial_balance' => 0, 'calculated_balance' => 7817.92, 'total_income' => 7817.92,
+    ]);
+    FinancialBalance::create([
+        'wallet_id' => $this->wallet->id, 'start_date' => '2026-10-01', 'end_date' => '2026-10-31',
+        'initial_balance' => 7817.92, 'calculated_balance' => 0,
+    ]);
+
+    $this->artisan('balances:rebuild')->assertSuccessful();
+
+    expect(FinancialMovement::where('type', FinancialMovementType::ADJUSTMENT)->count())->toBe(0)
+        ->and((float) balanceOf($this->wallet, '2026-10-01')->calculated_balance)->toBe(7817.92);
+});
+
 it('não grava nada em dry-run', function () {
     FinancialBalance::create([
         'wallet_id' => $this->wallet->id, 'start_date' => '2026-01-01', 'end_date' => '2026-01-31',

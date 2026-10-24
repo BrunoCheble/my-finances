@@ -31,4 +31,10 @@ return [
         ],
     ],
 
+    // "Sign in with Google" (OpenID Connect): a Web OAuth client of Google Cloud, see docs/DEPLOY.md
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+    ],
+
 ];
