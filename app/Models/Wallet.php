@@ -11,6 +11,34 @@ class Wallet extends Model
     use HasUserScope;
     use HasFactory;
 
+    public const TYPE_DEBIT = 'debit';
+    public const TYPE_CREDIT = 'credit';
+    // money of someone else kept in the user's banks; its balance is negative
+    // (what the user owes), so the sum of all wallets is the user's own money
+    public const TYPE_THIRD_PARTY = 'third_party';
+
+    public static function types(): array
+    {
+        return [
+            self::TYPE_DEBIT => __('Debit'),
+            self::TYPE_CREDIT => __('Credit'),
+            self::TYPE_THIRD_PARTY => __('Third-party money'),
+        ];
+    }
+
+    public function getIsThirdPartyAttribute(): bool
+    {
+        return $this->type === self::TYPE_THIRD_PARTY;
+    }
+
+    /**
+     * Wallets that are real bank accounts/cards (not someone else's money).
+     */
+    public function scopeOwn($query)
+    {
+        return $query->where('type', '!=', self::TYPE_THIRD_PARTY);
+    }
+
     // Campos que podem ser preenchidos em massa
     protected $fillable = [
         'name',

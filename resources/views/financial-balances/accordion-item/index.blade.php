@@ -42,7 +42,11 @@
                     <tr class="even:bg-gray-50">
 
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-white font-bold" style="background-color: {{ $balance->wallet->color }}">
-                            {{ $balance->wallet_name }}</td>
+                            {{ $balance->wallet_name }}
+                            @if ($balance->wallet->is_third_party)
+                                <div class="text-[10px] font-normal uppercase tracking-wide opacity-80">{{ __('Third-party money') }}</div>
+                            @endif
+                        </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-right">
                             {!! $balance->initial_balance != 0 ? colored_format_currency($balance->initial_balance) : '' !!}
                         </td>
@@ -54,13 +58,22 @@
                             {!! $balance->total_unidentified != 0 ? colored_format_currency($balance->total_unidentified) : '' !!}
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold">
+                            @if ($balance->wallet->is_third_party)
+                                <span class="text-purple-700" title="{{ __('Balance kept in your banks for this person') }}">{{ __('kept') }} {{ format_currency(-$balance->calculated_balance) }}</span>
+                            @else
                             {!! $balance->calculated_balance != 0 ? colored_format_currency($balance->calculated_balance) : '' !!}
+                            @endif
                             @if($balance->reserved_amount)
                             <i class="fa fa-circle-info" title="{{ __('Reserved amount: :amount', ['amount' => format_currency($balance->reserved_amount)]) }}"></i>
                             @endif
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-right font-bold">
+                            @if ($balance->wallet->is_third_party)
+                                @php($keptChange = $balance->initial_balance - $balance->calculated_balance)
+                                <span class="text-purple-700">{{ $keptChange != 0 ? ($keptChange > 0 ? '+' : '') . format_currency($keptChange) : '' }}</span>
+                            @else
                             {!! $balance->calculated_balance != 0 ? colored_format_currency($balance->calculated_balance-$balance->initial_balance) : '' !!}
+                            @endif
                         </td>
                         <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
                             @include('financial-balances.menu.index')

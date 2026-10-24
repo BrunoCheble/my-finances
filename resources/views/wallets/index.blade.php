@@ -28,7 +28,7 @@
                                     <tr>
 
 									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Name') }}</th>
-									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Reserved amnount') }}</th>
+									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Reserved amount') }}</th>
                                     <th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Color') }}</th>
 									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Type') }}</th>
 									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Actived') }}</th>
@@ -45,7 +45,7 @@
 										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                                             <div class="w-4 h-4 rounded-full" style="background-color: {{ $wallet->color }}"></div>
                                         </td>
-										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ $wallet->type == 'debit' ? __('Debit') : __('Credit') }}</td>
+										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ \App\Models\Wallet::types()[$wallet->type] ?? $wallet->type }}</td>
 										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ $wallet->active ? __('Yes') : __('No') }}</td>
 
                                             <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">

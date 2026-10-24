@@ -24,7 +24,7 @@
     <div>
         <x-input-label for="type" :value="__('Type Account')" />
         <x-dropdown-select
-            :options="['debit' => __('Debit'), 'credit' => __('Credit')]"
+            :options="\App\Models\Wallet::types()"
             selected="{{ old('type', $wallet?->type) }}"
             name="type"
         />
