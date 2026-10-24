@@ -2,6 +2,7 @@
 
 namespace App\Statements;
 
+use App\Statements\Parsers\ActivoBankStatementParser;
 use App\Statements\Parsers\CgdStatementParser;
 
 class StatementParserRegistry
@@ -11,6 +12,7 @@ class StatementParserRegistry
      */
     private const PARSERS = [
         CgdStatementParser::class,
+        ActivoBankStatementParser::class,
     ];
 
     public function detect(string $text): ?StatementParser
