@@ -15,6 +15,7 @@ class StatementImport extends Model
     protected $fillable = [
         'wallet_id',
         'bank',
+        'account_last4',
         'file_name',
         'period_start',
         'period_end',

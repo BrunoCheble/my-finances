@@ -11,6 +11,7 @@ use App\Repositories\Interfaces\FinancialBalanceRepositoryInterface;
 use App\Services\Statements\ConfirmStatementImportService;
 use App\Services\Statements\CreateStatementImportService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
@@ -44,6 +45,20 @@ class StatementImportController extends Controller
         }
 
         return redirect()->route('statement-imports.show', $import);
+    }
+
+    /**
+     * Called when a file is chosen: recognizes bank/account and the remembered wallet.
+     */
+    public function identify(Request $request, CreateStatementImportService $createStatementImportService): JsonResponse
+    {
+        $data = $request->validate(['file' => 'required|file|mimes:pdf|max:10240']);
+
+        try {
+            return response()->json($createStatementImportService->identify($data['file']->getRealPath()));
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
     }
 
     public function show(StatementImport $statementImport, FinancialBalanceRepositoryInterface $balanceRepository): View

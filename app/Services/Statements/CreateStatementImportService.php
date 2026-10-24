@@ -4,6 +4,7 @@ namespace App\Services\Statements;
 
 use App\Enums\FinancialMovementType;
 use App\Models\FinancialMovement;
+use App\Models\StatementAccount;
 use App\Models\StatementImport;
 use App\Statements\ParsedStatement;
 use App\Statements\PdfTextExtractor;
@@ -27,6 +28,36 @@ class CreateStatementImportService
 
     public function execute(string $path, string $fileName, int $walletId): StatementImport
     {
+        $statement = $this->parse($path);
+
+        return DB::transaction(function () use ($statement, $fileName, $walletId) {
+            StatementAccount::remember($statement, $walletId);
+            return $this->store($statement, $fileName, $walletId);
+        });
+    }
+
+    /**
+     * Bank, masked account and the wallet remembered for it, without creating anything.
+     */
+    public function identify(string $path): array
+    {
+        $statement = $this->parse($path);
+        $known = StatementAccount::findFor($statement);
+
+        return [
+            'bank' => $statement->bank,
+            'bank_name' => $this->registry->name($statement->bank),
+            'account_last4' => $statement->accountLast4(),
+            'wallet_id' => $known?->wallet_id,
+            'wallet_name' => $known?->wallet?->name,
+            'lines' => count($statement->lines),
+            'period_start' => $statement->periodStart,
+            'period_end' => $statement->periodEnd,
+        ];
+    }
+
+    public function parse(string $path): ParsedStatement
+    {
         $text = $this->extractor->extract($path);
 
         if (trim($text) === '') {
@@ -43,7 +74,7 @@ class CreateStatementImportService
             throw new InvalidArgumentException(__('No movements found in the statement.'));
         }
 
-        return DB::transaction(fn () => $this->store($statement, $fileName, $walletId));
+        return $statement;
     }
 
     private function store(ParsedStatement $statement, string $fileName, int $walletId): StatementImport
@@ -51,6 +82,7 @@ class CreateStatementImportService
         $import = StatementImport::create([
             'wallet_id' => $walletId,
             'bank' => $statement->bank,
+            'account_last4' => $statement->accountLast4(),
             'file_name' => $fileName,
             'period_start' => $statement->periodStart,
             'period_end' => $statement->periodEnd,

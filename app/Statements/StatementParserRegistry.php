@@ -25,4 +25,15 @@ class StatementParserRegistry
         }
         return null;
     }
+
+    public function name(string $bank): string
+    {
+        foreach (self::PARSERS as $class) {
+            $parser = app($class);
+            if ($parser->bank() === $bank) {
+                return $parser->name();
+            }
+        }
+        return $bank;
+    }
 }
