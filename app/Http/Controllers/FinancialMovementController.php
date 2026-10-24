@@ -14,6 +14,7 @@ use App\Models\Wallet;
 use App\Services\BulkDeleteFinancialMovementService;
 use App\Services\Cache\DashboardCacheService;
 use App\Services\CalculateFinancialBalanceService;
+use App\Services\CategoryMonthStatusService;
 use App\Services\CategoryOptionsService;
 use App\Services\DescriptionSuggestionsService;
 use App\Services\LoanService;
@@ -93,7 +94,9 @@ class FinancialMovementController extends Controller
                 }
             }
             $dashboardCacheService->clearAllByUser();
-            return response()->json(['balances' => $balances, 'movements' => $movements], Response::HTTP_CREATED);
+            // how the category stands in the month after this movement
+            $category = CategoryMonthStatusService::for($movements->first()?->category_id, $movements->first()?->date ?? 'now');
+            return response()->json(['balances' => $balances, 'movements' => $movements, 'category' => $category], Response::HTTP_CREATED);
         } catch (ValidationException $e) {
             // e.g. a repayment from someone without an open loan: show the reason
             throw $e;
@@ -118,8 +121,9 @@ class FinancialMovementController extends Controller
                 $affected->merge($movements->map(fn ($m) => $m->only('wallet_id', 'date')))
             );
             $dashboardCacheService->clearAllByUser();
+            $category = CategoryMonthStatusService::for($movements->first()?->category_id, $movements->first()?->date ?? 'now');
             return Redirect::route('financial-movements.index')
-                ->with('success', 'Financial Movement updated successfully');
+                ->with('success', trim(__('Movement saved.') . ' ' . ($category['text'] ?? '')));
         } catch (\Exception $e) {
             return Redirect::route('financial-movements.index')
                 ->with('error', __('Something went wrong'));

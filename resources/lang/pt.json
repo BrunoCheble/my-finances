@@ -599,5 +599,11 @@
     "Install app": "Instalar app",
     "Balance of :amount at the end of the month. If it is money you keep for someone else, mark the wallet as third-party money.": "Saldo de :amount no fim do mês. Se for dinheiro de outra pessoa guardado nesta conta, marque-a como Dinheiro de terceiros.",
     "Review wallet": "Revisar conta",
-    "Previous descriptions": "Descrições anteriores"
+    "Previous descriptions": "Descrições anteriores",
+    ":category in :month: :total": ":category em :month: :total",
+    "(:count movement).|(:count movements).": "(:count movimento).|(:count movimentos).",
+    "of :forecast forecast (:percent%).": "de :forecast previstos (:percent%).",
+    ":amount left.": "Restam :amount.",
+    "Category this month": "Categoria no mês",
+    "of the forecast": "da previsão"
 }

@@ -34,7 +34,11 @@
                     this.loanPerson = '';
                     this.suggestion = '';
                     this.typeTouched = this.categoryTouched = false;
-                    this.$nextTick(() => this.$refs.amount.focus());
+                    // back to the top of the modal, where the category status of the saved movement shows
+                    this.$nextTick(() => {
+                        this.$refs.amount.focus({ preventScroll: true });
+                        this.$el.closest('.overflow-y-auto')?.scrollTo({ top: 0 });
+                    });
                 });
             },
 
