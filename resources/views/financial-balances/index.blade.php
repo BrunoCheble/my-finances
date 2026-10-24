@@ -31,6 +31,17 @@
                         <!-- create a total summary, using the variable total_unidentified, total_initial, total_calculated -->
                         <div class="flex justify-end gap-8">
                             <div class="text-right">
+                                <div class="text-sm text-gray-500">{{ __('Your net worth') }}</div>
+                                <div class="text-lg font-bold">{!! colored_format_currency($summary['net_worth']) !!}</div>
+                            </div>
+                            @if ($summary['third_party'] != 0)
+                                <div class="text-right">
+                                    <div class="text-sm text-gray-500">{{ __('Balance in banks') }}</div>
+                                    <div class="text-lg font-bold">{!! colored_format_currency($summary['in_banks']) !!}</div>
+                                    <div class="text-xs text-purple-700">{{ __('of which kept for others: :amount', ['amount' => format_currency($summary['third_party'])]) }}</div>
+                                </div>
+                            @endif
+                            <div class="text-right">
                                 <div class="text-sm text-gray-500">{{ __('Total Evolution') }}</div>
                                 <div class="text-lg font-bold">
                                     <span class="mr-2">{!! colored_format_currency($summary['total_calculated']-$summary['total_initial']) !!}</span>

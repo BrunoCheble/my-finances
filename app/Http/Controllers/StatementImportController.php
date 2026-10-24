@@ -16,6 +16,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 
 class StatementImportController extends Controller
@@ -23,7 +24,8 @@ class StatementImportController extends Controller
     public function index(): View
     {
         $imports = StatementImport::with('wallet')->withCount('lines')->latest()->get();
-        $wallets = ArrayHelper::toKeyValueArray(Wallet::all(), 'id', 'name');
+        // third-party money has no bank statement of its own
+        $wallets = ArrayHelper::toKeyValueArray(Wallet::own()->get(), 'id', 'name');
 
         return view('statement-imports.index', compact('imports', 'wallets'));
     }
@@ -32,7 +34,7 @@ class StatementImportController extends Controller
     {
         $data = $request->validate([
             'file' => 'required|file|mimes:pdf|max:10240',
-            'wallet_id' => 'required|exists:wallets,id',
+            'wallet_id' => ['required', Rule::exists('wallets', 'id')->where('user_id', auth()->id())->whereNot('type', Wallet::TYPE_THIRD_PARTY)],
         ]);
 
         try {

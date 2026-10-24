@@ -268,5 +268,12 @@
     "There is a more recent statement for this wallet": "Há um extrato mais recente desta conta",
     "Clear reserved amount": "Zerar valor reservado",
     "Update reserved amount to :amount": "Atualizar valor reservado para :amount",
-    "Reserved amount of :wallet updated to :amount.": "Valor reservado de :wallet atualizado para :amount."
+    "Reserved amount of :wallet updated to :amount.": "Valor reservado de :wallet atualizado para :amount.",
+    "Third-party money": "Dinheiro de terceiros",
+    "Your net worth": "Seu patrimônio",
+    "Balance in banks": "Saldo nos bancos",
+    "of which kept for others: :amount": "dos quais guardado para outros: :amount",
+    "Balance kept in your banks for this person": "Valor desta pessoa guardado nos seus bancos",
+    "kept": "guardado",
+    "Reserved amount": "Valor reservado"
 }
