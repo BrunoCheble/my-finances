@@ -187,3 +187,40 @@ it('sends category usage counts to the preview', function () {
         ->assertOk()
         ->assertSee('"name":"Supermercado","type":"expense","uses":2', false);
 });
+
+it('keeps a virtual wallet (money of someone else held in the bank) consistent on import', function () {
+    // the bank holds 1000, of which 100 belongs to the daughter: her wallet is -100
+    $daughter = Wallet::create(['name' => 'Filha', 'type' => 'debit', 'active' => true]);
+    app(App\Services\SaveFinancialMovementService::class)->execute([
+        'description' => 'Saldo da filha', 'date' => '2026-07-01', 'wallet_id' => $daughter->id,
+        'transfer_to_wallet_id' => $this->bank->id, 'amount' => 100, 'type' => FinancialMovementType::TRANSFER,
+    ]);
+    app(CalculateFinancialBalanceService::class)->executeForMovements(FinancialMovement::all());
+
+    // bank statement: she receives 1500 (credit) and spends 200 of her money (debit)
+    fakeStatementText(str_replace(
+        ["SALARIO EMPRESA X\t", "TRF PARA POUPANCA\t"],
+        ["PRESENTE PARA A FILHA\t", "COMPRA DA FILHA\t"],
+        file_get_contents(__DIR__ . '/../Fixtures/cgd-statement.txt')
+    ));
+    uploadStatement($this, $this->bank);
+    $import = StatementImport::sole();
+
+    $choices = [];
+    foreach ($import->lines()->get() as $line) {
+        $isDaughters = str_contains($line->description, 'FILHA');
+        $choices[$line->id] = $isDaughters
+            ? ['selected' => 1, 'type' => 'transfer', 'transfer_wallet_id' => $daughter->id]
+            : ['selected' => null];
+    }
+    $this->patch(route('statement-imports.update', $import), ['lines' => $choices])->assertRedirect();
+
+    $balance = fn (Wallet $wallet) => (float) FinancialBalance::where('wallet_id', $wallet->id)->orderByDesc('start_date')->first()->calculated_balance;
+
+    // her money: -100 - 1500 received + 200 spent = -1400 (more owed to her)
+    expect($balance($daughter))->toBe(-1400.0)
+        // the bank moved by the real amounts: +1500 - 200
+        ->and($balance($this->bank))->toBe(round(1500 - 30 - 12.30 + 100 + 1500 - 200, 2))
+        // the user's own money didn't change with her movements
+        ->and(round($balance($this->bank) + $balance($daughter), 2))->toBe(round(1500 - 30 - 12.30, 2));
+});
