@@ -33,8 +33,13 @@ class FinancialCategoryController extends Controller
         return view('financial-categories.create', compact('category'));
     }
 
-    public function store(FinancialCategoryRequest $request): RedirectResponse
+    public function store(FinancialCategoryRequest $request): RedirectResponse|JsonResponse
     {
+        // quick creation from the statement import preview
+        if ($request->expectsJson()) {
+            return response()->json(FinancialCategory::create($request->validated()), 201);
+        }
+
         try {
             FinancialCategory::create($request->validated());
         } catch (\Exception $e) {

@@ -116,7 +116,7 @@
                     @endif
                 </div>
 
-                <div class="mt-6 overflow-x-auto">
+                <div class="mt-6 overflow-x-auto lg:overflow-visible">
                     <table class="w-full divide-y divide-gray-300 text-sm">
                         <thead>
                             <tr>
@@ -177,15 +177,7 @@
                                         </select>
                                     </td>
                                     <td class="py-2 px-2 align-top">
-                                        <select name="lines[{{ $line->id }}][category_id]" x-model="lines[{{ $index }}].category_id" @change="choose({{ $index }})"
-                                            x-show="needsCategory(lines[{{ $index }}])"
-                                            :class="lines[{{ $index }}].selected && !lines[{{ $index }}].category_id ? 'border-red-400' : ''"
-                                            class="{{ $selectClass }}" @disabled(!$statementImport->is_pending)>
-                                            <option value="">{{ __('Select category') }}</option>
-                                            @foreach ($categories as $category)
-                                                <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                            @endforeach
-                                        </select>
+                                        @include('statement-imports.category-picker', ['pending' => $statementImport->is_pending])
                                         <select name="lines[{{ $line->id }}][transfer_wallet_id]" x-model="lines[{{ $index }}].transfer_wallet_id" @change="choose({{ $index }})"
                                             x-show="lines[{{ $index }}].type === 'transfer'"
                                             :class="lines[{{ $index }}].selected && !lines[{{ $index }}].transfer_wallet_id ? 'border-red-400' : ''"
@@ -216,11 +208,106 @@
     </div>
 
     <script>
+        function categoryPicker(index) {
+            return {
+                index,
+                search: '',
+                open: false,
+                highlight: 0,
+                saving: false,
+                error: null,
+                get line() {
+                    return this.lines[this.index];
+                },
+                // expense/refund use expense categories, income/discount income ones
+                get kind() {
+                    return ['income', 'discount'].includes(this.line.type) ? 'income' : 'expense';
+                },
+                get options() {
+                    const term = this.search.trim().toLowerCase();
+                    const matches = this.categories.filter(c => c.name.toLowerCase().includes(term));
+                    const byUse = (a, b) => b.uses - a.uses || a.name.localeCompare(b.name);
+                    const toOption = c => ({ key: 'c' + c.id, id: c.id, label: c.name, uses: c.uses });
+
+                    const options = matches.filter(c => c.type === this.kind).sort(byUse).map(toOption);
+                    const others = matches.filter(c => c.type !== this.kind).sort(byUse).map(toOption);
+                    if (others.length) {
+                        options.push({ key: 'h-others', header: @json(__('Other categories')) }, ...others);
+                    }
+
+                    const exists = this.categories.some(c => c.name.toLowerCase() === term);
+                    if (term && !exists) {
+                        const label = this.kind === 'income' ? @json(__('as income')) : @json(__('as expense'));
+                        options.push({ key: 'create', create: true, label: '+ ' + @json(__('Create')) + ' "' + this.search.trim() + '" ' + label });
+                    }
+                    return options;
+                },
+                selectedName() {
+                    return this.categories.find(c => c.id === this.line.category_id)?.name || '';
+                },
+                openList() {
+                    this.search = '';
+                    this.error = null;
+                    this.open = true;
+                    this.highlight = this.options.findIndex(o => !o.header);
+                },
+                close() {
+                    this.open = false;
+                    this.search = '';
+                },
+                move(step) {
+                    if (!this.open) this.openList();
+                    const options = this.options;
+                    let next = this.highlight;
+                    do {
+                        next = (next + step + options.length) % options.length;
+                    } while (options[next]?.header && next !== this.highlight);
+                    this.highlight = next;
+                },
+                async pick(i) {
+                    const option = this.options[i];
+                    if (!option || option.header) return;
+                    if (option.create) {
+                        await this.create(this.search.trim());
+                        return;
+                    }
+                    this.line.category_id = option.id;
+                    this.choose(this.index);
+                    this.close();
+                },
+                async create(name) {
+                    this.saving = true;
+                    this.error = null;
+                    try {
+                        const response = await fetch(@json(route('financial-categories.store')), {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': @json(csrf_token()), 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name, type: this.kind, active: 1 }),
+                        });
+                        const data = await response.json();
+                        if (!response.ok) {
+                            this.error = Object.values(data.errors || {}).flat()[0] || data.message;
+                            return;
+                        }
+                        this.categories.push({ id: String(data.id), name: data.name, type: data.type, uses: 0 });
+                        this.line.category_id = String(data.id);
+                        this.choose(this.index);
+                        this.close();
+                    } catch (e) {
+                        this.error = @json(__('Something went wrong'));
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+            };
+        }
+
         function statementImport() {
             const wallets = @json($wallets);
             const categorizedTypes = @json($categorizedTypes);
             return {
                 lines: @json($linesData),
+                categories: @json($categoriesData),
                 systemBalance: {{ $statementImport->is_pending ? $systemBalance : $systemBalance - $statementImport->lines->whereNotNull('financial_movement_id')->sum('amount') }},
                 bankClosing: @json($statementImport->closing_balance !== null ? (float) $statementImport->closing_balance : null),
                 filter: 'all',

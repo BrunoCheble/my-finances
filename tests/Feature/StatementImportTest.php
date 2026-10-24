@@ -169,3 +169,21 @@ it('only suggests a transfer from an exactly equal description', function () {
         ->and($thirdParty->type)->toBe(FinancialMovementType::EXPENSE)
         ->and($thirdParty->transfer_wallet_id)->toBeNull();
 });
+
+it('creates a category from the preview as JSON', function () {
+    $this->postJson(route('financial-categories.store'), ['name' => 'Ginásio', 'type' => 'expense', 'active' => 1])
+        ->assertCreated()
+        ->assertJson(['name' => 'Ginásio', 'type' => 'expense']);
+
+    // same name again is rejected per user
+    $this->postJson(route('financial-categories.store'), ['name' => 'Ginásio', 'type' => 'expense'])
+        ->assertStatus(422)->assertJsonValidationErrors('name');
+});
+
+it('sends category usage counts to the preview', function () {
+    uploadStatement($this, $this->bank);
+
+    $this->get(route('statement-imports.show', StatementImport::sole()))
+        ->assertOk()
+        ->assertSee('"name":"Supermercado","type":"expense","uses":2', false);
+});
