@@ -47,7 +47,7 @@
         <x-page-header :title="__('Dashboard')" :subtitle="$monthLabel">
             <x-slot name="actions">
                 <label for="month" class="sr-only">{{ __('Month') }}</label>
-                <select id="month" class="input w-44" onchange="window.location.href='{{ route('dashboard') }}?month=' + this.value">
+                <select id="month" class="input w-44" onchange="window.location.href='{{ route('dashboard') }}?range={{ $range }}&month=' + this.value">
                     @foreach (array_reverse($filter, true) as $value => $label)
                         <option value="{{ $value }}" @selected($value === $month)>
                             {{ ucfirst(\Carbon\Carbon::createFromFormat('Y-m-d', $value . '-01')->translatedFormat('F Y')) }}
