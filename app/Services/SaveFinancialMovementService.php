@@ -54,15 +54,18 @@ class SaveFinancialMovementService
                 throw new \InvalidArgumentException("Invalid financial movement type: " . $data['type']);
         }
 
-        if ($id) {
-            $this->repository->removeDestinationMovement($id);
+        // an edited transfer keeps its mirror (updated in place); otherwise the mirror goes away
+        $mirror = $id ? FinancialMovement::where('original_movement_id', $id)->first() : null;
+        if ($mirror && !isset($data['transfer_to_wallet_id'])) {
+            $mirror->delete();
+            $mirror = null;
         }
 
         $financial = $this->repository->save($data, $id);
         $financials = new Collection([$financial]);
 
         if (isset($data['transfer_to_wallet_id'])) {
-            $transferFinancial = $this->executeForTransfer($data, $financial->id);
+            $transferFinancial = $this->executeForTransfer($data, $financial->id, $mirror?->id);
             $financials->push($transferFinancial);
         }
 
@@ -103,11 +106,12 @@ class SaveFinancialMovementService
         return new Collection([$movement]);
     }
 
-    public function executeForTransfer(mixed $data, ?int $id = null): FinancialMovement
+    public function executeForTransfer(mixed $data, ?int $id = null, ?int $mirrorId = null): FinancialMovement
     {
         $data['wallet_id'] = $data['transfer_to_wallet_id'];
         $data['original_movement_id'] = $id;
         $data['amount'] = -1 * $data['amount'];
-        return $this->repository->save($data);
+        unset($data['transfer_to_wallet_id']);
+        return $this->repository->save($data, $mirrorId);
     }
 }

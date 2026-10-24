@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\FinancialMovementType;
+use App\Services\ReconciliationService;
 use App\Traits\HasUserScope;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,6 +16,15 @@ class FinancialMovement extends Model
 
     protected static function booted()
     {
+        // keep a trace of changes that alter a balance the user already confirmed
+        static::created(fn (FinancialMovement $movement) => ReconciliationService::log($movement, 'created'));
+        static::updated(function (FinancialMovement $movement) {
+            if ($movement->wasChanged(['amount', 'date', 'wallet_id'])) {
+                ReconciliationService::log($movement, 'updated');
+            }
+        });
+        static::deleted(fn (FinancialMovement $movement) => ReconciliationService::log($movement, 'deleted'));
+
         // delete the transfer mirror without relying on the database's ON DELETE CASCADE
         static::deleting(function (FinancialMovement $movement) {
             $movement->destinationMovement?->delete();

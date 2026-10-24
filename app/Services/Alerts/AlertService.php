@@ -22,6 +22,7 @@ class AlertService
             SpendingAlerts::check($context, $flagged),
             UnusualMovementAlerts::check($context),
             PendingAlerts::check($context),
+            ReconciliationAlerts::check($context),
         ))
             ->sortBy([
                 fn ($a, $b) => self::LEVELS[$a['level']] <=> self::LEVELS[$b['level']],

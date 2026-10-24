@@ -51,6 +51,22 @@
             get isOtherType() {
                 return !['expense', 'income', 'transfer'].includes(this.type);
             },
+            // the latest confirmed month this save would change, as a sentence ('' when none)
+            get reconciledWarning() {
+                const positions = [{ walletId: this.walletId, date: this.date }];
+                if (this.type === 'transfer') positions.push({ walletId: this.transferToWalletId, date: this.date });
+                positions.push(...this.originalPositions);
+
+                for (const position of positions) {
+                    const last = this.reconciled[position.walletId];
+                    if (!last || !position.date || position.date.slice(0, 7) > last) continue;
+                    const month = new Date(last + '-01T00:00:00').toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
+                    return @json(__('Changes the confirmed balance of :wallet in :month.'))
+                        .replace(':wallet', this.allWallets[position.walletId] || '')
+                        .replace(':month', month);
+                }
+                return '';
+            },
             setType(value) {
                 this.type = value;
                 this.typeTouched = true;

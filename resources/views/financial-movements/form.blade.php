@@ -25,6 +25,13 @@
             ->filter(fn ($wallet) => $wallet->active || in_array($wallet->id, [$fm?->wallet_id, $fm?->destinationMovement?->wallet_id]))
             ->map(fn ($wallet) => ['id' => (string) $wallet->id, 'name' => $wallet->name, 'color' => $wallet->color ?? '#94a3b8'])->values(),
         'types' => $types,
+        // last confirmed month per wallet: saving in or before it changes a confirmed balance
+        'reconciled' => (object) ($reconciledMonths ?? \App\Services\ReconciliationService::lastReconciledMonths()),
+        'originalPositions' => $fm?->exists
+            ? collect([$fm, $fm->destinationMovement])->filter()->map(fn ($m) => ['walletId' => (string) $m->wallet_id, 'date' => $m->date])->values()
+            : [],
+        'allWallets' => $walletsSidebar->mapWithKeys(fn ($wallet) => [(string) $wallet->id => $wallet->name]),
+        'confirmReconciled' => (bool) old('confirm_reconciled'),
     ];
     $uid = $fm?->exists ? 'edit-' . $fm->id : 'create';
 @endphp
@@ -38,6 +45,7 @@
     <input type="hidden" name="include_alert" value="1" :disabled="!includeAlert">
     <input type="hidden" name="loan_person" :value="loanPerson" :disabled="type !== 'loan'">
     <input type="hidden" name="loan_direction" :value="loanDirection" :disabled="type !== 'loan'">
+    <input type="hidden" name="confirm_reconciled" value="1" :disabled="!reconciledWarning || !confirmReconciled">
 
     <div class="flex-1 space-y-6 px-5 pb-6 sm:px-6">
         {{-- Type --}}
@@ -196,6 +204,20 @@
             </fieldset>
         </div>
 
+        {{-- Confirmed month: warn and ask before changing it --}}
+        <div x-show="reconciledWarning" x-cloak role="alert" class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm">
+            <p class="flex items-start gap-2 font-semibold text-amber-900">
+                <i class="fa-solid fa-lock mt-0.5" aria-hidden="true"></i>
+                <span x-text="reconciledWarning"></span>
+            </p>
+            <p class="mt-1 pl-6 text-amber-800">{{ __('The balance you confirmed will no longer match. The change is recorded so you can review it in Net worth.') }}</p>
+            <label class="mt-3 flex cursor-pointer items-center gap-2 pl-6 font-medium text-amber-900">
+                <input type="checkbox" x-model="confirmReconciled" class="h-4 w-4 rounded border-amber-400 text-amber-600 focus:ring-amber-500">
+                {{ __('Yes, change a confirmed month') }}
+            </label>
+            <x-input-error class="mt-2 pl-6" :messages="$errors->get('confirm_reconciled')" />
+        </div>
+
         {{-- Alert --}}
         <label class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200 px-4 py-3">
             <span>
@@ -215,7 +237,7 @@
     {{-- Footer: sticky on phones (full-screen sheet) --}}
     <div class="sticky bottom-0 flex gap-2 border-t border-slate-200 bg-white/95 px-5 py-3 backdrop-blur sm:static sm:justify-end sm:bg-transparent sm:px-6 sm:py-4">
         <x-button variant="secondary" class="flex-1 sm:flex-none" x-on:click="{{ $cancel ?? '$dispatch(\'close\')' }}">{{ __('Cancel') }}</x-button>
-        <x-primary-button class="flex-1 sm:flex-none" x-bind:disabled="{{ $busy ?? 'false' }}">
+        <x-primary-button class="flex-1 sm:flex-none" x-bind:disabled="{{ $busy ?? 'false' }} || (reconciledWarning && !confirmReconciled)">
             <i class="fa-solid fa-circle-notch fa-spin" x-show="{{ $busy ?? 'false' }}" x-cloak aria-hidden="true"></i>
             {{ $buttonText ?? __('Save') }}
         </x-primary-button>

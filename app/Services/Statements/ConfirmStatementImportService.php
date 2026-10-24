@@ -7,6 +7,7 @@ use App\Models\StatementImport;
 use App\Models\StatementImportLine;
 use App\Services\Cache\DashboardCacheService;
 use App\Services\CalculateFinancialBalanceService;
+use App\Services\ReconciliationService;
 use App\Services\SaveFinancialMovementService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -57,9 +58,11 @@ class ConfirmStatementImportService
             }
 
             $this->calculateFinancialBalanceService->executeForMovements($affected);
-            DashboardCacheService::clearAllByUser();
-
             $import->update(['status' => StatementImport::STATUS_CONFIRMED, 'confirmed_at' => now()]);
+
+            // the bank says the same as the app: the month is confirmed
+            app(ReconciliationService::class)->reconcileFromStatement($import);
+            DashboardCacheService::clearAllByUser();
 
             return $created;
         });

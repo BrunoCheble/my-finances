@@ -16,6 +16,7 @@ use App\Services\Cache\DashboardCacheService;
 use App\Services\CalculateFinancialBalanceService;
 use App\Services\CategoryOptionsService;
 use App\Services\LoanService;
+use App\Services\ReconciliationService;
 use App\Services\GetFinancialMovementService;
 use App\Services\SaveFinancialMovementService;
 use Illuminate\Http\Request;
@@ -45,6 +46,7 @@ class FinancialMovementController extends Controller
         $categories = ArrayHelper::toKeyValueArray(FinancialCategory::all(), 'id', 'name');
         $categoryOptions = CategoryOptionsService::forPicker();
         $openLoans = LoanService::openPeople();
+        $reconciledMonths = ReconciliationService::lastReconciledMonths();
 
         // inactive wallets stay at the end of the switcher, for their history
         $walletsSidebar = Wallet::orderByDesc('active')->orderBy('name')->get();
@@ -67,7 +69,8 @@ class FinancialMovementController extends Controller
             'financialMovement',
             'totalBalance',
             'categoryOptions',
-            'openLoans'
+            'openLoans',
+            'reconciledMonths'
         ))->with('i', ($request->input('page', 1) - 1) * 5);
     }
 
@@ -123,11 +126,13 @@ class FinancialMovementController extends Controller
     }
 
     public function destroy(
+        Request $request,
         FinancialMovement $financial_movement,
         DashboardCacheService $dashboardCacheService,
         CalculateFinancialBalanceService $calculateFinancialBalanceService
     ): RedirectResponse
     {
+        $this->guardConfirmedMonths($request, collect([$financial_movement]));
         try {
             $affected = $this->affectedPositions($financial_movement);
             $financial_movement->delete();
@@ -148,8 +153,9 @@ class FinancialMovementController extends Controller
         CalculateFinancialBalanceService $calculateFinancialBalanceService
     ): JsonResponse
     {
+        $financial_movement = FinancialMovement::findOrFail($request->id);
+        $this->guardConfirmedMonths($request, collect([$financial_movement]));
         try {
-            $financial_movement = FinancialMovement::findOrFail($request->id);
             $affected = $this->affectedPositions($financial_movement);
             $financial_movement->delete();
 
@@ -168,8 +174,9 @@ class FinancialMovementController extends Controller
         CalculateFinancialBalanceService $calculateFinancialBalanceService
     ): JsonResponse
     {
+        $ids = $request->input('ids', []);
+        $this->guardConfirmedMonths($request, FinancialMovement::whereIn('id', $ids)->get());
         try {
-            $ids = $request->input('ids', []);
 
             $movements = $bulkDeleteFinancialMovementService->execute($ids);
             $calculateFinancialBalanceService->executeForMovements($movements);
@@ -193,6 +200,24 @@ class FinancialMovementController extends Controller
         );
 
         return response()->json($financials);
+    }
+
+    /**
+     * Deleting from a confirmed month needs an explicit confirmation (confirm_reconciled).
+     */
+    private function guardConfirmedMonths(Request $request, $movements): void
+    {
+        if ($request->boolean('confirm_reconciled')) {
+            return;
+        }
+        $positions = $movements->flatMap(fn ($movement) => $this->affectedPositions($movement));
+        $balance = FinancialMovementRequest::confirmedBalanceAffected($positions);
+        if ($balance) {
+            throw ValidationException::withMessages(['confirm_reconciled' => __('This changes the confirmed balance of :wallet in :month. Confirm to continue.', [
+                'wallet' => $balance->wallet?->name,
+                'month' => ucfirst(\Carbon\Carbon::parse($balance->start_date)->translatedFormat('F Y')),
+            ])]);
+        }
     }
 
     /**

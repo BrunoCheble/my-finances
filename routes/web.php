@@ -31,6 +31,10 @@ Route::middleware('auth')->group(function () {
 
     Route::patch('/financial-balances/recalculate/{id}', [FinancialBalanceController::class, 'recalculate'])->name('financial-balances.recalculate');
     Route::patch('/financial-balances/recalculate/all/{start_date}/{end_date}', [FinancialBalanceController::class, 'recalculateAll'])->name('financial-balances.recalculateAll');
+    Route::post('/financial-balances/{financial_balance}/reconcile', [FinancialBalanceController::class, 'reconcile'])->name('financial-balances.reconcile');
+    Route::delete('/financial-balances/{financial_balance}/reconcile', [FinancialBalanceController::class, 'unreconcile'])->name('financial-balances.unreconcile');
+    Route::post('/financial-balances/{financial_balance}/restore', [FinancialBalanceController::class, 'restore'])->name('financial-balances.restore');
+    Route::post('/financial-balances/reconcile-month/{start_date}', [FinancialBalanceController::class, 'reconcileMonth'])->name('financial-balances.reconcileMonth');
 
     Route::resource('financial-categories', FinancialCategoryController::class);
     Route::post('/financial-categories/import', [FinancialCategoryController::class, 'import'])->name('financial-categories.import');
