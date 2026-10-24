@@ -26,6 +26,19 @@ class StatementParserRegistry
         return null;
     }
 
+    /**
+     * Supported banks: code => name.
+     */
+    public function names(): array
+    {
+        $names = [];
+        foreach (self::PARSERS as $class) {
+            $parser = app($class);
+            $names[$parser->bank()] = $parser->name();
+        }
+        return $names;
+    }
+
     public function name(string $bank): string
     {
         foreach (self::PARSERS as $class) {
