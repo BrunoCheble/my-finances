@@ -142,3 +142,30 @@ it('reports an unsupported statement on identify', function () {
         'file' => UploadedFile::fake()->create('extrato.pdf', 10, 'application/pdf'),
     ])->assertStatus(422)->assertJsonStructure(['error']);
 });
+
+it('only suggests a transfer from an exactly equal description', function () {
+    // internal transfer already registered: bank -> savings
+    app(App\Services\SaveFinancialMovementService::class)->execute([
+        'description' => 'Transferência para poupança', 'date' => '2026-07-10', 'wallet_id' => $this->bank->id,
+        'transfer_to_wallet_id' => $this->savings->id, 'amount' => 100, 'type' => FinancialMovementType::TRANSFER,
+    ]);
+    fakeStatementText(str_replace(
+        ["TRF PARA POUPANCA\t", "UBER   TRIP 9876543210\t"],
+        ["TRANSFERENCIA PARA POUPANCA\t", "TRANSFERENCIA PARA POUPANCA JOAO\t"],
+        file_get_contents(__DIR__ . '/../Fixtures/cgd-statement.txt')
+    ));
+
+    uploadStatement($this, $this->bank);
+    $lines = StatementImport::sole()->lines()->get()->keyBy('description');
+
+    $exact = $lines['TRANSFERENCIA PARA POUPANCA'];
+    expect($exact->history_match)->toBe('exact')
+        ->and($exact->type)->toBe(FinancialMovementType::TRANSFER)
+        ->and($exact->transfer_wallet_id)->toBe($this->savings->id);
+
+    // a transfer to someone else is a payment, never an internal transfer by similarity
+    $thirdParty = $lines['TRANSFERENCIA PARA POUPANCA JOAO'];
+    expect($thirdParty->is_new)->toBeTrue()
+        ->and($thirdParty->type)->toBe(FinancialMovementType::EXPENSE)
+        ->and($thirdParty->transfer_wallet_id)->toBeNull();
+});

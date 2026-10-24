@@ -13,6 +13,8 @@
         'is_new' => $line->is_new,
         'duplicate' => $line->duplicate_movement_id !== null,
         'keywords' => \App\Services\Statements\MovementHistory::keywords($line->description),
+        'normalized' => $line->normalized_description,
+        'transfer_text' => \App\Services\Statements\MovementHistory::isTransferText($line->description),
         'position' => $line->position + 1,
         'touched' => false,
         'suggested_from' => null,
@@ -240,7 +242,7 @@
                     source.suggested_from = null;
 
                     this.lines.forEach((line, i) => {
-                        if (i === index || line.touched || !this.sameMerchant(line.keywords, source.keywords)) return;
+                        if (i === index || line.touched || !this.sameOrigin(line, source)) return;
                         // lines filled by this same source follow its changes; others only if still empty
                         if (line.suggested_from !== source.position) {
                             if (line.suggested_from || !line.is_new || line.category_id || line.transfer_wallet_id) return;
@@ -251,6 +253,13 @@
                         line.transfer_wallet_id = line.type === 'transfer' ? source.transfer_wallet_id : '';
                         line.suggested_from = (line.category_id || line.transfer_wallet_id) ? source.position : null;
                     });
+                },
+                // transfers may go to third parties: only exactly equal descriptions
+                sameOrigin(line, source) {
+                    if (source.type === 'transfer' || source.transfer_text || line.transfer_text) {
+                        return line.normalized === source.normalized;
+                    }
+                    return this.sameMerchant(line.keywords, source.keywords);
                 },
                 // same rule as MovementHistory::sameMerchant
                 sameMerchant(a, b) {
