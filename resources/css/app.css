@@ -1,3 +1,75 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-slate-50 text-slate-800;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+
+    :focus-visible {
+        @apply outline-none ring-2 ring-brand-500 ring-offset-2;
+    }
+}
+
+@layer components {
+    /* buttons */
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold transition
+            focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2
+            disabled:cursor-not-allowed disabled:opacity-50;
+    }
+    .btn-sm {
+        @apply px-2.5 py-1.5 text-xs;
+    }
+    .btn-primary {
+        @apply bg-brand-600 text-white shadow-sm hover:bg-brand-700;
+    }
+    .btn-secondary {
+        @apply bg-white text-slate-700 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50;
+    }
+    .btn-ghost {
+        @apply text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+    }
+    .btn-danger {
+        @apply bg-rose-600 text-white shadow-sm hover:bg-rose-700;
+    }
+    .btn-icon {
+        @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition
+            hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500;
+    }
+
+    /* surfaces */
+    .card {
+        @apply rounded-xl border border-slate-200 bg-white shadow-card;
+    }
+
+    /* forms */
+    .input {
+        @apply rounded-lg border-slate-300 bg-white text-sm shadow-sm placeholder:text-slate-400
+            focus:border-brand-500 focus:ring-brand-500 disabled:bg-slate-50 disabled:text-slate-500;
+    }
+    .label {
+        @apply block text-sm font-medium text-slate-700;
+    }
+
+    /* tables */
+    .th {
+        @apply px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500;
+    }
+    .td {
+        @apply px-3 py-3 text-sm text-slate-700;
+    }
+
+    .badge {
+        @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium;
+    }
+
+    .amount {
+        @apply whitespace-nowrap tabular-nums;
+    }
+}
