@@ -13,6 +13,14 @@ class FinancialMovement extends Model
     use HasFactory;
     protected $perPage = 20;
 
+    protected static function booted()
+    {
+        // delete the transfer mirror without relying on the database's ON DELETE CASCADE
+        static::deleting(function (FinancialMovement $movement) {
+            $movement->destinationMovement?->delete();
+        });
+    }
+
     protected $fillable = [
         'description',
         'date',
@@ -75,6 +83,7 @@ class FinancialMovement extends Model
             $this->type === FinancialMovementType::EXPENSE ||
             $this->type === FinancialMovementType::DISCOUNT ||
             ($this->type === FinancialMovementType::TRANSFER && $this->amount < 0) ||
-            ($this->type === FinancialMovementType::LOAN && $this->amount < 0);
+            ($this->type === FinancialMovementType::LOAN && $this->amount < 0) ||
+            ($this->type === FinancialMovementType::ADJUSTMENT && $this->amount < 0);
     }
 }

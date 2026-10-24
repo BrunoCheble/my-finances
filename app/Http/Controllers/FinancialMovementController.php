@@ -73,11 +73,15 @@ class FinancialMovementController extends Controller
     {
         try {
             $movements = $saveFinancialMovementService->execute($request->validated());
+            $balances = [];
             foreach ($movements as $movement) {
-                $calculateFinancialBalanceService->execute($movement->date, $movement->wallet_id);
-                $dashboardCacheService->clearRelatedCaches($movement->date);
+                $balance = $calculateFinancialBalanceService->execute($movement->date, $movement->wallet_id);
+                if ($balance) {
+                    $balances[] = $balance;
+                }
             }
-            return response()->json($movements, Response::HTTP_CREATED);
+            $dashboardCacheService->clearAllByUser();
+            return response()->json(['balances' => $balances, 'movements' => $movements], Response::HTTP_CREATED);
         } catch (\Exception $e) {
             return response()->json(['error' => __('Something went wrong')], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -92,11 +96,13 @@ class FinancialMovementController extends Controller
     ): RedirectResponse
     {
         try {
+            // the wallet/date before the edit must be recalculated too
+            $affected = $this->affectedPositions($financial_movement);
             $movements = $saveFinancialMovementService->execute($request->validated(), $financial_movement->id);
-            foreach ($movements as $movement) {
-                $calculateFinancialBalanceService->execute($movement->date, $movement->wallet_id);
-                $dashboardCacheService->clearRelatedCaches($movement->date);
-            }
+            $calculateFinancialBalanceService->executeForMovements(
+                $affected->merge($movements->map(fn ($m) => $m->only('wallet_id', 'date')))
+            );
+            $dashboardCacheService->clearAllByUser();
             return Redirect::route('financial-movements.index')
                 ->with('success', 'Financial Movement updated successfully');
         } catch (\Exception $e) {
@@ -112,9 +118,10 @@ class FinancialMovementController extends Controller
     ): RedirectResponse
     {
         try {
+            $affected = $this->affectedPositions($financial_movement);
             $financial_movement->delete();
-            $calculateFinancialBalanceService->execute($financial_movement->date, $financial_movement->wallet_id);
-            $dashboardCacheService->clearRelatedCaches($financial_movement->date);
+            $calculateFinancialBalanceService->executeForMovements($affected);
+            $dashboardCacheService->clearAllByUser();
 
             return Redirect::route('financial-movements.index')
                 ->with('success', 'Financial Movement deleted successfully');
@@ -131,11 +138,12 @@ class FinancialMovementController extends Controller
     ): JsonResponse
     {
         try {
-            $financial_movement = FinancialMovement::find($request->id);
+            $financial_movement = FinancialMovement::findOrFail($request->id);
+            $affected = $this->affectedPositions($financial_movement);
             $financial_movement->delete();
 
-            $calculateFinancialBalanceService->execute($financial_movement->date, $financial_movement->wallet_id);
-            $dashboardCacheService->clearRelatedCaches($financial_movement->date);
+            $calculateFinancialBalanceService->executeForMovements($affected);
+            $dashboardCacheService->clearAllByUser();
             return response()->json(['success' => 'Financial Movement deleted successfully'], Response::HTTP_OK);
         } catch (\Exception $e) {
             return response()->json(['error' => __('Something went wrong')], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -153,10 +161,8 @@ class FinancialMovementController extends Controller
             $ids = $request->input('ids', []);
 
             $movements = $bulkDeleteFinancialMovementService->execute($ids);
-            $balances = $calculateFinancialBalanceService->executeForMultipleBalances($movements);
-            foreach ($balances as $balance) {
-                $dashboardCacheService->clearRelatedCaches($balance->start_date);
-            }
+            $calculateFinancialBalanceService->executeForMovements($movements);
+            $dashboardCacheService->clearAllByUser();
             return response()->json(['success' => 'Selected Financial Movements deleted successfully'], Response::HTTP_OK);
         } catch (\Exception $e) {
             return response()->json(['error' => __('Something went wrong')], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -176,6 +182,17 @@ class FinancialMovementController extends Controller
         );
 
         return response()->json($financials);
+    }
+
+    /**
+     * Wallet/date of the movement and of its transfer mirror (deleted along with it).
+     */
+    private function affectedPositions(FinancialMovement $movement)
+    {
+        return collect([$movement, $movement->destinationMovement])
+            ->filter()
+            ->map(fn ($m) => $m->only('wallet_id', 'date'))
+            ->values();
     }
 
     public function fetchLatestTypeAndCategory(Request $request): JsonResponse

@@ -2,33 +2,35 @@
 
 namespace App\Services;
 
-use App\Models\FinancialBalance;
 use App\Repositories\Interfaces\FinancialBalanceRepositoryInterface;
 
 class SaveFinancialBalanceService
 {
-    private FinancialBalanceRepositoryInterface $repository;
-
     public function __construct(
-        FinancialBalanceRepositoryInterface $financialBalanceRepository
+        private FinancialBalanceRepositoryInterface $repository,
+        private CalculateFinancialBalanceService $calculateFinancialBalanceService,
+        private AdjustFinancialBalanceService $adjustFinancialBalanceService,
     ) {
-        $this->repository = $financialBalanceRepository;
     }
+
     public function execute(mixed $data)
     {
-        foreach ($data['wallets'] as $wallet) {
-            $data['wallet_id'] = $wallet;
-            $balance = $this->repository->findByWalletAndDates($data['wallet_id'], $data['start_date'], $data['end_date']);
+        foreach ($data['wallets'] as $walletId) {
+            $previous = $this->repository->findPreviousByWalletAndDate($walletId, $data['start_date']);
 
-            $old_date = date('Y-m-d', strtotime($data['start_date']) - 1);
-            $old_balance = $this->repository->findByWalletByEndDate($data['wallet_id'], $old_date);
-
-            if ($old_balance) {
-                $data['initial_balance'] = $old_balance->calculated_balance;
-                $data['calculated_balance'] = $old_balance->calculated_balance;
+            // with history, the initial balance comes from the previous month;
+            // without it, the given balance becomes an opening adjustment
+            if ($previous) {
+                $this->calculateFinancialBalanceService->execute($data['start_date'], $walletId);
+                continue;
             }
 
-            if (!$balance) $this->repository->create($data);
+            $this->adjustFinancialBalanceService->execute(
+                $walletId,
+                $data['start_date'],
+                (float) $data['initial_balance'],
+                'Saldo de abertura'
+            );
         }
     }
 }

@@ -31,6 +31,7 @@ class FinancialMovementRequest extends FormRequest
                     FinancialMovementType::DISCOUNT,
                     FinancialMovementType::TRANSFER,
                     FinancialMovementType::LOAN,
+                    FinancialMovementType::ADJUSTMENT,
                 ]),
             ],
             'include_alert' => 'nullable|numeric',

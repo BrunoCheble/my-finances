@@ -106,7 +106,7 @@
     </x-modal>
 
     <template x-if="notification">
-        <div class="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50" x-text="notification"
+        <div class="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 whitespace-pre-line" x-text="notification"
             x-show="notification" x-transition></div>
     </template>
 
@@ -187,32 +187,44 @@
                             return;
                         }
 
-                        for (let i = 0; i < data.length; i++) {
-                            data[i].wallet_id = this.wallets[data[i].wallet_id];
-                            data[i].category_id = data[i].category_id ? this.categories[data[i].category_id] : 'N/A';
-                            data[i].type = this.types[data[i].type];
+                        for (let i = 0; i < data['movements'].length; i++) {
+                            const movement = data['movements'][i];
 
-                            if (data[i].description.length > 10) {
-                                data[i].description = data[i].description.substring(0, 10) + '...';
+                            movement.wallet_id = this.wallets[movement.wallet_id];
+                            movement.category_id = movement.category_id ? this.categories[movement.category_id] : 'N/A';
+                            movement.type = this.types[movement.type];
+
+                            if (movement.description.length > 10) {
+                                movement.description = movement.description.substring(0, 10) + '...';
                             }
-                            if (data[i].wallet_id.length > 10) {
-                                data[i].wallet_id = data[i].wallet_id.substring(0, 10) + '...';
+                            if (movement.wallet_id.length > 10) {
+                                movement.wallet_id = movement.wallet_id.substring(0, 10) + '...';
                             }
-                            if (data[i].category_id.length > 10) {
-                                data[i].category_id = data[i].category_id.substring(0, 10) + '...';
+                            if (movement.category_id.length > 10) {
+                                movement.category_id = movement.category_id.substring(0, 10) + '...';
                             }
-                            if (data[i].type.length > 10) {
-                                data[i].type = data[i].type.substring(0, 10) + '...';
+                            if (movement.type.length > 10) {
+                                movement.type = movement.type.substring(0, 10) + '...';
                             }
 
-                            data[i].amount = parseFloat(data[i].amount).toLocaleString('pt-PT', {
+                            movement.amount = parseFloat(movement.amount).toLocaleString('pt-PT', {
                                 style: 'currency',
                                 currency: 'EUR'
                             });
-                            data[i].date = new Date(data[i].date).toLocaleDateString('pt-PT');
-                            this.lastMovements.push(data[i]);
+                            movement.date = new Date(movement.date).toLocaleDateString('pt-PT');
+                            this.lastMovements.push(movement);
                         }
+
                         this.notification = 'Financial movement saved successfully!';
+
+                        for (let i = 0; i < data['balances'].length; i++) {
+                            const balance = data['balances'][i];
+                            const calculated = parseFloat(balance.calculated_balance).toLocaleString('pt-PT', {
+                                style: 'currency',
+                                currency: 'EUR'
+                            });
+                            this.notification += '\n' + this.wallets[balance.wallet_id] + ': ' + calculated;
+                        }
                         // reset form fields but keep date field value
                         form.reset();
                         form.querySelector('input[name="date"]').value = formData.get('date');
