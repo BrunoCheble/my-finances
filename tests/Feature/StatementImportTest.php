@@ -267,3 +267,16 @@ it('ignores an available balance above the accounting one (overdraft limit)', fu
 
     expect(StatementImport::sole()->suggestedReservedAmount())->toBeNull();
 });
+
+it('answers a damaged PDF with a clear message instead of an error page', function () {
+    // what the real parser does with a broken file
+    app()->instance(PdfTextExtractor::class, new class extends PdfTextExtractor {
+        public function __construct() {}
+        public function extract(string $path): string { throw new \Exception('Unable to find startxref'); }
+    });
+    $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('quebrado.pdf', "%PDF-1.4\nnot really a pdf\n%%EOF");
+
+    $this->postJson(route('statement-imports.identify'), ['file' => $file])
+        ->assertStatus(422)
+        ->assertJsonPath('error', __('This PDF could not be read. Check that it is the original statement from the bank.'));
+});
