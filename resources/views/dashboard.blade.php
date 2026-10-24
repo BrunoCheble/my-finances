@@ -38,13 +38,6 @@
     $spendingOthers = abs($spending->slice(7)->sum('amount'));
     $spendingMax = abs($spendingTop->first()->amount ?? 1) ?: 1;
 
-    $allAlerts = collect($alerts)->flatten(1)->filter()->sortByDesc('severity')->values();
-    $alertStyles = [
-        100 => ['icon' => 'chart-pie', 'label' => __('Concentration'), 'class' => 'bg-amber-50 text-amber-700'],
-        75 => ['icon' => 'arrow-trend-up', 'label' => __('Well above usual'), 'class' => 'bg-rose-50 text-rose-700'],
-        50 => ['icon' => 'arrow-trend-up', 'label' => __('Above usual'), 'class' => 'bg-amber-50 text-amber-700'],
-        25 => ['icon' => 'bell', 'label' => __('Reminder'), 'class' => 'bg-brand-50 text-brand-700'],
-    ];
 @endphp
 
 <x-app-layout>
@@ -148,38 +141,7 @@
             </section>
 
             {{-- Alerts --}}
-            <section class="card flex flex-col p-4 sm:p-6" aria-labelledby="alerts-title" x-data="{ all: false }">
-                <div class="flex items-center justify-between">
-                    <h2 id="alerts-title" class="text-base font-semibold text-slate-900">{{ __('Alerts') }}</h2>
-                    @if ($allAlerts->isNotEmpty())
-                        <x-badge color="slate">{{ $allAlerts->count() }}</x-badge>
-                    @endif
-                </div>
-                @if ($allAlerts->isEmpty())
-                    <x-empty-state icon="circle-check" :title="__('All quiet')" :description="__('No unusual spending this month.')" class="flex-1 !py-8" />
-                @else
-                    <ul class="mt-3 flex-1 space-y-3">
-                        @foreach ($allAlerts as $i => $alert)
-                            @php
-                                $style = $alertStyles[$alert['severity']] ?? $alertStyles[25];
-                            @endphp
-                            <li class="flex gap-3" @if ($i >= 4) x-show="all" x-cloak @endif>
-                                <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg {{ $style['class'] }}" aria-hidden="true">
-                                    <i class="fa-solid fa-{{ $style['icon'] }} text-sm"></i>
-                                </span>
-                                <div class="min-w-0 text-sm">
-                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ $style['label'] }}</p>
-                                    <p class="text-slate-700 [&_b]:font-semibold [&_b]:text-slate-900">{!! $alert['message'] !!}</p>
-                                </div>
-                            </li>
-                        @endforeach
-                    </ul>
-                    @if ($allAlerts->count() > 4)
-                        <button type="button" class="mt-3 text-left text-sm font-medium text-brand-700 hover:text-brand-800" @click="all = !all"
-                            x-text="all ? @js(__('Show less')) : @js(__('Show all :count', ['count' => $allAlerts->count()]))"></button>
-                    @endif
-                @endif
-            </section>
+            @include('dashboard.alerts')
         </div>
 
         <div class="grid gap-6 lg:grid-cols-3">
