@@ -51,10 +51,18 @@ class MovementHistory
             return (object) ((array) $exact + ['match' => 'exact']);
         }
 
+        // a bank transfer may go to a third party (an expense), so it only
+        // reuses an exactly equal description
+        if (self::isTransferText($description)) {
+            return null;
+        }
+
         // a known description contained in the bank text, e.g. "PINGO DOCE" in
-        // "PINGO DOCE S JOAO MA"; the longest one wins
+        // "PINGO DOCE S JOAO MA"; the longest one wins. Never suggests an
+        // internal transfer by similarity.
         $similar = $this->entries
-            ->filter(fn ($entry) => mb_strlen($entry->description) >= 4
+            ->filter(fn ($entry) => $entry->type !== FinancialMovementType::TRANSFER
+                && mb_strlen($entry->description) >= 4
                 && preg_match('/(^| )' . preg_quote($entry->description, '/') . '( |$)/u', $normalized))
             ->sortByDesc(fn ($entry) => mb_strlen($entry->description))
             ->first();
@@ -70,6 +78,19 @@ class MovementHistory
         'COMPRA', 'COMPRAS', 'C', 'DEB', 'CRED', 'PAG', 'PAGAMENTO', 'MB', 'DD',
         'TRF', 'TFI', 'TRANSF', 'TRANSFERENCIA', 'SEPA', 'PARA', 'DE', 'DO', 'DA', 'DOS', 'DAS',
     ];
+
+    private const TRANSFER_WORDS = ['TRF', 'TFI', 'TRANSF', 'TRANSFERENCIA', 'SEPA', 'MBWAY'];
+
+    /**
+     * Whether the bank text describes a transfer, to a third party or not.
+     */
+    public static function isTransferText(?string $description): bool
+    {
+        $words = preg_split('/[^A-Z0-9]+/', strtoupper(Str::ascii((string) $description)), -1, PREG_SPLIT_NO_EMPTY);
+        $joined = ' ' . implode(' ', $words) . ' ';
+
+        return (bool) array_intersect($words, self::TRANSFER_WORDS) || str_contains($joined, ' MB WAY ');
+    }
 
     /**
      * Words that identify the merchant: no purchase codes (any word with a digit),

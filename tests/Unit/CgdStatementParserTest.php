@@ -51,3 +51,15 @@ it('matches merchants ignoring purchase codes and generic bank words', function 
         ->and($same('TRF PARA POUPANCA 001', 'TRANSFERENCIA PARA POUPANCA'))->toBeTrue()
         ->and($same('1234 5678', '1234 5678'))->toBeFalse();
 });
+
+it('recognizes bank transfer descriptions', function () {
+    $isTransfer = fn ($d) => App\Services\Statements\MovementHistory::isTransferText($d);
+
+    expect($isTransfer('TRF PARA JOAO'))->toBeTrue()
+        ->and($isTransfer('TFI CATARINA FILIPA L'))->toBeTrue()
+        ->and($isTransfer('TRF CRED SEPA+ DE EMPRESA'))->toBeTrue()
+        ->and($isTransfer('Transferência para poupança'))->toBeTrue()
+        ->and($isTransfer('MB WAY 912345678'))->toBeTrue()
+        ->and($isTransfer('PINGO DOCE S JOAO MA'))->toBeFalse()
+        ->and($isTransfer('UBER TRIP'))->toBeFalse();
+});
