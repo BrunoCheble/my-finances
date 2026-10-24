@@ -595,5 +595,6 @@
     "Pagination": "Paginação",
     "Previous": "Anterior",
     "Page :current of :last": "Página :current de :last",
-    "Go to page :page": "Ir para a página :page"
+    "Go to page :page": "Ir para a página :page",
+    "Install app": "Instalar app"
 }

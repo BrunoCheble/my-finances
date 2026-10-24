@@ -13,6 +13,13 @@
     </div>
 </div>
 <div class="my-1 border-t border-slate-100"></div>
+{{-- shown when the browser offers to install the app (Chrome / Edge, Android and desktop) --}}
+<button type="button" x-data="{ available: !!window.escudoInstallPrompt }" x-show="available" x-cloak
+    @install-available.window="available = true" @appinstalled.window="available = false"
+    @click="window.escudoInstallPrompt.prompt(); window.escudoInstallPrompt.userChoice.then(() => { window.escudoInstallPrompt = null; available = false; })"
+    class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm font-medium text-brand-700 hover:bg-brand-50">
+    <i class="fa-solid fa-download w-4 text-center" aria-hidden="true"></i>{{ __('Install app') }}
+</button>
 <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100">
     <i class="fa-solid fa-user w-4 text-center text-slate-400" aria-hidden="true"></i>{{ __('Profile') }}
 </a>

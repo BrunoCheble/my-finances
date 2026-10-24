@@ -22,6 +22,7 @@ window.escudoTheme = {
         const dark = theme === 'dark' || (theme === 'system' && darkQuery.matches);
         if (document.documentElement.classList.contains('dark') !== dark) {
             document.documentElement.classList.toggle('dark', dark);
+            document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#141c2b' : '#ffffff');
             window.dispatchEvent(new CustomEvent('theme-changed', { detail: { dark } }));
         }
     },
