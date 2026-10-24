@@ -78,6 +78,7 @@
                                 @if ($current) aria-current="page" @endif>
                                 <span class="h-2.5 w-2.5 rounded-full" style="background-color: {{ $wallet->color ?? '#94a3b8' }}" aria-hidden="true"></span>
                                 {{ $wallet->name }}
+                                @unless ($wallet->active)<span class="text-xs font-normal opacity-70">({{ __('inactive wallet') }})</span>@endunless
                             </a>
                         </li>
                     @endforeach

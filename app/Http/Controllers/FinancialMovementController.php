@@ -46,7 +46,8 @@ class FinancialMovementController extends Controller
         $categoryOptions = CategoryOptionsService::forPicker();
         $openLoans = LoanService::openPeople();
 
-        $walletsSidebar = Wallet::all();
+        // inactive wallets stay at the end of the switcher, for their history
+        $walletsSidebar = Wallet::orderByDesc('active')->orderBy('name')->get();
         $wallets = ArrayHelper::toKeyValueArray($walletsSidebar, 'id', 'name');
         $walletSection = Wallet::find($request->input('wallet_id'));
 

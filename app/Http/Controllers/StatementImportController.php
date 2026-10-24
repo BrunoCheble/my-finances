@@ -25,7 +25,7 @@ class StatementImportController extends Controller
     {
         $imports = StatementImport::with('wallet')->withCount('lines')->latest()->get();
         // third-party money has no bank statement of its own
-        $wallets = ArrayHelper::toKeyValueArray(Wallet::own()->get(), 'id', 'name');
+        $wallets = ArrayHelper::toKeyValueArray(Wallet::own()->where('active', true)->get(), 'id', 'name');
 
         return view('statement-imports.index', compact('imports', 'wallets'));
     }
@@ -34,7 +34,7 @@ class StatementImportController extends Controller
     {
         $data = $request->validate([
             'file' => 'required|file|mimes:pdf|max:10240',
-            'wallet_id' => ['required', Rule::exists('wallets', 'id')->where('user_id', auth()->id())->whereNot('type', Wallet::TYPE_THIRD_PARTY)],
+            'wallet_id' => ['required', Rule::exists('wallets', 'id')->where('user_id', auth()->id())->where('active', true)->whereNot('type', Wallet::TYPE_THIRD_PARTY)],
         ]);
 
         try {
@@ -76,7 +76,7 @@ class StatementImportController extends Controller
 
         $types = FinancialMovementType::options();
         $categoriesData = CategoryOptionsService::forPicker();
-        $wallets = ArrayHelper::toKeyValueArray(Wallet::orderBy('name')->get(), 'id', 'name');
+        $wallets = ArrayHelper::toKeyValueArray(Wallet::where('active', true)->orderBy('name')->get(), 'id', 'name');
         $categorizedTypes = ConfirmStatementImportService::CATEGORIZED_TYPES;
 
         return view('statement-imports.show', compact(

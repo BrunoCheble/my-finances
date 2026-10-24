@@ -544,5 +544,6 @@
     "Is active": "Ativa",
     "Inactive category": "Inativa",
     "Inactive wallets": "Inativas",
-    "Every active wallet in every month, with the balance carried over. Edit to adjust to the real balance.": "Todas as contas ativas em todos os meses, com o saldo carregado. Edite para ajustar ao saldo real."
+    "Every active wallet in every month, with the balance carried over. Edit to adjust to the real balance.": "Todas as contas ativas em todos os meses, com o saldo carregado. Edite para ajustar ao saldo real.",
+    "inactive wallet": "inativa"
 }

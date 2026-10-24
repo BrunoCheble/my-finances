@@ -20,7 +20,10 @@
         'loanDirection' => old('loan_direction', $fm?->exists && $fm->type === \App\Enums\FinancialMovementType::LOAN && $fm->amount > 0 ? 'receive' : 'lend'),
         'openLoans' => $openLoans ?? [],
         'categories' => $categoryOptions,
-        'wallets' => $walletsSidebar->map(fn ($wallet) => ['id' => (string) $wallet->id, 'name' => $wallet->name, 'color' => $wallet->color ?? '#94a3b8'])->values(),
+        // inactive wallets leave the form, unless the edited movement already uses one
+        'wallets' => $walletsSidebar
+            ->filter(fn ($wallet) => $wallet->active || in_array($wallet->id, [$fm?->wallet_id, $fm?->destinationMovement?->wallet_id]))
+            ->map(fn ($wallet) => ['id' => (string) $wallet->id, 'name' => $wallet->name, 'color' => $wallet->color ?? '#94a3b8'])->values(),
         'types' => $types,
     ];
     $uid = $fm?->exists ? 'edit-' . $fm->id : 'create';

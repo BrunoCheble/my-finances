@@ -57,3 +57,20 @@ it('skips wallets with nothing to carry', function () {
 
     expect(FinancialBalance::where('wallet_id', $empty->id)->count())->toBeLessThanOrEqual(1);
 });
+
+it('keeps inactive wallets out of the forms but in the movements history', function () {
+    $active = walletWithMovement('Ativa', '2026-08-03', 10);
+    $inactive = walletWithMovement('Encerrada', '2026-08-03', 20, active: false);
+
+    $page = $this->get(route('financial-movements.index'))->assertOk();
+    // the switcher still lists it (history)...
+    $page->assertSee(route('financial-movements.index', ['wallet_id' => $inactive->id]), false);
+    // ...and its movements are still there
+    $this->get(route('financial-movements.index', ['wallet_id' => $inactive->id]))->assertOk()->assertSee('Encerrada');
+
+    // but the statement upload refuses it
+    $this->post(route('statement-imports.store'), [
+        'file' => Illuminate\Http\UploadedFile::fake()->create('e.pdf', 10, 'application/pdf'),
+        'wallet_id' => $inactive->id,
+    ])->assertSessionHasErrors('wallet_id');
+});
