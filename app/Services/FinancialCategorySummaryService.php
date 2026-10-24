@@ -64,8 +64,10 @@ class FinancialCategorySummaryService
 
         // Garantir que TODAS as categorias tenham todos os meses
         $summary = $categories->mapWithKeys(function ($category) use ($groupedMovements, $allMonths) {
+            // a category without movements still shows its own forecast
             return [$category->id => collect($allMonths)->mapWithKeys(fn($month) => [
-                $month => $groupedMovements[$category->id][$month] ?? 0
+                $month => $groupedMovements[$category->id][$month]
+                    ?? ($month === 'Previsão' ? (float) $category->expected_total : 0)
             ])];
         });
 

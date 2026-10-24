@@ -67,7 +67,9 @@
                         </a>
                     </li>
                     @foreach ($walletsSidebar as $wallet)
-                        @php($current = $walletSection?->id === $wallet->id)
+                        @php
+                            $current = $walletSection?->id === $wallet->id;
+                        @endphp
                         <li>
                             <a href="{{ route('financial-movements.index', array_merge(request()->except(['wallet_id', 'page']), ['wallet_id' => $wallet->id])) }}"
                                 @class(['flex items-center gap-2 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-medium transition',

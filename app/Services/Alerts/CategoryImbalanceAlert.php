@@ -41,7 +41,7 @@ class CategoryImbalanceAlert
                 $alerts[] = [
                     'type' => 'category_imbalance',
                     'category_id' => $categoryId,
-                    'message' => "<b>{$categories[$categoryId]->name}</b> representa <b>{$formattedPercent}%</b> (€{$formattedTotal}) dos gastos do mês.",
+                    'message' => "<b>{$categories[$categoryId]->name}</b> representa <b>{$formattedPercent}%</b> ({$formattedTotal} €) dos gastos do mês.",
                     'percent' => $percent,
                     'severity' => 100,
                 ];

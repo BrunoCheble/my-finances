@@ -9,6 +9,7 @@ use App\Services\FinancialBalanceSummaryService;
 use App\Services\FinancialCategorySummaryService;
 use App\Services\Alerts\SpendingSpikeAlert;
 use App\Services\Cache\DashboardCacheService;
+use App\Services\DashboardKpiService;
 use DateTime;
 use Illuminate\Http\Request;
 
@@ -45,6 +46,8 @@ class DashboardController extends Controller
         ])->all();
 
         return view('dashboard', [
+            'month' => $month,
+            'kpis' => DashboardKpiService::for($month, $data['monthlySummary']),
             'monthlySummary' => $data['monthlySummary'],
             'categorySummary' => $data['categorySummary'],
             'alerts' => $alerts,
