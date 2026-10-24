@@ -27,8 +27,8 @@ class FinancialBalanceAccordionService
 
         $result = $groupedBalances->values();
 
-        if (!$result) {
-            return;
+        if ($result->isEmpty()) {
+            return $result;
         }
 
         $result[0]->balances
@@ -51,6 +51,10 @@ class FinancialBalanceAccordionService
 
     public static function getSummary($groups)
     {
+        if ($groups->isEmpty()) {
+            return ['net_worth' => 0, 'in_banks' => 0, 'third_party' => 0, 'total_unidentified' => 0, 'total_calculated' => 0, 'total_initial' => 0];
+        }
+
         $totalUnidentified = $groups->flatMap(fn($group) => $group->balances)->sum('total_unidentified');
         $totalCalculated = $groups->first()->balances->sum('calculated_balance');
         $totalInitial = $groups->last()->balances->sum('initial_balance');

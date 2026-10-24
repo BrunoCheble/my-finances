@@ -14,7 +14,7 @@
         <span class="sr-only">{{ $label }}</span>
     </a>
 @else
-    <button type="button" title="{{ $label }}" {{ $attributes->merge(['class' => "btn-icon $toneClass"]) }}>
+    <button title="{{ $label }}" {{ $attributes->merge(['type' => 'button', 'class' => "btn-icon $toneClass"]) }}>
         <i class="fa-solid fa-{{ $icon }}" aria-hidden="true"></i>
         <span class="sr-only">{{ $label }}</span>
     </button>

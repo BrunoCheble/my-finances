@@ -12,6 +12,7 @@ use App\Services\AdjustFinancialBalanceService;
 use App\Services\Cache\DashboardCacheService;
 use App\Services\CalculateFinancialBalanceService;
 use App\Services\FinancialBalanceAccordionService;
+use App\Services\NetWorthHistoryService;
 use App\Services\SaveFinancialBalanceService;
 use Illuminate\Contracts\View\View;
 
@@ -32,7 +33,10 @@ class FinancialBalanceController extends Controller
             $value => $value
         ])->all();
 
-        return view('financial-balances.index', compact('groups', 'summary', 'wallets', 'types', 'startDate', 'endDate', 'filter'));
+        $period = array_key_exists($request->input('period'), NetWorthHistoryService::PERIODS) ? $request->input('period') : '1y';
+        $history = NetWorthHistoryService::build(NetWorthHistoryService::PERIODS[$period]);
+
+        return view('financial-balances.index', compact('groups', 'summary', 'wallets', 'types', 'startDate', 'endDate', 'filter', 'period', 'history'));
     }
 
     public function create(): View
