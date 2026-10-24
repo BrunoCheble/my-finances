@@ -3,7 +3,7 @@
     $targets = $financials->map(fn ($financial) => $financial->originalMovement ?? $financial)->unique('id');
 @endphp
 
-<div x-data="deleteSelected()" class="card overflow-hidden">
+<div x-data="deleteSelected()" class="card mb-20 overflow-hidden md:mb-0">
     {{-- Toolbar: selection actions or summary --}}
     <div class="flex min-h-[3.25rem] items-center justify-between gap-3 border-b border-slate-200 px-4 py-2">
         <div x-show="selected.length === 0" class="text-sm text-slate-500">
@@ -48,7 +48,7 @@
         </div>
 
         {{-- Mobile: list grouped by day --}}
-        <div class="pb-20 md:hidden">
+        <div class="md:hidden">
             @foreach ($financials->groupBy('date') as $date => $dayMovements)
                 <h3 class="sticky top-14 z-10 border-b border-slate-100 bg-slate-50/95 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 backdrop-blur">
                     {{ \Carbon\Carbon::parse($date)->translatedFormat('d M Y') }}
