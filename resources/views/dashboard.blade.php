@@ -122,8 +122,8 @@
                         <p class="text-sm text-slate-500">{{ __('Last :count months', ['count' => $chart->count()]) }}</p>
                     </div>
                     <ul class="flex items-center gap-4 text-sm text-slate-600">
-                        <li class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm bg-[#059669]" aria-hidden="true"></span>{{ __('Total income') }}</li>
-                        <li class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm bg-[#e34948]" aria-hidden="true"></span>{{ __('Total expenses') }}</li>
+                        <li class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm bg-[color:var(--chart-income)]" aria-hidden="true"></span>{{ __('Total income') }}</li>
+                        <li class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm bg-[color:var(--chart-expense)]" aria-hidden="true"></span>{{ __('Total expenses') }}</li>
                     </ul>
                 </div>
                 <div class="relative mt-4 h-64 sm:h-72">
@@ -214,32 +214,36 @@
         (() => {
             const money = (value) => Number(value).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
             const compact = (value) => Number(value).toLocaleString('pt-PT', { notation: 'compact', maximumFractionDigits: 1 });
-            const ink = { muted: '#64748b', grid: '#eef2f6' };
             const flow = @json($chart);
             const netWorth = @json($netWorth);
+            const charts = [];
 
-            Chart.defaults.font.family = 'Figtree, ui-sans-serif, system-ui, sans-serif';
-            Chart.defaults.color = ink.muted;
+            // (re)drawn with the colors of the current theme
+            const render = () => {
+                charts.splice(0).forEach((chart) => chart.destroy());
+                const ink = window.chartInk();
+                Chart.defaults.font.family = 'Figtree, ui-sans-serif, system-ui, sans-serif';
+                Chart.defaults.color = ink.muted;
 
-            const axes = {
-                x: { grid: { display: false }, border: { display: false } },
-                y: {
-                    grid: { color: ink.grid }, border: { display: false },
-                    ticks: { callback: (value) => compact(value) + ' €', maxTicksLimit: 5 },
-                },
+                const axes = {
+                    x: { grid: { display: false }, border: { display: false } },
+                    y: {
+                        grid: { color: ink.grid }, border: { display: false },
+                        ticks: { callback: (value) => compact(value) + ' €', maxTicksLimit: 5 },
+                    },
             };
             const tooltip = {
-                backgroundColor: '#0f172a', padding: 10, cornerRadius: 8, boxPadding: 4,
+                backgroundColor: ink.tooltip, padding: 10, cornerRadius: 8, boxPadding: 4,
                 callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${money(ctx.parsed.y)}` },
             };
 
-            new Chart(document.getElementById('flowChart'), {
+            charts.push(new Chart(document.getElementById('flowChart'), {
                 type: 'bar',
                 data: {
                     labels: flow.map((row) => row.label),
                     datasets: [
-                        { label: @json(__('Total income')), data: flow.map((row) => row.income), backgroundColor: '#059669', borderRadius: 4, borderSkipped: 'bottom', maxBarThickness: 18 },
-                        { label: @json(__('Total expenses')), data: flow.map((row) => row.expenses), backgroundColor: '#e34948', borderRadius: 4, borderSkipped: 'bottom', maxBarThickness: 18 },
+                        { label: @json(__('Total income')), data: flow.map((row) => row.income), backgroundColor: ink.income, borderRadius: 4, borderSkipped: 'bottom', maxBarThickness: 18 },
+                        { label: @json(__('Total expenses')), data: flow.map((row) => row.expenses), backgroundColor: ink.expense, borderRadius: 4, borderSkipped: 'bottom', maxBarThickness: 18 },
                     ],
                 },
                 options: {
@@ -249,18 +253,18 @@
                     plugins: { legend: { display: false }, tooltip },
                     scales: { ...axes, y: { ...axes.y, beginAtZero: true } },
                 },
-            });
+            }));
 
-            new Chart(document.getElementById('netWorthChart'), {
+            charts.push(new Chart(document.getElementById('netWorthChart'), {
                 type: 'line',
                 data: {
                     labels: flow.map((row) => row.label),
                     datasets: [{
                         label: @json(__('Net worth')),
                         data: Object.values(netWorth),
-                        borderColor: '#2479bf', borderWidth: 2, tension: 0.3,
-                        pointRadius: 0, pointHoverRadius: 5, pointHitRadius: 12, pointBackgroundColor: '#2479bf',
-                        fill: true, backgroundColor: 'rgba(36, 121, 191, 0.08)',
+                        borderColor: ink.brand, borderWidth: 2, tension: 0.3,
+                        pointRadius: 0, pointHoverRadius: 5, pointHitRadius: 12, pointBackgroundColor: ink.brand,
+                        fill: true, backgroundColor: ink.brandFill,
                     }],
                 },
                 options: {
@@ -269,7 +273,10 @@
                     plugins: { legend: { display: false }, tooltip },
                     scales: { ...axes, x: { ...axes.x, ticks: { maxTicksLimit: 6 } } },
                 },
-            });
+            }));
+            };
+            render();
+            window.addEventListener('theme-changed', render);
         })();
     </script>
 </x-app-layout>

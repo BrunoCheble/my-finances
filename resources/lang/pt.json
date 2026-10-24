@@ -587,5 +587,9 @@
     "All match: confirm": "Todos batem: conferir",
     "Reconciled": "Conferido",
     "Collapse menu": "Recolher menu",
-    "Expand menu": "Expandir menu"
+    "Expand menu": "Expandir menu",
+    "Theme": "Tema",
+    "Light": "Claro",
+    "Dark": "Escuro",
+    "System": "Sistema"
 }

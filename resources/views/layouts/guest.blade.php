@@ -13,6 +13,9 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
 
+    <!-- theme (light / dark / system) applied before the first paint -->
+    <script>try { var t = localStorage.getItem('theme'); if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark'); } catch (e) {}</script>
+
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -20,7 +23,7 @@
 <body class="font-sans text-slate-900 antialiased">
     <div class="flex min-h-screen">
         {{-- Brand panel (large screens) --}}
-        <aside class="relative hidden w-[44%] overflow-hidden bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 lg:flex lg:flex-col lg:justify-between lg:p-12">
+        <aside class="theme-light relative hidden w-[44%] overflow-hidden bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 lg:flex lg:flex-col lg:justify-between lg:p-12">
             <svg class="pointer-events-none absolute -right-24 -top-24 h-[28rem] w-[28rem] text-white/5" viewBox="0 0 100 100" aria-hidden="true">
                 <circle cx="50" cy="50" r="50" fill="currentColor" />
             </svg>

@@ -3,8 +3,38 @@
 @tailwind utilities;
 
 @layer base {
+    /* chart colors (canvas can't use the Tailwind classes) */
+    :root {
+        --chart-muted: #64748b;
+        --chart-grid: #eef2f6;
+        --chart-tooltip: #0f172a;
+        --chart-income: #059669;
+        --chart-expense: #e34948;
+        --chart-brand: #2479bf;
+        --chart-brand-fill: rgba(36, 121, 191, 0.08);
+    }
+    .dark {
+        color-scheme: dark;
+        --chart-muted: #94a3b8;
+        --chart-grid: #243045;
+        --chart-tooltip: #334155;
+        --chart-income: #0fa878;
+        --chart-expense: #c9353d;
+        --chart-brand: #5aa2dc;
+        --chart-brand-fill: rgba(90, 162, 220, 0.14);
+    }
+
     body {
         @apply bg-slate-50 text-slate-800;
+    }
+
+    /* dark theme: form controls and focus rings follow the surface */
+    .dark :where(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]), select, textarea, [type=checkbox], [type=radio]) {
+        background-color: rgb(var(--c-white));
+        border-color: rgb(var(--c-slate-300));
+    }
+    .dark *, .dark ::before, .dark ::after {
+        --tw-ring-offset-color: rgb(var(--c-white));
     }
 
     [x-cloak] {

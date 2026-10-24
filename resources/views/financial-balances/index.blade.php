@@ -128,7 +128,7 @@
                                             @endif
                                         </p>
                                         <svg viewBox="0 0 100 30" preserveAspectRatio="none" class="h-5 w-16 shrink-0" aria-hidden="true">
-                                            <polyline points="{{ $sparkline($wallet->values) }}" fill="none" stroke="{{ $wallet->third_party ? '#9333ea' : '#2479bf' }}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" />
+                                            <polyline points="{{ $sparkline($wallet->values) }}" fill="none" stroke="{{ $wallet->third_party ? 'rgb(var(--c-purple-600))' : 'var(--chart-brand)' }}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" />
                                         </svg>
                                     </div>
                                 </div>
@@ -147,8 +147,8 @@
                             <p class="text-sm text-slate-500">{{ __('How much your net worth grew or shrank each month') }}</p>
                         </div>
                         <ul class="flex items-center gap-4 text-sm text-slate-600">
-                            <li class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm bg-[#059669]" aria-hidden="true"></span>{{ __('Grew') }}</li>
-                            <li class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm bg-[#e34948]" aria-hidden="true"></span>{{ __('Shrank') }}</li>
+                            <li class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm bg-[color:var(--chart-income)]" aria-hidden="true"></span>{{ __('Grew') }}</li>
+                            <li class="flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-sm bg-[color:var(--chart-expense)]" aria-hidden="true"></span>{{ __('Shrank') }}</li>
                         </ul>
                     </div>
                     <div class="relative mt-4 h-56">
@@ -201,40 +201,46 @@
                 const total = @json($total);
                 const monthly = @json(array_values($monthly));
 
-                Chart.defaults.font.family = 'Figtree, ui-sans-serif, system-ui, sans-serif';
-                Chart.defaults.color = '#64748b';
-                const axes = {
-                    x: { grid: { display: false }, border: { display: false }, ticks: { maxTicksLimit: 8 } },
-                    y: { grid: { color: '#eef2f6' }, border: { display: false }, ticks: { callback: (v) => compact(v) + ' €', maxTicksLimit: 5 } },
+                const charts = [];
+
+                // (re)drawn with the colors of the current theme
+                const render = () => {
+                    charts.splice(0).forEach((chart) => chart.destroy());
+                    const ink = window.chartInk();
+                    Chart.defaults.font.family = 'Figtree, ui-sans-serif, system-ui, sans-serif';
+                    Chart.defaults.color = ink.muted;
+                    const axes = {
+                        x: { grid: { display: false }, border: { display: false }, ticks: { maxTicksLimit: 8 } },
+                        y: { grid: { color: ink.grid }, border: { display: false }, ticks: { callback: (v) => compact(v) + ' €', maxTicksLimit: 5 } },
                 };
                 const tooltip = {
-                    backgroundColor: '#0f172a', padding: 10, cornerRadius: 8,
+                    backgroundColor: ink.tooltip, padding: 10, cornerRadius: 8,
                     callbacks: { label: (ctx) => ' ' + money(ctx.parsed.y) },
                 };
 
-                new Chart(document.getElementById('netWorthChart'), {
+                charts.push(new Chart(document.getElementById('netWorthChart'), {
                     type: 'line',
                     data: {
                         labels,
                         datasets: [{
                             label: @json(__('Net worth')), data: total,
-                            borderColor: '#2479bf', borderWidth: 2, tension: 0.3,
-                            pointRadius: total.length > 24 ? 0 : 3, pointHoverRadius: 6, pointHitRadius: 14, pointBackgroundColor: '#2479bf',
-                            fill: true, backgroundColor: 'rgba(36, 121, 191, 0.08)',
+                            borderColor: ink.brand, borderWidth: 2, tension: 0.3,
+                            pointRadius: total.length > 24 ? 0 : 3, pointHoverRadius: 6, pointHitRadius: 14, pointBackgroundColor: ink.brand,
+                            fill: true, backgroundColor: ink.brandFill,
                         }],
                     },
                     options: { maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false }, tooltip }, scales: axes },
-                });
+                }));
 
                 const monthlyCanvas = document.getElementById('monthlyChart');
                 if (monthlyCanvas) {
-                    new Chart(monthlyCanvas, {
+                    charts.push(new Chart(monthlyCanvas, {
                         type: 'bar',
                         data: {
                             labels: labels.slice(1),
                             datasets: [{
                                 label: @json(__('Change')), data: monthly,
-                                backgroundColor: monthly.map((v) => v >= 0 ? '#059669' : '#e34948'),
+                                backgroundColor: monthly.map((v) => v >= 0 ? ink.income : ink.expense),
                                 borderRadius: 4, maxBarThickness: 22,
                             }],
                         },
@@ -243,8 +249,11 @@
                             plugins: { legend: { display: false }, tooltip: { ...tooltip, callbacks: { label: (ctx) => ' ' + (ctx.parsed.y > 0 ? '+' : '') + money(ctx.parsed.y) } } },
                             scales: axes,
                         },
-                    });
+                    }));
                 }
+                };
+                render();
+                window.addEventListener('theme-changed', render);
             })();
         </script>
     @endif
