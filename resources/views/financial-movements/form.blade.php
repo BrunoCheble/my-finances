@@ -1,97 +1,195 @@
-<div class="space-y-6"
-    x-data="{
-        description: '{{ old('description', $financialMovement?->description) }}',
-        type: '{{ old('type', $financialMovement?->type) }}',
-        category_id: '{{ old('category_id', $financialMovement?->category_id) }}',
-        baseUrl: '{{ url('/api/financial-movements/latest-type-category') }}',
+{{--
+    Movement form, used to create (modal-create, submitted via fetch) and to edit (modal-edit).
+    The Alpine component "movementForm" is defined once in financial-movements/form-script.
+--}}
+@php
+    $fm = $financialMovement;
+    $isLoanLike = in_array($fm?->type, [\App\Enums\FinancialMovementType::LOAN, \App\Enums\FinancialMovementType::ADJUSTMENT]);
+    $amount = $fm?->exists ? ($isLoanLike ? (float) $fm->amount : abs((float) $fm->amount)) : null;
+    $config = [
+        'mode' => $fm?->exists ? 'edit' : 'create',
+        'type' => old('type', $fm?->type ?: \App\Enums\FinancialMovementType::EXPENSE),
+        'amount' => old('amount', $amount !== null ? number_format($amount, 2, ',', '') : ''),
+        'description' => old('description', $fm?->description ?? ''),
+        'date' => old('date', $fm?->date ?: now()->format('Y-m-d')),
+        'categoryId' => (string) old('category_id', $fm?->category_id ?? ''),
+        'walletId' => (string) old('wallet_id', $fm?->wallet_id ?? $walletSection?->id ?? $walletsSidebar->firstWhere('type', '!=', 'third_party')?->id ?? ''),
+        'transferToWalletId' => (string) old('transfer_to_wallet_id', $fm?->destinationMovement?->wallet_id ?? ''),
+        'includeAlert' => (bool) old('include_alert', $fm?->include_alert),
+        'categories' => $categoryOptions,
+        'wallets' => $walletsSidebar->map(fn ($wallet) => ['id' => (string) $wallet->id, 'name' => $wallet->name, 'color' => $wallet->color ?? '#94a3b8'])->values(),
+        'types' => $types,
+    ];
+    $uid = $fm?->exists ? 'edit-' . $fm->id : 'create';
+@endphp
 
-        async fetchLatestByDescription() {
-            if (!this.description) {
-                return;
-            }
+<div x-data="movementForm(@js($config))" class="flex flex-1 flex-col">
+    <input type="hidden" name="type" :value="type">
+    <input type="hidden" name="amount" :value="normalizedAmount">
+    <input type="hidden" name="category_id" :value="needsCategory ? categoryId : ''">
+    <input type="hidden" name="wallet_id" :value="walletId">
+    <input type="hidden" name="transfer_to_wallet_id" :value="transferToWalletId" :disabled="type !== 'transfer'">
+    <input type="hidden" name="include_alert" value="1" :disabled="!includeAlert">
 
-            const params = new URLSearchParams({ search: this.description });
-            const response = await fetch(`${this.baseUrl}?${params.toString()}`);
-            const data = await response.json();
-
-            this.type = data.type;
-            this.category_id = data.category_id;
-        }
-    }"
->
-
-
-
-    <div class="grid grid-cols-2 gap-4 sm:grid-cols-6">
-        <div class="col-span-2 sm:col-span-2">
-            <x-input-label for="date" :value="__('Date')" />
-            <x-text-input id="date" name="date" type="date" class="mt-1 block w-full"
-                :value="old('date', $financialMovement?->date)" autocomplete="off" />
-            <x-input-error class="mt-2" :messages="$errors->get('date')" />
+    <div class="flex-1 space-y-6 px-5 pb-6 sm:px-6">
+        {{-- Type --}}
+        <div role="radiogroup" aria-label="{{ __('Type') }}" class="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1">
+            <template x-for="option in mainTypes" :key="option.value">
+                <button type="button" role="radio" :aria-checked="type === option.value" @click="setType(option.value)"
+                    :class="type === option.value ? 'bg-white shadow-sm ' + option.active : 'text-slate-600 hover:text-slate-900'"
+                    class="flex flex-col items-center gap-1 rounded-lg px-2 py-2 text-xs font-semibold transition sm:flex-row sm:justify-center sm:text-sm">
+                    <i class="fa-solid" :class="'fa-' + option.icon" aria-hidden="true"></i>
+                    <span x-text="option.label"></span>
+                </button>
+            </template>
+            <div class="relative" @click.outside="moreTypes = false">
+                <button type="button" @click="moreTypes = !moreTypes" :aria-expanded="moreTypes"
+                    :class="isOtherType ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'"
+                    class="flex w-full flex-col items-center gap-1 rounded-lg px-2 py-2 text-xs font-semibold transition sm:flex-row sm:justify-center sm:text-sm">
+                    <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
+                    <span x-text="isOtherType ? types[type] : @js(__('More'))" class="truncate"></span>
+                </button>
+                <div x-show="moreTypes" x-cloak x-transition
+                    class="absolute right-0 z-30 mt-2 w-44 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                    <template x-for="option in otherTypes" :key="option.value">
+                        <button type="button" @click="setType(option.value); moreTypes = false"
+                            class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
+                            <i class="fa-solid w-4 text-slate-400" :class="'fa-' + option.icon" aria-hidden="true"></i>
+                            <span x-text="option.label"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
         </div>
 
-        <div class="col-span-2 sm:col-span-4">
-            <x-input-label for="description" :value="__('Description')" />
-            <x-text-input id="description" name="description" type="text" class="mt-1 block w-full"
-                x-model="description" x-on:change="fetchLatestByDescription()"
-                autocomplete="off" :placeholder="__('E.g. Supermarket')" />
+        {{-- Amount --}}
+        <div class="text-center">
+            <label for="amount-{{ $uid }}" class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ __('Amount') }}</label>
+            <div class="mt-1 flex items-baseline justify-center gap-1" :class="amountColor">
+                <span class="text-3xl font-semibold sm:text-4xl" x-text="amountSign" aria-hidden="true"></span>
+                <input id="amount-{{ $uid }}" x-ref="amount" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00"
+                    x-model="amount" :style="`width: ${(amount.length || 4) + 0.2}ch`"
+                    class="max-w-[12ch] border-0 bg-transparent p-0 text-left text-4xl font-semibold tabular-nums placeholder:text-slate-300 focus:ring-0 sm:text-5xl">
+                <span class="text-2xl font-semibold sm:text-3xl" aria-hidden="true">€</span>
+            </div>
+            <x-input-error class="mt-1" :messages="$errors->get('amount')" />
+        </div>
+
+        {{-- Description + history hint --}}
+        <div>
+            <x-input-label for="description-{{ $uid }}" :value="__('Description')" />
+            <x-text-input id="description-{{ $uid }}" name="description" type="text" class="mt-1 block w-full"
+                x-model="description" x-on:change="lookupHistory()" autocomplete="off" :placeholder="__('E.g. Supermarket')" />
+            <p x-show="suggestion" x-cloak class="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500">
+                <i class="fa-solid fa-clock-rotate-left text-brand-500" aria-hidden="true"></i>
+                <span x-text="suggestion"></span>
+            </p>
             <x-input-error class="mt-2" :messages="$errors->get('description')" />
         </div>
 
-        <div class="col-span-1 sm:col-span-2">
-            <x-input-label for="amount" :value="__('Amount')" />
+        {{-- Category (searchable, can create) --}}
+        <div x-show="needsCategory" class="relative" @click.outside="closeCategories()">
+            <x-input-label for="category-{{ $uid }}" :value="__('Category')" />
             <div class="relative mt-1">
-                <x-text-input id="amount" name="amount" type="number" step="0.01" inputmode="decimal" class="block w-full pr-8 tabular-nums"
-                    :value="old('amount', $financialMovement->type === 'loan' ? $financialMovement?->amount : abs($financialMovement?->amount))"
-                    autocomplete="off" placeholder="0,00" />
-                <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-slate-400">€</span>
+                <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400" aria-hidden="true"></i>
+                <input id="category-{{ $uid }}" type="text" autocomplete="off" role="combobox" :aria-expanded="categoriesOpen"
+                    :value="categoriesOpen ? categorySearch : categoryName()"
+                    @input="categorySearch = $event.target.value; highlight = firstOption()"
+                    @focus="openCategories()" @click="openCategories()"
+                    @keydown.arrow-down.prevent="moveHighlight(1)" @keydown.arrow-up.prevent="moveHighlight(-1)"
+                    @keydown.enter.prevent="pickCategory(highlight)" @keydown.escape.stop.prevent="closeCategories()" @keydown.tab="closeCategories()"
+                    placeholder="{{ __('Select category') }}" class="input block w-full pl-8">
             </div>
-            <x-input-error class="mt-2" :messages="$errors->get('amount')" />
-        </div>
-
-        <div class="col-span-1 sm:col-span-2">
-            <x-input-label for="type" :value="__('Type')" />
-            <x-dropdown-select :options="$types" x-model="type" name="type" id="type" />
-            <x-input-error class="mt-2" :messages="$errors->get('type')" />
-        </div>
-
-        <div x-show="type !== 'transfer' && type !== 'loan' && type !== 'adjustment'" class="col-span-2 sm:col-span-2">
-            <x-input-label for="category_id" :value="__('Category')" />
-            <x-dropdown-select :options="$categories" x-model="category_id" name="category_id" id="category_id" />
+            <ul x-show="categoriesOpen" x-cloak role="listbox"
+                class="absolute left-0 right-0 z-30 mt-1 max-h-60 overflow-auto rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg">
+                <template x-for="(option, i) in categoryOptions" :key="option.key">
+                    <li>
+                        <div x-show="option.header" class="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400" x-text="option.header"></div>
+                        <button type="button" x-show="!option.header" role="option" :aria-selected="option.id === categoryId"
+                            @mousedown.prevent="pickCategory(i)" @mouseenter="highlight = i"
+                            :class="highlight === i ? 'bg-brand-50 text-brand-900' : 'text-slate-700'"
+                            class="flex w-full items-center justify-between px-3 py-2 text-left">
+                            <span x-text="option.label" :class="option.create && 'font-semibold text-brand-700'"></span>
+                            <span x-show="option.uses" class="text-xs text-slate-400" x-text="option.uses + '×'"></span>
+                        </button>
+                    </li>
+                </template>
+                <li x-show="categorySaving" class="px-3 py-2 text-slate-500">{{ __('Creating category...') }}</li>
+                <li x-show="categoryError" class="px-3 py-2 text-rose-600" x-text="categoryError"></li>
+            </ul>
             <x-input-error class="mt-2" :messages="$errors->get('category_id')" />
         </div>
 
-        @if (count($wallets) > 1)
-            <div class="col-span-2 sm:col-span-3">
-                <x-input-label for="wallet_id" :value="__('From Wallet')" />
-                <x-dropdown-select :options="$wallets" id="wallet_id"
-                    selected="{{ old('wallet_id', $financialMovement?->wallet_id) ?? $walletSection?->id }}"
-                    name="wallet_id" />
-                <x-input-error class="mt-2" :messages="$errors->get('wallet_id')" />
+        {{-- Date --}}
+        <div>
+            <x-input-label for="date-{{ $uid }}" :value="__('Date')" />
+            <div class="mt-1 flex flex-wrap items-center gap-2">
+                <button type="button" @click="date = today()" :aria-pressed="date === today()"
+                    :class="date === today() ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600 hover:border-slate-300'"
+                    class="rounded-full border px-3 py-1.5 text-sm font-medium">{{ __('Today') }}</button>
+                <button type="button" @click="date = yesterday()" :aria-pressed="date === yesterday()"
+                    :class="date === yesterday() ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-slate-200 text-slate-600 hover:border-slate-300'"
+                    class="rounded-full border px-3 py-1.5 text-sm font-medium">{{ __('Yesterday') }}</button>
+                <x-text-input id="date-{{ $uid }}" name="date" type="date" x-model="date" class="min-w-0 flex-1 sm:flex-none" />
             </div>
-        @else
-            <input type="hidden" name="wallet_id" value="{{ key($wallets) }}">
-        @endif
-
-        <div x-show="type === 'transfer'" class="col-span-2 sm:col-span-3">
-            <x-input-label for="transfer_to_wallet_id" :value="__('To Wallet')" />
-            <x-dropdown-select :options="$wallets" id="transfer_to_wallet_id"
-                selected="{{ old('transfer_to_wallet_id', $financialMovement?->destinationMovement?->wallet_id) }}"
-                name="transfer_to_wallet_id" />
-            <x-input-error class="mt-2" :messages="$errors->get('transfer_to_wallet_id')" />
+            <x-input-error class="mt-2" :messages="$errors->get('date')" />
         </div>
-    </div>
 
-    <div class="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <label for="include_alert" class="flex cursor-pointer items-center gap-3 text-sm text-slate-700">
-            <input type="checkbox" id="include_alert" name="include_alert" value="1"
-                @if(old('include_alert', $financialMovement?->include_alert)) checked @endif
-                class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500" />
+        {{-- Wallets --}}
+        <div class="space-y-4">
+            <fieldset>
+                <legend class="label" x-text="type === 'transfer' ? @js(__('From wallet')) : @js(__('Wallet'))"></legend>
+                <div class="mt-1 flex flex-wrap gap-2" role="radiogroup">
+                    <template x-for="wallet in wallets" :key="wallet.id">
+                        <button type="button" role="radio" :aria-checked="walletId === wallet.id" @click="walletId = wallet.id"
+                            :class="walletId === wallet.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-700 hover:border-slate-300'"
+                            class="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition">
+                            <span class="h-2.5 w-2.5 rounded-full" :style="`background-color: ${wallet.color}`" aria-hidden="true"></span>
+                            <span x-text="wallet.name"></span>
+                        </button>
+                    </template>
+                </div>
+                <x-input-error class="mt-2" :messages="$errors->get('wallet_id')" />
+            </fieldset>
+
+            <fieldset x-show="type === 'transfer'" x-cloak>
+                <legend class="label flex items-center gap-2"><i class="fa-solid fa-arrow-down text-slate-400" aria-hidden="true"></i>{{ __('To wallet') }}</legend>
+                <div class="mt-1 flex flex-wrap gap-2" role="radiogroup">
+                    <template x-for="wallet in wallets.filter(w => w.id !== walletId)" :key="wallet.id">
+                        <button type="button" role="radio" :aria-checked="transferToWalletId === wallet.id" @click="transferToWalletId = wallet.id"
+                            :class="transferToWalletId === wallet.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-700 hover:border-slate-300'"
+                            class="flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition">
+                            <span class="h-2.5 w-2.5 rounded-full" :style="`background-color: ${wallet.color}`" aria-hidden="true"></span>
+                            <span x-text="wallet.name"></span>
+                        </button>
+                    </template>
+                </div>
+                <x-input-error class="mt-2" :messages="$errors->get('transfer_to_wallet_id')" />
+            </fieldset>
+        </div>
+
+        {{-- Alert --}}
+        <label class="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-slate-200 px-4 py-3">
             <span>
-                {{ __('Include Alert') }}
+                <span class="block text-sm font-medium text-slate-900">{{ __('Include Alert') }}</span>
                 <span class="block text-xs text-slate-500">{{ __('Shows this movement in the dashboard alerts.') }}</span>
             </span>
+            <button type="button" role="switch" :aria-checked="includeAlert" @click="includeAlert = !includeAlert"
+                :class="includeAlert ? 'bg-brand-600' : 'bg-slate-200'"
+                class="relative inline-flex h-6 w-11 shrink-0 rounded-full transition">
+                <span :class="includeAlert ? 'translate-x-5' : 'translate-x-0.5'"
+                    class="mt-0.5 inline-block h-5 w-5 rounded-full bg-white shadow transition"></span>
+                <span class="sr-only">{{ __('Include Alert') }}</span>
+            </button>
         </label>
-        <x-primary-button class="w-full sm:w-auto">{{ $buttonText ?? __('Save') }}</x-primary-button>
+    </div>
+
+    {{-- Footer: sticky on phones (full-screen sheet) --}}
+    <div class="sticky bottom-0 flex gap-2 border-t border-slate-200 bg-white/95 px-5 py-3 backdrop-blur sm:static sm:justify-end sm:bg-transparent sm:px-6 sm:py-4">
+        <x-button variant="secondary" class="flex-1 sm:flex-none" x-on:click="{{ $cancel ?? '$dispatch(\'close\')' }}">{{ __('Cancel') }}</x-button>
+        <x-primary-button class="flex-1 sm:flex-none" x-bind:disabled="{{ $busy ?? 'false' }}">
+            <i class="fa-solid fa-circle-notch fa-spin" x-show="{{ $busy ?? 'false' }}" x-cloak aria-hidden="true"></i>
+            {{ $buttonText ?? __('Save') }}
+        </x-primary-button>
     </div>
 </div>
