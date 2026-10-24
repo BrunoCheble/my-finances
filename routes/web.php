@@ -14,6 +14,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\Site\SiteController;
 use App\Http\Controllers\StatementImportController;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\LockController;
+use App\Http\Controllers\PasskeyController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -57,6 +59,22 @@ Route::middleware('auth')->group(function () {
     Route::resource('statement-imports', StatementImportController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 
     Route::post('/api/backup/save', [\App\Http\Controllers\BackupController::class, 'save'])->name('backup.save');
+
+    // Fingerprint / Face ID: this device registered on the profile, and the app's lock.
+    Route::post('/passkeys/options', [PasskeyController::class, 'options'])->middleware('throttle:10,1,passkeys-options')->name('passkeys.options');
+    Route::post('/passkeys', [PasskeyController::class, 'store'])->middleware('throttle:10,1,passkeys-store')->name('passkeys.store');
+    Route::delete('/passkeys/{passkey}', [PasskeyController::class, 'destroy'])->name('passkeys.destroy');
+    Route::get('/lock', [LockController::class, 'show'])->name('lock');
+    Route::post('/lock/ping', [LockController::class, 'ping'])->middleware('throttle:30,1,lock-ping')->name('lock.ping');
+    Route::post('/lock/options', [LockController::class, 'options'])->middleware('throttle:20,1,lock-options')->name('lock.options');
+    Route::post('/lock/unlock', [LockController::class, 'unlock'])->middleware('throttle:10,1,lock-unlock')->name('lock.unlock');
+    Route::post('/lock/password', [LockController::class, 'password'])->middleware('throttle:5,1,lock-password')->name('lock.password');
+});
+
+// Signing in with fingerprint / Face ID (a passkey registered on the profile).
+Route::middleware(['guest', 'throttle:10,1,passkeys-sign-in'])->group(function () {
+    Route::post('/passkeys/sign-in/options', [PasskeyController::class, 'signInOptions'])->name('passkeys.sign-in.options');
+    Route::post('/passkeys/sign-in', [PasskeyController::class, 'signIn'])->name('passkeys.sign-in');
 });
 
 
