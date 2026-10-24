@@ -473,5 +473,13 @@
     "Attention": "Atenção",
     "Warnings": "Avisos",
     "For your information": "Para saber",
-    "Nothing needs your attention this month.": "Nada precisa da sua atenção neste mês."
+    "Nothing needs your attention this month.": "Nada precisa da sua atenção neste mês.",
+    "Click a value to see its movements. Values above the forecast are marked in red.": "Clique num valor para ver os movimentos. Valores acima do previsto ficam em vermelho.",
+    ":count months": ":count meses",
+    "% of total": "% do total",
+    "Average": "Média",
+    "Above forecast": "Acima do previsto",
+    "Use average": "Usar a média",
+    "Result": "Resultado",
+    "Show :count category without movements|Show :count categories without movements": "Mostrar :count categoria sem movimentos|Mostrar :count categorias sem movimentos"
 }
