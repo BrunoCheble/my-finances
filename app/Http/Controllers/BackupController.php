@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\RestoreBackupService;
 use App\Services\SaveBackupService;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BackupController extends Controller
 {
-    public function save(SaveBackupService $service): JsonResponse
+    /**
+     * Downloads the user's data (see SaveBackupService) to the device; nothing is kept on the server.
+     */
+    public function save(Request $request, SaveBackupService $service): StreamedResponse
     {
-        $result = $service->execute();
-        return response()->json($result);
-    }
+        $backup = $service->execute($request->user());
 
-    public function restore(RestoreBackupService $service): JsonResponse
-    {
-        $result = $service->execute();
-        return response()->json($result);
+        return response()->streamDownload(function () use ($backup) {
+            echo json_encode($backup, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }, SaveBackupService::filename(), ['Content-Type' => 'application/json; charset=utf-8', 'Cache-Control' => 'no-store']);
     }
 }
