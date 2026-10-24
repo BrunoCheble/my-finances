@@ -9,6 +9,11 @@ itself on the first visits after the pull (`app/Services/DeployTasksService.php`
 - Libraries the server cannot install are kept in `lib/` (`lib/webauthn`, `lib/pdfparser`); the built CSS/JS is in
   `public/build` (committed). `vendor/` on the server stays as it is: no other Composer package changed.
 
+The domain may point to the repository folder itself (`/home/igrejai1/my-finances`): the root `.htaccess` then
+serves everything from `public/`, so `storage/` (logs, old backups), `vendor/`, `.env` and the rest are never
+reachable, and old `/public/...` addresses redirect. Pointing the domain's document root to `.../public` (cPanel →
+*Domains*) is still the cleanest; the root `.htaccess` is then simply not used.
+
 ## One-time setup
 
 1. **Back up the database** first: cPanel → phpMyAdmin → database → *Export* (SQL). The first deploy runs the
