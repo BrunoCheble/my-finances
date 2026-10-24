@@ -1,22 +1,18 @@
 <div x-data="submitForm()" @keydown.escape.window="handleModalCloseManual">
 
     <x-modal name="modal-create" :show="false" focusable>
-        <div class="bg-white w-full max-w-3xl rounded-lg shadow-lg p-6 space-y-6">
-            <button
-                class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 transition duration-150 ease-in-out"
-                @click.prevent="handleModalCloseManual"
-                aria-label="{{ __('Close') }}"
-            >
-                <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-
-            <h2 class="text-lg font-bold text-gray-900">{{ __('Create a new movement') }}</h2>
+        <div class="p-5 sm:p-6">
+            <div class="mb-5 flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-900">{{ __('New movement') }}</h2>
+                    <p class="text-sm text-slate-500">{{ __('The form stays open so you can register several in a row.') }}</p>
+                </div>
+                <x-icon-button icon="xmark" :label="__('Close')" class="-mr-2 -mt-1" x-on:click.prevent="handleModalCloseManual" />
+            </div>
 
             <template x-if="errorMessages.length">
-                <div class="bg-red-500 text-white p-4 rounded shadow-lg">
-                    <ul>
+                <div class="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700" role="alert">
+                    <ul class="list-disc space-y-1 pl-4">
                         <template x-for="error in errorMessages" :key="error">
                             <li x-text="error"></li>
                         </template>
@@ -30,92 +26,36 @@
                 @include('financial-movements.form')
             </form>
 
-            <!-- last movements registered -->
-            <h2 class="text-lg font-bold text-gray-900 mt-6">{{ __('Last movements registered') }}</h2>
-            <table id="lastMovements" class="w-full divide-y divide-gray-300">
-                <thead>
-                    <tr>
-                        <th scope="col"
-                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            {{ __('Wallet') }}
-                        </th>
-                        <th scope="col"
-                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            {{ __('Date') }}
-                        </th>
-                        <th scope="col"
-                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            {{ __('Description') }}
-                        </th>
-                        <th scope="col"
-                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            {{ __('Category') }}
-                        </th>
-                        <th scope="col"
-                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                            {{ __('Type') }}
-                        </th>
-                        <th scope="col"
-                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">
-                            {{ __('Amount') }}
-                        </th>
-                        <th scope="col"
-                            class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200 bg-white">
-                    <template x-for="movement in lastMovements" :key="movement.id">
-                        <tr>
-                            <td
-                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                <span x-text="movement.wallet_id"></span>
-                            </td>
-                            <td
-                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                <span x-text="movement.date"></span>
-                            </td>
-                            <td
-                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                <span x-text="movement.description"></span>
-                            </td>
-                            <td
-                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                <span x-text="movement.category_id"></span>
-                            </td>
-                            <td
-                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                <span x-text="movement.type"></span>
-                            </td>
-                            <td
-                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">
-                                <span x-text="movement.amount"></span>
-                            </td>
-                            <td
-                                class="px-1 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                                <button class="bg-green-500 rounded-full text-white w-6 h-6 shadow-lg"
-                                    @click.prevent="deleteMovement(movement.id)">
-                                    <span class="fa fa-trash"></span>
-                                </button>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
+            <template x-if="lastMovements.length">
+                <div class="mt-6 border-t border-slate-200 pt-4">
+                    <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ __('Registered now') }}</h3>
+                    <ul class="mt-2 divide-y divide-slate-100">
+                        <template x-for="movement in lastMovements" :key="movement.id">
+                            <li class="flex items-center gap-3 py-2 text-sm">
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate font-medium text-slate-900" x-text="movement.description"></p>
+                                    <p class="truncate text-xs text-slate-500" x-text="movement.date + ' · ' + movement.wallet_id + ' · ' + movement.category_id"></p>
+                                </div>
+                                <span class="amount font-semibold text-slate-700" x-text="movement.amount"></span>
+                                <x-icon-button icon="trash" tone="danger" :label="__('Delete')" x-on:click.prevent="deleteMovement(movement.id)" />
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+            </template>
         </div>
     </x-modal>
 
-    <template x-if="notification">
-        <div class="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50 whitespace-pre-line" x-text="notification"
-            x-show="notification" x-transition></div>
-    </template>
+    <div x-show="notification" x-cloak x-transition role="status"
+        class="fixed inset-x-4 top-4 z-[60] whitespace-pre-line rounded-lg bg-slate-900 px-4 py-3 text-sm text-white shadow-lg sm:inset-x-auto sm:right-4 sm:max-w-sm"
+        x-text="notification"></div>
 
-    <div class="flex fixed bottom-4 z-50 right-4 gap-4">
-        <button class="bg-green-500 rounded-full text-white w-12 h-12 shadow-lg"
-            @click.prevent="$dispatch('open-modal', 'modal-create')">
-            <span class="fa fa-plus"></span>
-        </button>
-    </div>
+    {{-- mobile: floating "new movement" button (desktop uses the page header button) --}}
+    <button type="button" class="fixed bottom-5 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg shadow-brand-600/30 hover:bg-brand-700 md:hidden"
+        @click.prevent="$dispatch('open-modal', 'modal-create')">
+        <i class="fa-solid fa-plus text-lg" aria-hidden="true"></i>
+        <span class="sr-only">{{ __('New movement') }}</span>
+    </button>
 </div>
 
 
@@ -130,6 +70,14 @@
             wallets: @json($wallets),
             categories: @json($categories),
             types: @json($types),
+
+            init() {
+                // the toast hides itself after a few seconds
+                this.$watch('notification', (value) => {
+                    clearTimeout(this.notificationTimer);
+                    if (value) this.notificationTimer = setTimeout(() => this.notification = '', 6000);
+                });
+            },
 
             handleModalCloseManual() {
                 if (this.lastMovements.length > 0) {
@@ -151,10 +99,10 @@
                     .then(response => response.json())
                     .then(data => {
                         this.lastMovements = this.lastMovements.filter(movement => movement.id !== id);
-                        this.notification = 'Financial movement deleted successfully!';
+                        this.notification = @json(__('Movement deleted.'));
                     }).catch(error => {
                         console.error('Error:', error);
-                        this.notification = 'Unexpected error. Please try again later.';
+                        this.notification = @json(__('Something went wrong'));
                     });
             },
 
@@ -191,21 +139,8 @@
                             const movement = data['movements'][i];
 
                             movement.wallet_id = this.wallets[movement.wallet_id];
-                            movement.category_id = movement.category_id ? this.categories[movement.category_id] : 'N/A';
+                            movement.category_id = movement.category_id ? this.categories[movement.category_id] : this.types[movement.type];
                             movement.type = this.types[movement.type];
-
-                            if (movement.description.length > 10) {
-                                movement.description = movement.description.substring(0, 10) + '...';
-                            }
-                            if (movement.wallet_id.length > 10) {
-                                movement.wallet_id = movement.wallet_id.substring(0, 10) + '...';
-                            }
-                            if (movement.category_id.length > 10) {
-                                movement.category_id = movement.category_id.substring(0, 10) + '...';
-                            }
-                            if (movement.type.length > 10) {
-                                movement.type = movement.type.substring(0, 10) + '...';
-                            }
 
                             movement.amount = parseFloat(movement.amount).toLocaleString('pt-PT', {
                                 style: 'currency',
@@ -215,7 +150,7 @@
                             this.lastMovements.push(movement);
                         }
 
-                        this.notification = 'Financial movement saved successfully!';
+                        this.notification = @json(__('Movement saved.'));
 
                         for (let i = 0; i < data['balances'].length; i++) {
                             const balance = data['balances'][i];
@@ -231,7 +166,7 @@
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        this.notification = 'Unexpected error. Please try again later.';
+                        this.notification = @json(__('Something went wrong'));
                     })
                     .finally(() => this.isLoading = false);
             }

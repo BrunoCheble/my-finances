@@ -1,65 +1,88 @@
-<div x-data="deleteSelected()">
-    <div class="flex items-center justify-between">
-        <button
-            id="delete-selected-btn"
-            @click="deleteSelectedMovements"
-            :disabled="selected.length === 0"
-            class="mb-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white"
-            :class="selected.length ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-900 cursor-not-allowed'"
-        >
-            {{ __('Delete Selected') }} <span x-text="selected.length ? `(${selected.length})` : ''" class="ml-2"></span>
-        </button>
+@php
+    // one edit/delete modal per movement; a transfer mirror acts on its original movement
+    $targets = $financials->map(fn ($financial) => $financial->originalMovement ?? $financial)->unique('id');
+@endphp
 
-        <button
-            id="reload-page-btn"
-            @click="window.location.reload()"
-            title="{{ __('Update Table') }}"
-            class="mb-4 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-        >
-            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </button>
+<div x-data="deleteSelected()" class="card overflow-hidden">
+    {{-- Toolbar: selection actions or summary --}}
+    <div class="flex min-h-[3.25rem] items-center justify-between gap-3 border-b border-slate-200 px-4 py-2">
+        <div x-show="selected.length === 0" class="text-sm text-slate-500">
+            {{ __('Showing :from–:to of :total', ['from' => $financials->firstItem() ?? 0, 'to' => $financials->lastItem() ?? 0, 'total' => $financials->total()]) }}
+        </div>
+        <div x-show="selected.length > 0" x-cloak class="flex items-center gap-3">
+            <span class="text-sm font-medium text-slate-900" x-text="selected.length + ' {{ __('selected') }}'"></span>
+            <x-button variant="danger" size="sm" icon="trash" x-on:click="deleteSelectedMovements">{{ __('Delete') }}</x-button>
+            <button type="button" class="text-sm font-medium text-slate-500 hover:text-slate-900" @click="selected = []">{{ __('Cancel') }}</button>
+        </div>
+        <x-icon-button icon="rotate-right" :label="__('Update Table')" x-on:click="window.location.reload()" />
     </div>
 
-    <table class="w-full divide-y divide-gray-300">
-        <thead>
-            <tr>
-                <th scope="col" class="px-3 py-3"></th>
-                @if (!$walletSection)
-                    <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Wallet') }}</th>
-                @endif
-                <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Date') }}</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Description') }}</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Category') }}</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Type') }}</th>
-                <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 text-right">{{ __('Amount') }}</th>
-                <th scope="col" class="px-3 py-3"></th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200 bg-white">
-            @foreach ($financials as $financial)
-                @include('financial-movements.table.row')
+    @if ($financials->isEmpty())
+        <x-empty-state icon="receipt" :title="__('No movements found')"
+            :description="__('Try another wallet or clear the filters, or register a new movement.')" />
+    @else
+        {{-- Desktop / tablet: table --}}
+        <div class="hidden md:block">
+            <table class="w-full">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th scope="col" class="w-10 py-2.5 pl-4 pr-1">
+                            <span class="sr-only">{{ __('Select') }}</span>
+                        </th>
+                        <th scope="col" class="th">{{ __('Date') }}</th>
+                        <th scope="col" class="th">{{ __('Description') }}</th>
+                        <th scope="col" class="th hidden lg:table-cell">{{ __('Category') }}</th>
+                        @if (!$walletSection)
+                            <th scope="col" class="th hidden xl:table-cell">{{ __('Wallet') }}</th>
+                        @endif
+                        <th scope="col" class="th text-right">{{ __('Amount') }}</th>
+                        <th scope="col" class="w-24 py-2.5 pr-4"><span class="sr-only">{{ __('Actions') }}</span></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    @foreach ($financials as $financial)
+                        @include('financial-movements.table.row')
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Mobile: list grouped by day --}}
+        <div class="pb-20 md:hidden">
+            @foreach ($financials->groupBy('date') as $date => $dayMovements)
+                <h3 class="sticky top-14 z-10 border-b border-slate-100 bg-slate-50/95 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 backdrop-blur">
+                    {{ \Carbon\Carbon::parse($date)->translatedFormat('d M Y') }}
+                </h3>
+                <ul class="divide-y divide-slate-100">
+                    @foreach ($dayMovements as $financial)
+                        @include('financial-movements.table.card')
+                    @endforeach
+                </ul>
             @endforeach
-        </tbody>
-    </table>
+        </div>
 
-    <div class="mt-4 px-4">
-        {!! $financials->withQueryString()->links() !!}
-    </div>
+        @if ($financials->hasPages())
+            <div class="border-t border-slate-200 px-4 py-3">
+                {!! $financials->withQueryString()->links() !!}
+            </div>
+        @endif
+    @endif
 </div>
+
+@foreach ($targets as $financial)
+    @include('financial-movements.menu.modal-delete')
+    @include('financial-movements.menu.modal-edit', ['financialMovement' => $financial])
+@endforeach
 
 <script>
     function deleteSelected() {
         return {
             selected: [],
             deleteSelectedMovements() {
-                this.selected = Array.from(document.querySelectorAll('input[name="selected_financials[]"]:checked')).map(cb => cb.value);
                 if (this.selected.length === 0) return;
-                if (!confirm('Tem certeza que deseja excluir essas movimentações?')) return;
+                if (!confirm(@json(__('Are you sure you want to delete the selected movements?')))) return;
 
-                const baseUrl = "{{ url('/api/financial-movements/bulk-delete') }}";
-
-                fetch(baseUrl, {
+                fetch(@json(url('/api/financial-movements/bulk-delete')), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -70,16 +93,15 @@
                     credentials: 'same-origin'
                 })
                 .then(response => response.json())
-                .then(data => {
+                .then(() => {
                     this.selected.forEach(id => {
-                        const row = document.querySelector(`input[value="${id}"]`)?.closest('tr');
-                        if (row) row.remove();
+                        document.querySelectorAll(`[data-movement="${id}"]`).forEach(el => el.remove());
                     });
                     this.selected = [];
                 })
                 .catch(error => {
                     console.error('Error deleting:', error);
-                    alert('An unexpected error occurred.');
+                    alert(@json(__('Something went wrong')));
                 });
             }
         }
