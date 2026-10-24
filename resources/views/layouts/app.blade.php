@@ -30,6 +30,8 @@
         <!-- remembered sidebar state, applied before the first paint -->
         <script>try { if (localStorage.getItem('sidebar') === 'collapsed') document.documentElement.classList.add('sidebar-collapsed'); } catch (e) {}</script>
 
+        @include('layouts.pwa-head')
+
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>

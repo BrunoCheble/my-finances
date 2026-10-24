@@ -1,0 +1,25 @@
+{
+    "id": "./",
+    "name": "Escudo",
+    "short_name": "Escudo",
+    "description": "Suas finanças pessoais: movimentos, extratos, patrimônio e empréstimos.",
+    "lang": "pt-BR",
+    "start_url": "./dashboard",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#f8fafc",
+    "theme_color": "#1b63a2",
+    "categories": ["finance", "productivity"],
+    "icons": [
+        { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+        { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+        { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    ],
+    "shortcuts": [
+        { "name": "Movimentações", "url": "./financial-movements", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+        { "name": "Importar extrato", "url": "./statement-imports", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+        { "name": "Patrimônio", "url": "./financial-balances", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+    ]
+}
