@@ -48,6 +48,10 @@ class StatementImportController extends Controller
             );
         } catch (InvalidArgumentException $e) {
             return redirect()->route('statement-imports.index')->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            // a damaged or unusual PDF: the parser's own error means nothing to the user
+            report($e);
+            return redirect()->route('statement-imports.index')->with('error', __('This PDF could not be read. Check that it is the original statement from the bank.'));
         }
 
         return redirect()->route('statement-imports.show', $import);
@@ -64,6 +68,9 @@ class StatementImportController extends Controller
             return response()->json($createStatementImportService->identify($data['file']->getRealPath()));
         } catch (InvalidArgumentException $e) {
             return response()->json(['error' => $e->getMessage()], 422);
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json(['error' => __('This PDF could not be read. Check that it is the original statement from the bank.')], 422);
         }
     }
 
