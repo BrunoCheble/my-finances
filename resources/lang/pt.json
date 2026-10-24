@@ -591,5 +591,9 @@
     "Theme": "Tema",
     "Light": "Claro",
     "Dark": "Escuro",
-    "System": "Sistema"
+    "System": "Sistema",
+    "Pagination": "Paginação",
+    "Previous": "Anterior",
+    "Page :current of :last": "Página :current de :last",
+    "Go to page :page": "Ir para a página :page"
 }
