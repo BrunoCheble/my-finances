@@ -29,6 +29,10 @@
                     <x-nav-link :href="route('wallets.index')" :active="request()->routeIs('wallets.index')">
                         {{ __('Wallets') }}
                     </x-nav-link>
+
+                    <x-nav-link :href="route('statement-imports.index')" :active="request()->routeIs('statement-imports.*')">
+                        {{ __('Import Statement') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -99,6 +103,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('financial-categories.index')" :active="request()->routeIs('financial-categories.index')">
                 {{ __('Financial Categories') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('statement-imports.index')" :active="request()->routeIs('statement-imports.*')">
+                {{ __('Import Statement') }}
             </x-responsive-nav-link>
         </div>
 

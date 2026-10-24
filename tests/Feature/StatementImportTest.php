@@ -1,0 +1,116 @@
+<?php
+
+use App\Enums\FinancialMovementType;
+use App\Models\FinancialBalance;
+use App\Models\FinancialCategory;
+use App\Models\FinancialMovement;
+use App\Models\StatementImport;
+use App\Models\User;
+use App\Models\Wallet;
+use App\Services\CalculateFinancialBalanceService;
+use App\Statements\PdfTextExtractor;
+use Illuminate\Http\UploadedFile;
+
+function fakeStatementText(string $text): void
+{
+    app()->instance(PdfTextExtractor::class, new class($text) extends PdfTextExtractor {
+        public function __construct(private string $text) {}
+        public function extract(string $path): string { return $this->text; }
+    });
+}
+
+function uploadStatement($test, Wallet $wallet)
+{
+    return $test->post(route('statement-imports.store'), [
+        'file' => UploadedFile::fake()->create('extrato.pdf', 10, 'application/pdf'),
+        'wallet_id' => $wallet->id,
+    ]);
+}
+
+beforeEach(function () {
+    $this->actingAs(User::factory()->create());
+    $this->bank = Wallet::create(['name' => 'Banco', 'type' => 'debit', 'active' => true]);
+    $this->savings = Wallet::create(['name' => 'Poupança', 'type' => 'debit', 'active' => true]);
+    $this->groceries = FinancialCategory::create(['name' => 'Supermercado', 'type' => 'expense']);
+    $this->salary = FinancialCategory::create(['name' => 'Salário', 'type' => 'income']);
+
+    // history: typed by hand, plus an Uber ride already registered
+    FinancialMovement::create(['description' => 'Pingo Doce', 'date' => '2026-07-03', 'wallet_id' => $this->bank->id, 'category_id' => $this->groceries->id, 'amount' => -30, 'type' => 'expense']);
+    FinancialMovement::create(['description' => 'Salário Empresa X', 'date' => '2026-07-05', 'wallet_id' => $this->bank->id, 'category_id' => $this->salary->id, 'amount' => 1500, 'type' => 'income']);
+    FinancialMovement::create(['description' => 'Uber', 'date' => '2026-08-21', 'wallet_id' => $this->bank->id, 'category_id' => $this->groceries->id, 'amount' => -12.30, 'type' => 'expense']);
+    app(CalculateFinancialBalanceService::class)->executeForMovements(FinancialMovement::all());
+
+    fakeStatementText(file_get_contents(__DIR__ . '/../Fixtures/cgd-statement.txt'));
+});
+
+it('builds the preview with history suggestions, new lines and duplicates', function () {
+    uploadStatement($this, $this->bank)->assertRedirect();
+
+    $import = StatementImport::sole();
+    $lines = $import->lines()->get();
+
+    expect($import->bank)->toBe('cgd')
+        ->and($lines)->toHaveCount(4)
+        // "Pingo Doce" typed by hand is contained in the bank description
+        ->and($lines[0]->history_match)->toBe('similar')
+        ->and($lines[0]->category_id)->toBe($this->groceries->id)
+        ->and($lines[0]->type)->toBe(FinancialMovementType::EXPENSE)
+        ->and($lines[1]->history_match)->toBe('exact')
+        ->and($lines[1]->type)->toBe(FinancialMovementType::INCOME)
+        // never seen before: no suggestion
+        ->and($lines[2]->is_new)->toBeTrue()
+        ->and($lines[2]->category_id)->toBeNull()
+        // same amount one day apart: already registered, unselected
+        ->and($lines[3]->duplicate_movement_id)->not->toBeNull()
+        ->and($lines[3]->selected)->toBeFalse();
+
+    $this->get(route('statement-imports.show', $import))->assertOk()->assertSee('PINGO DOCE LISBOA');
+});
+
+it('imports the selected lines, including a transfer, and updates balances', function () {
+    uploadStatement($this, $this->bank);
+    $import = StatementImport::sole();
+    $lines = $import->lines()->get();
+
+    $choices = [];
+    foreach ($lines as $line) {
+        $choices[$line->id] = ['selected' => $line->selected ? 1 : null, 'type' => $line->type, 'category_id' => $line->category_id];
+    }
+    $choices[$lines[2]->id] = ['selected' => 1, 'type' => 'transfer', 'transfer_wallet_id' => $this->savings->id];
+
+    $this->patch(route('statement-imports.update', $import), ['lines' => $choices])->assertRedirect();
+
+    expect($import->fresh()->status)->toBe(StatementImport::STATUS_CONFIRMED)
+        ->and(FinancialMovement::where('description', 'TRF PARA POUPANCA')->where('wallet_id', $this->savings->id)->value('amount'))->toEqual(200)
+        ->and(FinancialMovement::where('description', 'PINGO DOCE LISBOA 1234567890')->value('amount'))->toEqual(-50.25)
+        ->and($lines[3]->fresh()->financial_movement_id)->toBeNull();
+
+    // July closing (1500 - 30) + August: Uber already registered, plus -50.25 + 1500 - 200 imported
+    $august = FinancialBalance::where('wallet_id', $this->bank->id)->where('start_date', '2026-08-01')->sole();
+    expect((float) $august->calculated_balance)->toBe(round(1500 - 30 - 12.30 - 50.25 + 1500 - 200, 2))
+        ->and((float) FinancialBalance::where('wallet_id', $this->savings->id)->sole()->calculated_balance)->toBe(200.0);
+
+    // cannot be imported twice
+    $this->patch(route('statement-imports.update', $import), ['lines' => $choices])->assertSessionHasErrors('import');
+});
+
+it('blocks the import while a selected new line has no category', function () {
+    uploadStatement($this, $this->bank);
+    $import = StatementImport::sole();
+    $choices = $import->lines()->get()->mapWithKeys(fn ($line) => [$line->id => [
+        'selected' => 1, 'type' => $line->type, 'category_id' => $line->category_id,
+    ]])->all();
+
+    $before = FinancialMovement::count();
+    $this->patch(route('statement-imports.update', $import), ['lines' => $choices])->assertSessionHasErrors();
+
+    expect(FinancialMovement::count())->toBe($before)
+        ->and($import->fresh()->status)->toBe(StatementImport::STATUS_PENDING);
+});
+
+it('rejects a layout it does not know', function () {
+    fakeStatementText("Extrato de outro banco\n2026-08-01 COMPRA -10,00");
+
+    uploadStatement($this, $this->bank)->assertRedirect(route('statement-imports.index'))->assertSessionHas('error');
+    expect(StatementImport::count())->toBe(0);
+});

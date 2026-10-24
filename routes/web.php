@@ -12,6 +12,7 @@ use App\Http\Controllers\MinistryMemberController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\Site\SiteController;
+use App\Http\Controllers\StatementImportController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -39,6 +40,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/financial-movements/bulk-delete', [FinancialMovementController::class, 'bulkDelete'])->name('financial-movements.bulk-delete');
     Route::delete('/api/financial-movements/{id}', [FinancialMovementController::class, 'delete'])->name('financial-movements.delete');
     Route::resource('financial-movements', FinancialMovementController::class);
+
+    Route::resource('statement-imports', StatementImportController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 
     Route::post('/api/backup/save', [\App\Http\Controllers\BackupController::class, 'save'])->name('backup.save');
 });
