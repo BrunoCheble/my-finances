@@ -15,6 +15,7 @@ use App\Http\Controllers\Site\SiteController;
 use App\Http\Controllers\StatementImportController;
 use App\Http\Controllers\LoanController;
 use App\Http\Controllers\LockController;
+use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\PasskeyController;
 use Illuminate\Support\Facades\Route;
 
@@ -70,6 +71,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/lock/unlock', [LockController::class, 'unlock'])->middleware('throttle:10,1,lock-unlock')->name('lock.unlock');
     Route::post('/lock/password', [LockController::class, 'password'])->middleware('throttle:5,1,lock-password')->name('lock.password');
 });
+
+// Sign in with Google (existing users only), and linking it from the profile.
+Route::middleware('throttle:20,1,google')->group(function () {
+    Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('auth.google');
+    Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+});
+Route::delete('/auth/google', [GoogleAuthController::class, 'unlink'])->middleware('auth')->name('auth.google.unlink');
 
 // Signing in with fingerprint / Face ID (a passkey registered on the profile).
 Route::middleware(['guest', 'throttle:10,1,passkeys-sign-in'])->group(function () {

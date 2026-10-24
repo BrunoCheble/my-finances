@@ -44,6 +44,24 @@ reachable, and old `/public/...` addresses redirect. Pointing the domain's docum
    ```
    Fingerprint / Face ID only works over **HTTPS** and is bound to that domain.
 
+## Sign in with Google (optional)
+
+Only users that already exist sign in (by their verified Google email); nobody is created. Without these
+variables the button does not show.
+
+1. https://console.cloud.google.com → create (or pick) a project.
+2. *APIs & Services → OAuth consent screen*: type **External**, app name `Escudo`, your email; scopes `openid`,
+   `email`, `profile` (the default ones). While in *Testing*, add your Google account under *Test users* (or
+   *Publish app*: these scopes need no review).
+3. *APIs & Services → Credentials → Create credentials → OAuth client ID*: type **Web application**;
+   *Authorized redirect URIs*: `https://my-finances.igrejaicd.pt/auth/google/callback`.
+4. In the server's `.env`:
+   ```
+   GOOGLE_CLIENT_ID=<client id>.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=<client secret>
+   ```
+   (changing `.env` makes the app rebuild its caches on the next visit, see below).
+
 ## Checking a deploy
 
 `https://<site>/up` answers with the header `X-App-Deploy: tasks=ok; config=1; routes=1`.
