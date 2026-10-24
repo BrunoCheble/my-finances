@@ -3,66 +3,87 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\WalletRequest;
+use App\Models\FinancialBalance;
+use App\Models\FinancialMovement;
 use App\Models\Wallet;
-use Illuminate\Http\RedirectResponse;
+use App\Services\Cache\DashboardCacheService;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Exception;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class WalletController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $wallets = Wallet::paginate();
-        return view('wallets.index', compact('wallets'));
+        $wallets = Wallet::orderBy('name')->get();
+        $counts = FinancialMovement::selectRaw('wallet_id, count(*) as total')->groupBy('wallet_id')->pluck('total', 'wallet_id');
+        $balances = FinancialBalance::orderBy('start_date')->get(['wallet_id', 'calculated_balance'])->groupBy('wallet_id')
+            ->map(fn ($items) => (float) $items->last()->calculated_balance);
+
+        foreach ($wallets as $wallet) {
+            $wallet->movements_count = (int) ($counts[$wallet->id] ?? 0);
+            $wallet->balance = (float) ($balances[$wallet->id] ?? 0);
+        }
+
+        return view('wallets.index', [
+            'groups' => [
+                'own' => $wallets->filter(fn ($w) => $w->active && !$w->is_third_party)->values(),
+                'third_party' => $wallets->filter(fn ($w) => $w->active && $w->is_third_party)->values(),
+                'inactive' => $wallets->reject(fn ($w) => $w->active)->values(),
+            ],
+            'openModal' => $request->input('modal'),
+        ]);
     }
 
-    public function create(): View
+    // the forms live in modals on the index
+    public function create(): RedirectResponse
     {
-        $wallet = new Wallet();
-        return view('wallets.create', compact('wallet'));
+        return redirect()->route('wallets.index', ['modal' => 'wallet-new']);
+    }
+
+    public function edit($id): RedirectResponse
+    {
+        return redirect()->route('wallets.index', ['modal' => 'wallet-edit-' . (int) $id]);
     }
 
     public function store(WalletRequest $request): RedirectResponse
     {
-        try {
-            Wallet::create($request->validated());
-            return redirect()->route('wallets.index')->with('success', 'Wallet created successfully.');
-        } catch (Exception $e) {
-            return redirect()->route('wallets.index')->with('error', 'Failed to create wallet.');
-        }
-    }
+        Wallet::create(self::normalized($request));
+        DashboardCacheService::clearAllByUser();
 
-    public function edit($id): View
-    {
-            $wallet = Wallet::findOrFail($id);
-            return view('wallets.edit', compact('wallet'));
+        return redirect()->route('wallets.index')->with('success', __('Wallet created.'));
     }
 
     public function update(WalletRequest $request, Wallet $wallet): RedirectResponse
     {
-        try {
-            $wallet->update($request->validated());
-            return redirect()->route('wallets.index')->with('success', 'Wallet updated successfully.');
-        } catch (Exception $e) {
-            return redirect()->route('wallets.index')->with('error', 'Failed to update wallet.');
-        }
+        $wallet->update(self::normalized($request));
+        DashboardCacheService::clearAllByUser();
+
+        return redirect()->route('wallets.index')->with('success', __('Wallet updated.'));
     }
 
-    public function destroy($id): RedirectResponse
+    public function destroy(Wallet $wallet): RedirectResponse
     {
-        try {
-            $wallet = Wallet::findOrFail($id);
-
-            if ($wallet->financialMovements()->count() > 0) {
-                 return redirect()->route('wallets.index')->with('error', 'Wallet has financial movements, cannot delete.');
-            }
-
-            $wallet->delete();
-
-            return redirect()->route('wallets.index')->with('success', 'Wallet deleted successfully.');
-        } catch (Exception $e) {
-            return redirect()->route('wallets.index')->with('error', 'Failed to delete wallet.');
+        if ($wallet->financialMovements()->exists()) {
+            return redirect()->route('wallets.index')->with('error', __('This wallet has movements: deactivate it instead of deleting.'));
         }
+
+        $wallet->financialBalances()->delete();
+        $wallet->delete();
+        DashboardCacheService::clearAllByUser();
+
+        return redirect()->route('wallets.index')->with('success', __('Wallet deleted.'));
+    }
+
+    /**
+     * The held amount (valor cativo) is typed as a positive amount and stored negative,
+     * because it is added to the displayed balance.
+     */
+    private static function normalized(WalletRequest $request): array
+    {
+        $data = $request->validated();
+        $data['reserved_amount'] = -abs((float) ($data['reserved_amount'] ?? 0));
+        $data['active'] = $request->boolean('active');
+        return $data;
     }
 }

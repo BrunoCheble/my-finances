@@ -24,7 +24,7 @@ class FinancialCategoryRequest extends FormRequest
                     ->where(fn ($query) => $query->where('user_id', auth()->id())),
             ],
             'expected_total' => 'nullable|numeric',
-            'active' => 'numeric',
+            'active' => 'nullable|boolean',
             'type' => [
                 'required',
                 'string',
