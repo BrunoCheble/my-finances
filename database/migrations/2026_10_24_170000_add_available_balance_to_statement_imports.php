@@ -8,9 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('statement_imports', function (Blueprint $table) {
-            $table->decimal('available_balance', 15, 2)->nullable()->after('closing_balance');
-        });
+        if (! Schema::hasColumn('statement_imports', 'available_balance')) {
+            Schema::table('statement_imports', function (Blueprint $table) {
+                $table->decimal('available_balance', 15, 2)->nullable()->after('closing_balance');
+            });
+        }
     }
 
     public function down(): void

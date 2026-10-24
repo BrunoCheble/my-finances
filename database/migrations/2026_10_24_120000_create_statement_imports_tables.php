@@ -8,7 +8,8 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('statement_imports', function (Blueprint $table) {
+        // each step checks what is there: a run that failed halfway on MySQL leaves part of it behind
+        if (! Schema::hasTable('statement_imports')) Schema::create('statement_imports', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users');
             $table->foreignId('wallet_id')->constrained('wallets');
@@ -23,7 +24,7 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('statement_import_lines', function (Blueprint $table) {
+        if (! Schema::hasTable('statement_import_lines')) Schema::create('statement_import_lines', function (Blueprint $table) {
             $table->id();
             $table->foreignId('statement_import_id')->constrained('statement_imports')->cascadeOnDelete();
             $table->unsignedInteger('position');
