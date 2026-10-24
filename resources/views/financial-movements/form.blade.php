@@ -66,7 +66,7 @@
         </div>
 
         <!-- Category Field -->
-        <div x-show="type !== 'transfer' && type !== 'loan'" class="flex-1">
+        <div x-show="type !== 'transfer' && type !== 'loan' && type !== 'adjustment'" class="flex-1">
             <x-input-label for="category_id" :value="__('Category')" />
             <x-dropdown-select :options="$categories" x-model="category_id" name="category_id" />
             <x-input-error class="mt-2" :messages="$errors->get('category_id')" />

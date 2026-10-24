@@ -25,7 +25,7 @@
                                 <form method="POST" action="{{ route('financial-balances.update', $balance->id) }}"  role="form" enctype="multipart/form-data">
                                     {{ method_field('PATCH') }}
                                     @csrf
-                                    @include('financial-balances.form')
+                                    @include('financial-balances.edit-form')
                                 </form>
                             </div>
                         </div>

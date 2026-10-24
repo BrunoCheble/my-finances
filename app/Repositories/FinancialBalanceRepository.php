@@ -70,4 +70,12 @@ class FinancialBalanceRepository implements FinancialBalanceRepositoryInterface
             ->orderBy('end_date', 'desc')
             ->first();
     }
+
+    public function findNextByWalletAndDate(int $walletId, string $date)
+    {
+        return FinancialBalance::where('wallet_id', $walletId)
+            ->where('start_date', '>', $date)
+            ->orderBy('start_date')
+            ->get();
+    }
 }

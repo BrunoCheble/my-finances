@@ -40,6 +40,11 @@ class SaveFinancialMovementService
                 $data['transfer_to_wallet_id'] = null;
                 $data['include_alert'] = true;
                 break;
+            case FinancialMovementType::ADJUSTMENT:
+                // signed amount: difference between the real and the calculated balance
+                $data['category_id'] = null;
+                $data['transfer_to_wallet_id'] = null;
+                break;
             default:
                 throw new \InvalidArgumentException("Invalid financial movement type: " . $data['type']);
         }

@@ -36,8 +36,7 @@ class FinancialBalanceRequest extends FormRequest
             ];
         }
         return [
-            'initial_balance' => 'required|numeric',
-            'calculated_balance' => 'nullable|numeric',
+            'real_balance' => 'required|numeric',
         ];
     }
 
