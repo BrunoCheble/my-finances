@@ -12,6 +12,10 @@
         'transfer_wallet_id' => $line->transfer_wallet_id ? (string) $line->transfer_wallet_id : '',
         'is_new' => $line->is_new,
         'duplicate' => $line->duplicate_movement_id !== null,
+        'keywords' => \App\Services\Statements\MovementHistory::keywords($line->description),
+        'position' => $line->position + 1,
+        'touched' => false,
+        'suggested_from' => null,
     ])->values();
     $selectClass = 'block w-full rounded-md border border-gray-300 bg-white py-1 pl-2 pr-8 text-xs focus:border-primary focus:ring-1 focus:ring-primary disabled:bg-gray-100';
 @endphp
@@ -142,6 +146,8 @@
                                         <div class="mt-1 flex flex-wrap gap-1 text-xs">
                                             @if ($line->is_new)
                                                 <span class="rounded-full bg-yellow-200 px-2 py-0.5 font-semibold text-yellow-900">{{ __('New') }}</span>
+                                                <span x-show="lines[{{ $index }}].suggested_from" x-cloak class="rounded-full bg-purple-100 px-2 py-0.5 text-purple-800"
+                                                    x-text="'{{ __('same as line') }} #' + lines[{{ $index }}].suggested_from"></span>
                                             @elseif ($line->history_match === 'exact')
                                                 <span class="rounded-full bg-green-100 px-2 py-0.5 text-green-800">{{ __('used :count× · last on :date', ['count' => $line->history_count, 'date' => date_format_custom($line->history_last_date)]) }}</span>
                                             @else
@@ -162,14 +168,14 @@
                                         {{ format_currency($line->amount) }}
                                     </td>
                                     <td class="py-2 px-2 align-top">
-                                        <select name="lines[{{ $line->id }}][type]" x-model="lines[{{ $index }}].type" class="{{ $selectClass }}" @disabled(!$statementImport->is_pending)>
+                                        <select name="lines[{{ $line->id }}][type]" x-model="lines[{{ $index }}].type" @change="choose({{ $index }})" class="{{ $selectClass }}" @disabled(!$statementImport->is_pending)>
                                             @foreach ($types as $value => $label)
                                                 <option value="{{ $value }}">{{ $label }}</option>
                                             @endforeach
                                         </select>
                                     </td>
                                     <td class="py-2 px-2 align-top">
-                                        <select name="lines[{{ $line->id }}][category_id]" x-model="lines[{{ $index }}].category_id"
+                                        <select name="lines[{{ $line->id }}][category_id]" x-model="lines[{{ $index }}].category_id" @change="choose({{ $index }})"
                                             x-show="needsCategory(lines[{{ $index }}])"
                                             :class="lines[{{ $index }}].selected && !lines[{{ $index }}].category_id ? 'border-red-400' : ''"
                                             class="{{ $selectClass }}" @disabled(!$statementImport->is_pending)>
@@ -178,7 +184,7 @@
                                                 <option value="{{ $category->id }}">{{ $category->name }}</option>
                                             @endforeach
                                         </select>
-                                        <select name="lines[{{ $line->id }}][transfer_wallet_id]" x-model="lines[{{ $index }}].transfer_wallet_id"
+                                        <select name="lines[{{ $line->id }}][transfer_wallet_id]" x-model="lines[{{ $index }}].transfer_wallet_id" @change="choose({{ $index }})"
                                             x-show="lines[{{ $index }}].type === 'transfer'"
                                             :class="lines[{{ $index }}].selected && !lines[{{ $index }}].transfer_wallet_id ? 'border-red-400' : ''"
                                             class="{{ $selectClass }}" @disabled(!$statementImport->is_pending)>
@@ -223,6 +229,44 @@
                     if (this.filter === 'new') return line.is_new;
                     if (this.filter === 'duplicate') return line.duplicate;
                     return true;
+                },
+                /**
+                 * A choice made on one line fills the untouched, still empty lines
+                 * of the same merchant (purchase codes ignored).
+                 */
+                choose(index) {
+                    const source = this.lines[index];
+                    source.touched = true;
+                    source.suggested_from = null;
+
+                    this.lines.forEach((line, i) => {
+                        if (i === index || line.touched || !this.sameMerchant(line.keywords, source.keywords)) return;
+                        // lines filled by this same source follow its changes; others only if still empty
+                        if (line.suggested_from !== source.position) {
+                            if (line.suggested_from || !line.is_new || line.category_id || line.transfer_wallet_id) return;
+                        }
+
+                        line.type = this.typeForSign(source.type, line.amount);
+                        line.category_id = this.needsCategory(line) ? source.category_id : '';
+                        line.transfer_wallet_id = line.type === 'transfer' ? source.transfer_wallet_id : '';
+                        line.suggested_from = (line.category_id || line.transfer_wallet_id) ? source.position : null;
+                    });
+                },
+                // same rule as MovementHistory::sameMerchant
+                sameMerchant(a, b) {
+                    const needed = Math.min(2, a.length, b.length);
+                    if (needed === 0) return false;
+                    for (let i = 0; i < needed; i++) {
+                        if (a[i] !== b[i]) return false;
+                    }
+                    return needed === 2 || a[0].length >= 4;
+                },
+                // same rule as CreateStatementImportService::typeForSign
+                typeForSign(type, amount) {
+                    const credit = amount > 0;
+                    if (type === 'expense' || type === 'refund') return credit ? 'refund' : 'expense';
+                    if (type === 'income' || type === 'discount') return credit ? 'income' : 'discount';
+                    return type;
                 },
                 needsCategory(line) {
                     return categorizedTypes.includes(line.type);

@@ -63,6 +63,42 @@ class MovementHistory
     }
 
     /**
+     * Generic bank words that say nothing about the merchant. Transfer words and
+     * prepositions are included so the recipient comes first ("TRF PARA JOAO").
+     */
+    private const STOPWORDS = [
+        'COMPRA', 'COMPRAS', 'C', 'DEB', 'CRED', 'PAG', 'PAGAMENTO', 'MB', 'DD',
+        'TRF', 'TFI', 'TRANSF', 'TRANSFERENCIA', 'SEPA', 'PARA', 'DE', 'DO', 'DA', 'DOS', 'DAS',
+    ];
+
+    /**
+     * Words that identify the merchant: no purchase codes (any word with a digit),
+     * no punctuation and no generic bank words.
+     */
+    public static function keywords(?string $description): array
+    {
+        $words = preg_split('/[^A-Z0-9]+/', strtoupper(Str::ascii((string) $description)), -1, PREG_SPLIT_NO_EMPTY);
+
+        return array_values(array_filter(
+            $words,
+            fn ($word) => !preg_match('/\d/', $word) && !in_array($word, self::STOPWORDS, true)
+        ));
+    }
+
+    /**
+     * Same merchant when both start with the same two keywords
+     * (or the same single keyword of 4+ letters when one has only one).
+     */
+    public static function sameMerchant(array $a, array $b): bool
+    {
+        $needed = min(2, count($a), count($b));
+        if ($needed === 0 || array_slice($a, 0, $needed) !== array_slice($b, 0, $needed)) {
+            return false;
+        }
+        return $needed === 2 || strlen($a[0]) >= 4;
+    }
+
+    /**
      * Uppercase, without accents (bank texts have none), reference numbers and punctuation.
      */
     public static function normalize(?string $description): string
