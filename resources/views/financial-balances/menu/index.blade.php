@@ -4,7 +4,6 @@ $menu = $menu ?? ['all'];
 
 {{-- pass modals => false when the modals are rendered elsewhere --}}
 @if ($modals ?? true)
-    @include('financial-balances.menu.modal-delete')
     @include('financial-balances.menu.modal-edit')
 @endif
 
@@ -15,5 +14,4 @@ $menu = $menu ?? ['all'];
         @csrf
         <x-icon-button type="submit" icon="rotate" :label="__('Recalculate')" />
     </form>
-    <x-icon-button icon="trash" tone="danger" :label="__('Delete')" x-data x-on:click.prevent="$dispatch('open-modal', 'modal-delete-{{ $balance->id }}')" />
 </div>

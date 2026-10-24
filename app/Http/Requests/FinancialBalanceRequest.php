@@ -23,19 +23,6 @@ class FinancialBalanceRequest extends FormRequest
      */
     public function rules()
     {
-        if ($this->isMethod('post')) {
-            return [
-                'wallets' => 'required|array|min:1',
-                'wallets.*' => [\Illuminate\Validation\Rule::exists('wallets', 'id')->where('user_id', auth()->id())],
-                'initial_balance' => 'required|numeric',
-                'total_expense' => 'nullable|numeric|default:0',
-                'total_income' => 'nullable|numeric|default:0',
-                'calculated_balance' => 'nullable|numeric|default:0',
-                'total_unidentified' => 'nullable|numeric|default:0',
-                'start_date' => 'required|date',
-                'end_date' => 'required|date|after_or_equal:start_date',
-            ];
-        }
         return [
             'real_balance' => 'required|numeric',
         ];

@@ -27,7 +27,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::resource('wallets', WalletController::class);
-    Route::resource('financial-balances', FinancialBalanceController::class);
+    Route::resource('financial-balances', FinancialBalanceController::class)->only(['index', 'edit', 'update']);
 
     Route::patch('/financial-balances/recalculate/{id}', [FinancialBalanceController::class, 'recalculate'])->name('financial-balances.recalculate');
     Route::patch('/financial-balances/recalculate/all/{start_date}/{end_date}', [FinancialBalanceController::class, 'recalculateAll'])->name('financial-balances.recalculateAll');
