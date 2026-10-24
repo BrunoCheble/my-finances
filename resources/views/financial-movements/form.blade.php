@@ -262,7 +262,7 @@
     {{-- Footer: sticky on phones (full-screen sheet) --}}
     <div class="sticky bottom-0 flex gap-2 border-t border-slate-200 bg-white/95 px-5 py-3 backdrop-blur sm:static sm:justify-end sm:bg-transparent sm:px-6 sm:py-4">
         <x-button variant="secondary" class="flex-1 sm:flex-none" x-on:click="{{ $cancel ?? '$dispatch(\'close\')' }}">{{ __('Cancel') }}</x-button>
-        <x-primary-button class="flex-1 sm:flex-none" x-bind:disabled="{{ $busy ?? 'false' }} || (reconciledWarning && !confirmReconciled)">
+        <x-primary-button class="flex-1 sm:flex-none" x-bind:disabled="!!({{ $busy ?? 'false' }} || (reconciledWarning && !confirmReconciled))">
             <i class="fa-solid fa-circle-notch fa-spin" x-show="{{ $busy ?? 'false' }}" x-cloak aria-hidden="true"></i>
             {{ $buttonText ?? __('Save') }}
         </x-primary-button>
