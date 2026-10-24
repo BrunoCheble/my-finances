@@ -13,13 +13,18 @@ use App\Services\Cache\DashboardCacheService;
 use App\Services\CalculateFinancialBalanceService;
 use App\Services\FinancialBalanceAccordionService;
 use App\Services\NetWorthHistoryService;
-use App\Services\SaveFinancialBalanceService;
+use App\Services\OpenMonthsService;
 use Illuminate\Contracts\View\View;
 
 class FinancialBalanceController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, OpenMonthsService $openMonthsService): View
     {
+        // every active wallet shows up in every month, with its balance carried forward
+        if ($openMonthsService->execute() > 0) {
+            DashboardCacheService::clearAllByUser();
+        }
+
         $startDate = $request->input('start_date') ?? date('Y-m-01');
         $endDate = $request->input('end_date') ?? date('Y-m-t');
         $year = $request->input('year') ?? null;
@@ -39,27 +44,8 @@ class FinancialBalanceController extends Controller
         return view('financial-balances.index', compact('groups', 'summary', 'wallets', 'types', 'startDate', 'endDate', 'filter', 'period', 'history'));
     }
 
-    public function create(): View
-    {
-        $balance = new FinancialBalance();
-        $balance->start_date = date('Y-m-01');
-        $balance->end_date = date('Y-m-t');
 
-        $wallets = ArrayHelper::toKeyValueArray(Wallet::all(), 'id', 'name');
-        return view('financial-balances.create', compact('balance','wallets'));
-    }
 
-    public function store(FinancialBalanceRequest $request, SaveFinancialBalanceService $saveFinancialBalanceService)
-    {
-        $saveFinancialBalanceService->execute($request->validated());
-        DashboardCacheService::clearAllByUser();
-        return redirect()->route('financial-balances.index')->with('success', 'Financial Balance created successfully.');
-    }
-
-    public function show(FinancialBalance $financial_balance): View
-    {
-        return view('financial-balances.show', compact('financialBalance'));
-    }
 
     public function edit($id): View
     {
@@ -79,14 +65,6 @@ class FinancialBalanceController extends Controller
         return redirect()->route('financial-balances.index')->with('success', 'Financial Balance updated successfully.');
     }
 
-    public function destroy(FinancialBalance $financial_balance, CalculateFinancialBalanceService $calculateFinancialBalanceService)
-    {
-        $financial_balance->delete();
-        // the month is recreated if it still has movements; following months are re-chained
-        $calculateFinancialBalanceService->execute($financial_balance->start_date, $financial_balance->wallet_id);
-        DashboardCacheService::clearAllByUser();
-        return redirect()->route('financial-balances.index')->with('success', 'Financial Balance deleted successfully.');
-    }
 
     public function recalculate(int $id, CalculateFinancialBalanceService $calculateFinancialBalanceService)
     {

@@ -543,5 +543,6 @@
     "This wallet has movements: deactivate it instead of deleting.": "Esta conta tem movimentos: desative em vez de excluir.",
     "Is active": "Ativa",
     "Inactive category": "Inativa",
-    "Inactive wallets": "Inativas"
+    "Inactive wallets": "Inativas",
+    "Every active wallet in every month, with the balance carried over. Edit to adjust to the real balance.": "Todas as contas ativas em todos os meses, com o saldo carregado. Edite para ajustar ao saldo real."
 }

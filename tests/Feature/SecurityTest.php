@@ -35,10 +35,6 @@ it('does not accept a wallet of another user', function () {
         'amount' => 10, 'type' => FinancialMovementType::INCOME,
     ])->assertStatus(422)->assertJsonValidationErrors('wallet_id');
 
-    $this->post(route('financial-balances.store'), [
-        'wallets' => [$foreign->id], 'initial_balance' => 100, 'start_date' => '2026-10-01', 'end_date' => '2026-10-31',
-    ])->assertSessionHasErrors('wallets.0');
-
     expect(FinancialMovement::withoutGlobalScopes()->count())->toBe(0);
 });
 

@@ -173,7 +173,7 @@
             <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <h2 id="detail-title" class="text-base font-semibold text-slate-900">{{ __('Monthly detail') }}</h2>
-                    <p class="text-sm text-slate-500">{{ __('Balances of each wallet per month. Edit to adjust to the real balance.') }}</p>
+                    <p class="text-sm text-slate-500">{{ __('Every active wallet in every month, with the balance carried over. Edit to adjust to the real balance.') }}</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <label for="year" class="sr-only">{{ __('Year') }}</label>
@@ -183,7 +183,6 @@
                             <option value="{{ $value }}" @selected((string) request('year') === (string) $value)>{{ $label }}</option>
                         @endforeach
                     </select>
-                    <x-button variant="secondary" icon="plus" :href="route('financial-balances.create')">{{ __('Open month') }}</x-button>
                 </div>
             </div>
 
