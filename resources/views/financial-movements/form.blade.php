@@ -91,11 +91,36 @@
             <x-input-error class="mt-1" :messages="$errors->get('amount')" />
         </div>
 
-        {{-- Description + history hint --}}
-        <div>
+        {{-- Description: autocomplete from the history + hint of the last use --}}
+        <div class="relative" @click.outside="closeDescriptions()">
             <x-input-label for="description-{{ $uid }}" :value="__('Description')" />
-            <x-text-input id="description-{{ $uid }}" name="description" type="text" class="mt-1 block w-full"
-                x-model="description" x-on:change="lookupHistory()" autocomplete="off" :placeholder="__('E.g. Supermarket')" />
+            <x-text-input id="description-{{ $uid }}" name="description" type="text" class="mt-1 block w-full" x-ref="description"
+                x-model="description" x-on:change="lookupHistory()" autocomplete="off" :placeholder="__('E.g. Supermarket')"
+                role="combobox" aria-autocomplete="list" aria-controls="description-list-{{ $uid }}"
+                x-bind:aria-expanded="descriptionsOpen.toString()"
+                x-bind:aria-activedescendant="descriptionsOpen ? 'description-{{ $uid }}-' + descriptionHighlight : null"
+                x-on:input="searchDescriptions()" x-on:focus="searchDescriptions()"
+                x-on:keydown.arrow-down.prevent="moveDescription(1)" x-on:keydown.arrow-up.prevent="moveDescription(-1)"
+                x-on:keydown.enter="if (descriptionsOpen && descriptionHighlight >= 0) { $event.preventDefault(); pickDescription(descriptionHighlight) }"
+                x-on:keydown.escape="if (descriptionsOpen) { $event.stopPropagation(); closeDescriptions() }"
+                x-on:keydown.tab="closeDescriptions()" />
+            <ul id="description-list-{{ $uid }}" x-show="descriptionsOpen" x-cloak role="listbox" aria-label="{{ __('Previous descriptions') }}"
+                class="absolute left-0 right-0 z-30 mt-1 max-h-72 overflow-auto rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg">
+                <template x-for="(item, i) in descriptionSuggestions" :key="item.description">
+                    <li :id="'description-{{ $uid }}-' + i" role="option" :aria-selected="(descriptionHighlight === i).toString()"
+                        @mousedown.prevent="pickDescription(i)" @mouseenter="descriptionHighlight = i"
+                        :class="descriptionHighlight === i ? 'bg-brand-50' : ''"
+                        class="flex cursor-pointer items-center justify-between gap-3 px-3 py-2">
+                        <span class="min-w-0">
+                            <span class="block truncate font-medium text-slate-900" x-text="item.description"></span>
+                            <span class="block truncate text-xs text-slate-500"
+                                x-text="[types[item.type], item.category, item.uses > 1 ? item.uses + '×' : null].filter(Boolean).join(' · ')"></span>
+                        </span>
+                        <span class="amount shrink-0 text-xs font-semibold" :class="item.amount < 0 ? 'text-rose-600' : 'text-emerald-600'"
+                            x-text="(item.amount > 0 ? '+' : '') + money(item.amount)"></span>
+                    </li>
+                </template>
+            </ul>
             <p x-show="suggestion" x-cloak class="mt-1.5 flex items-center gap-1.5 text-xs text-slate-500">
                 <i class="fa-solid fa-clock-rotate-left text-brand-500" aria-hidden="true"></i>
                 <span x-text="suggestion"></span>
