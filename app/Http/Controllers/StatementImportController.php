@@ -27,7 +27,9 @@ class StatementImportController extends Controller
         // third-party money has no bank statement of its own
         $wallets = ArrayHelper::toKeyValueArray(Wallet::own()->where('active', true)->get(), 'id', 'name');
 
-        return view('statement-imports.index', compact('imports', 'wallets'));
+        $banks = app(\App\Statements\StatementParserRegistry::class)->names();
+
+        return view('statement-imports.index', compact('imports', 'wallets', 'banks'));
     }
 
     public function store(Request $request, CreateStatementImportService $createStatementImportService): RedirectResponse

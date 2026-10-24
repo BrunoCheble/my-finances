@@ -653,5 +653,17 @@
     "Delete Account": "Excluir conta",
     "Once your account is deleted, all of its resources and data will be permanently deleted. Before deleting your account, please download any data or information that you wish to retain.": "Ao excluir a conta, todos os seus dados serão apagados para sempre. Antes, faça um backup do que quiser guardar.",
     "Are you sure you want to delete your account?": "Tem certeza de que quer excluir sua conta?",
-    "Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.": "Ao excluir a conta, todos os seus dados serão apagados para sempre. Digite sua senha para confirmar."
+    "Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.": "Ao excluir a conta, todos os seus dados serão apagados para sempre. Digite sua senha para confirmar.",
+    "Read the PDF of your bank statement, review the movements and import them in one go.": "Leia o PDF do extrato, revise os movimentos e importe tudo de uma vez.",
+    "Drop the PDF here or tap to choose": "Arraste o PDF aqui ou toque para escolher",
+    "PDF up to 10 MB.": "PDF de até 10 MB.",
+    "Supported": "Bancos suportados",
+    "Select wallet": "Selecionar conta",
+    "Read on": "Lido em",
+    "The statements you read show up here.": "Os extratos que você ler aparecem aqui.",
+    ":count line|:count lines": ":count linha|:count linhas",
+    "Balance check": "Conferência de saldo",
+    "Select all shown": "Selecionar todos os mostrados",
+    "Nothing here.": "Nada por aqui.",
+    "Nothing was imported yet. The preview is deleted; you can read the statement again later.": "Nada foi importado ainda. A pré-visualização é apagada; você pode ler o extrato de novo depois."
 }
