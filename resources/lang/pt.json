@@ -247,5 +247,7 @@
     "Import discarded.": "Import descartado.",
     "All": "Todos",
     "Balance before import": "Saldo antes do import",
-    "Pending review": "Pendente"
+    "Pending review": "Pendente",
+    "Unsupported PDF protection.": "Proteção de PDF não suportada.",
+    "This PDF requires a password.": "Este PDF exige senha para abrir."
 }

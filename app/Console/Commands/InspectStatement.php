@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Smalot\PdfParser\Parser;
+use App\Statements\PdfTextExtractor;
 
 /**
  * Shows the structure of a PDF bank statement without exposing its data:
@@ -29,7 +29,7 @@ class InspectStatement extends Command
             return self::FAILURE;
         }
 
-        $pdf = (new Parser())->parseFile($file);
+        $pdf = app(PdfTextExtractor::class)->document($file);
         $pages = array_slice($pdf->getPages(), 0, (int) $this->option('pages'));
 
         if (trim($pdf->getText()) === '') {
