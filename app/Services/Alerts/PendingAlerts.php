@@ -60,9 +60,10 @@ class PendingAlerts
                 'critical',
                 'triangle-exclamation',
                 __(':wallet is negative', ['wallet' => $wallet->name]),
-                __('Balance of :amount at the end of the month.', ['amount' => format_currency($balance->calculated_balance)]),
-                __('See wallet'),
-                route('financial-movements.index', ['wallet_id' => $wallet->id]),
+                // a debit wallet below zero is usually money kept for someone else, not an overdraft
+                __('Balance of :amount at the end of the month. If it is money you keep for someone else, mark the wallet as third-party money.', ['amount' => format_currency($balance->calculated_balance)]),
+                __('Review wallet'),
+                route('wallets.index', ['modal' => "wallet-edit-{$wallet->id}"]),
                 abs($balance->calculated_balance),
             );
         }
