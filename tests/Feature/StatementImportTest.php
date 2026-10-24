@@ -4,6 +4,7 @@ use App\Enums\FinancialMovementType;
 use App\Models\FinancialBalance;
 use App\Models\FinancialCategory;
 use App\Models\FinancialMovement;
+use App\Models\StatementAccount;
 use App\Models\StatementImport;
 use App\Models\User;
 use App\Models\Wallet;
@@ -113,4 +114,31 @@ it('rejects a layout it does not know', function () {
 
     uploadStatement($this, $this->bank)->assertRedirect(route('statement-imports.index'))->assertSessionHas('error');
     expect(StatementImport::count())->toBe(0);
+});
+
+it('recognizes bank and account when a file is chosen and remembers the wallet', function () {
+    $file = fn () => ['file' => UploadedFile::fake()->create('extrato.pdf', 10, 'application/pdf')];
+
+    $this->postJson(route('statement-imports.identify'), $file())
+        ->assertOk()
+        ->assertJson(['bank' => 'cgd', 'bank_name' => 'Caixa Geral de Depósitos', 'account_last4' => '0000', 'wallet_id' => null, 'lines' => 4]);
+
+    uploadStatement($this, $this->savings);
+
+    $this->postJson(route('statement-imports.identify'), $file())
+        ->assertOk()
+        ->assertJson(['wallet_id' => $this->savings->id, 'wallet_name' => 'Poupança']);
+
+    // only a hash and the last digits are stored
+    expect(StatementAccount::sole()->account_last4)->toBe('0000')
+        ->and(StatementAccount::sole()->account_hash)->not->toContain('0000000000000')
+        ->and(StatementImport::sole()->account_last4)->toBe('0000');
+});
+
+it('reports an unsupported statement on identify', function () {
+    fakeStatementText("Extrato de outro banco\n2026-08-01 COMPRA -10,00");
+
+    $this->postJson(route('statement-imports.identify'), [
+        'file' => UploadedFile::fake()->create('extrato.pdf', 10, 'application/pdf'),
+    ])->assertStatus(422)->assertJsonStructure(['error']);
 });

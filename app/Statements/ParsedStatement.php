@@ -17,7 +17,13 @@ class ParsedStatement
         public readonly ?string $periodEnd = null,
         public readonly ?float $openingBalance = null,
         public readonly ?float $closingBalance = null,
+        public readonly ?string $account = null,
     ) {
+    }
+
+    public function accountLast4(): ?string
+    {
+        return $this->account ? substr($this->account, -4) : null;
     }
 
     /**

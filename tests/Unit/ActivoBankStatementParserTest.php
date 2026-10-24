@@ -36,3 +36,7 @@ it('takes the sign from the balance change and the year from the period', functi
         // January belongs to the next year of a December-January statement
         ->and($lines[2]->date)->toBe('2027-01-05');
 });
+
+it('reads the account number', function () {
+    expect((new ActivoBankStatementParser())->parse(activoBankFixture())->account)->toBe('00000000000');
+});

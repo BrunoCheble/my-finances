@@ -23,6 +23,11 @@ class ActivoBankStatementParser implements StatementParser
         return 'activobank';
     }
 
+    public function name(): string
+    {
+        return 'ActivoBank';
+    }
+
     public function supports(string $text): bool
     {
         return str_contains($text, 'ActivoBank') && str_contains($text, 'EXTRATO COMBINADO');
@@ -85,6 +90,7 @@ class ActivoBankStatementParser implements StatementParser
             periodEnd: $periodEnd,
             openingBalance: $opening,
             closingBalance: $closing,
+            account: preg_match('/DEPOSITO A ORDEM:\s*(\d+)/', $text, $match) ? $match[1] : null,
         );
     }
 

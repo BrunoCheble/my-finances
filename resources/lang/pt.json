@@ -249,5 +249,10 @@
     "Balance before import": "Saldo antes do import",
     "Pending review": "Pendente",
     "Unsupported PDF protection.": "Proteção de PDF não suportada.",
-    "This PDF requires a password.": "Este PDF exige senha para abrir."
+    "This PDF requires a password.": "Este PDF exige senha para abrir.",
+    "Reading statement...": "A ler o extrato...",
+    "account": "conta",
+    "movements": "movimentos",
+    "remembered": "memorizada",
+    "New account: choose the wallet, it will be remembered next time.": "Conta bancária nova: escolha a conta do sistema, ela fica memorizada para a próxima vez."
 }

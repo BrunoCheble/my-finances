@@ -23,6 +23,11 @@ class CgdStatementParser implements StatementParser
         return 'cgd';
     }
 
+    public function name(): string
+    {
+        return 'Caixa Geral de Depósitos';
+    }
+
     public function supports(string $text): bool
     {
         return str_contains($text, 'Extrato Global')
@@ -72,6 +77,7 @@ class CgdStatementParser implements StatementParser
             periodEnd: $periodEnd,
             openingBalance: $opening,
             closingBalance: $closing,
+            account: preg_match('/CONTA EXTRACTO\s+([\d.]+)/u', $text, $match) ? preg_replace('/\D/', '', $match[1]) : null,
         );
     }
 
