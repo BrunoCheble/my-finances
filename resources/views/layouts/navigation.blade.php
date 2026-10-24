@@ -1,137 +1,99 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
+@php
+    $navigation = [
+        ['route' => 'dashboard', 'active' => 'dashboard', 'icon' => 'chart-pie', 'label' => __('Dashboard')],
+        ['route' => 'financial-movements.index', 'active' => 'financial-movements.*', 'icon' => 'arrow-right-arrow-left', 'label' => __('Financial Movements')],
+        ['route' => 'statement-imports.index', 'active' => 'statement-imports.*', 'icon' => 'file-import', 'label' => __('Import Statement')],
+        ['route' => 'financial-balances.index', 'active' => 'financial-balances.*', 'icon' => 'scale-balanced', 'label' => __('Financial Balances')],
+        ['route' => 'financial-categories.index', 'active' => 'financial-categories.*', 'icon' => 'tags', 'label' => __('Financial Categories')],
+        ['route' => 'wallets.index', 'active' => 'wallets.*', 'icon' => 'wallet', 'label' => __('Wallets')],
+    ];
+    $user = Auth::user();
+    $initials = collect(explode(' ', trim($user->name)))->filter()->take(2)->map(fn ($part) => mb_substr($part, 0, 1))->implode('');
+@endphp
 
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
-                    </a>
-                </div>
+{{-- Navigation links, shared by the desktop sidebar and the mobile drawer --}}
+@php
+    $links = function () use ($navigation) {
+        $html = '';
+        foreach ($navigation as $item) {
+            $active = request()->routeIs($item['active']);
+            $classes = $active
+                ? 'bg-brand-50 text-brand-700'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900';
+            $html .= '<a href="' . e(route($item['route'])) . '" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ' . $classes . '"'
+                . ($active ? ' aria-current="page"' : '') . '>'
+                . '<i class="fa-solid fa-' . $item['icon'] . ' w-5 text-center ' . ($active ? 'text-brand-600' : 'text-slate-400 group-hover:text-slate-500') . '" aria-hidden="true"></i>'
+                . e($item['label']) . '</a>';
+        }
+        return $html;
+    };
+@endphp
 
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('financial-movements.index')" :active="request()->routeIs('financial-movements.index')">
-                        {{ __('Financial Movements') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('financial-categories.index')" :active="request()->routeIs('financial-categories.index')">
-                        {{ __('Financial Categories') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('financial-balances.index')" :active="request()->routeIs('financial-balances.index')">
-                        {{ __('Financial Balances') }}
-                    </x-nav-link>
+<div x-data="{ drawer: false }" @keydown.escape.window="drawer = false">
+    {{-- Desktop sidebar --}}
+    <aside class="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200 bg-white lg:flex" aria-label="{{ __('Main navigation') }}">
+        <a href="{{ route('dashboard') }}" class="flex h-16 items-center px-5">
+            <x-brand />
+        </a>
 
-                    <x-nav-link :href="route('wallets.index')" :active="request()->routeIs('wallets.index')">
-                        {{ __('Wallets') }}
-                    </x-nav-link>
+        <nav class="flex-1 space-y-1 px-3 py-4">{!! $links() !!}</nav>
 
-                    <x-nav-link :href="route('statement-imports.index')" :active="request()->routeIs('statement-imports.*')">
-                        {{ __('Import Statement') }}
-                    </x-nav-link>
+        <div class="border-t border-slate-200 p-3" x-data="{ menu: false }" @click.outside="menu = false">
+            <div class="relative">
+                <button type="button" @click="menu = !menu" :aria-expanded="menu"
+                    class="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-slate-100">
+                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700" aria-hidden="true">{{ $initials }}</span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block truncate text-sm font-medium text-slate-900">{{ $user->name }}</span>
+                        <span class="block truncate text-xs text-slate-500">{{ $user->email }}</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-up text-xs text-slate-400" aria-hidden="true"></i>
+                </button>
+
+                <div x-show="menu" x-cloak x-transition
+                    class="absolute bottom-full left-0 right-0 mb-2 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                    @include('layouts.user-menu')
                 </div>
             </div>
+        </div>
+    </aside>
 
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ Auth::user()->name }}</div>
+    {{-- Mobile / tablet top bar --}}
+    <header class="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:hidden">
+        <button type="button" class="btn-icon -ml-2" @click="drawer = true" :aria-expanded="drawer" aria-controls="mobile-drawer">
+            <i class="fa-solid fa-bars text-lg" aria-hidden="true"></i>
+            <span class="sr-only">{{ __('Open menu') }}</span>
+        </button>
+        <a href="{{ route('dashboard') }}" class="flex items-center">
+            <x-brand size="sm" />
+        </a>
+    </header>
 
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </button>
-                    </x-slot>
-
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
-
-                        <form method="POST" action="{{ route('backup.save') }}">
-                            @csrf
-
-                            <x-dropdown-link :href="route('backup.save')"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Save Backup') }}
-                            </x-dropdown-link>
-                        </form>
-
-                        <!-- Authentication -->
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-
-                            <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
-                        </form>
-                    </x-slot>
-                </x-dropdown>
-            </div>
-
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+    {{-- Mobile / tablet drawer --}}
+    <div x-show="drawer" x-cloak class="relative z-40 lg:hidden" role="dialog" aria-modal="true" id="mobile-drawer">
+        <div x-show="drawer" x-transition.opacity class="fixed inset-0 bg-slate-900/40" @click="drawer = false"></div>
+        <div x-show="drawer"
+            x-transition:enter="transition ease-out duration-200" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
+            x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full"
+            class="fixed inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-xl">
+            <div class="flex h-14 items-center justify-between border-b border-slate-200 px-4">
+                <x-brand size="sm" />
+                <button type="button" class="btn-icon -mr-2" @click="drawer = false">
+                    <i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i>
+                    <span class="sr-only">{{ __('Close menu') }}</span>
                 </button>
             </div>
-        </div>
-    </div>
-
-    <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('financial-movements.index')" :active="request()->routeIs('financial-movements.index')">
-                {{ __('Financial Movements') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('financial-categories.index')" :active="request()->routeIs('financial-categories.index')">
-                {{ __('Financial Categories') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('statement-imports.index')" :active="request()->routeIs('statement-imports.*')">
-                {{ __('Import Statement') }}
-            </x-responsive-nav-link>
-        </div>
-
-        <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
-            </div>
-
-            <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
-                </x-responsive-nav-link>
-
-                <!-- Authentication -->
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-
-                    <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault();
-                                        this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
-                </form>
+            <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="{{ __('Main navigation') }}">{!! $links() !!}</nav>
+            <div class="border-t border-slate-200 p-3">
+                <div class="flex items-center gap-3 px-2 pb-2">
+                    <span class="flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700" aria-hidden="true">{{ $initials }}</span>
+                    <span class="min-w-0">
+                        <span class="block truncate text-sm font-medium text-slate-900">{{ $user->name }}</span>
+                        <span class="block truncate text-xs text-slate-500">{{ $user->email }}</span>
+                    </span>
+                </div>
+                @include('layouts.user-menu')
             </div>
         </div>
     </div>
-</nav>
+</div>
