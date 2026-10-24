@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\FinancialMovementType;
 use App\Helpers\ArrayHelper;
 use App\Models\FinancialCategory;
+use App\Models\FinancialMovement;
 use App\Models\StatementImport;
 use App\Models\Wallet;
 use App\Repositories\Interfaces\FinancialBalanceRepositoryInterface;
@@ -71,7 +72,17 @@ class StatementImportController extends Controller
         $systemBalance = (float) ($balance?->calculated_balance ?? 0);
 
         $types = FinancialMovementType::options();
-        $categories = FinancialCategory::orderBy('name')->get(['id', 'name', 'type']);
+        $uses = FinancialMovement::whereNotNull('category_id')
+            ->selectRaw('category_id, count(*) as total')
+            ->groupBy('category_id')
+            ->pluck('total', 'category_id');
+        $categoriesData = FinancialCategory::active()->orderBy('name')->get(['id', 'name', 'type'])
+            ->map(fn ($category) => [
+                'id' => (string) $category->id,
+                'name' => $category->name,
+                'type' => $category->type,
+                'uses' => (int) ($uses[$category->id] ?? 0),
+            ])->values();
         $wallets = ArrayHelper::toKeyValueArray(Wallet::orderBy('name')->get(), 'id', 'name');
         $categorizedTypes = ConfirmStatementImportService::CATEGORIZED_TYPES;
 
@@ -79,7 +90,7 @@ class StatementImportController extends Controller
             'statementImport',
             'systemBalance',
             'types',
-            'categories',
+            'categoriesData',
             'wallets',
             'categorizedTypes'
         ));
