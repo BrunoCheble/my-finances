@@ -598,5 +598,6 @@
     "Go to page :page": "Ir para a página :page",
     "Install app": "Instalar app",
     "Balance of :amount at the end of the month. If it is money you keep for someone else, mark the wallet as third-party money.": "Saldo de :amount no fim do mês. Se for dinheiro de outra pessoa guardado nesta conta, marque-a como Dinheiro de terceiros.",
-    "Review wallet": "Revisar conta"
+    "Review wallet": "Revisar conta",
+    "Previous descriptions": "Descrições anteriores"
 }

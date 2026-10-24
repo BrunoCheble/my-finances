@@ -17,6 +17,11 @@
             highlight: 0,
             categorySaving: false,
             categoryError: null,
+            descriptionsOpen: false,
+            descriptionSuggestions: [],
+            descriptionHighlight: -1,
+            descriptionTimer: null,
+            descriptionRequest: 0,
 
             init() {
                 // after a successful create, keep date, wallet and type for the next entry
@@ -114,6 +119,48 @@
 
                 const category = this.categories.find(c => c.id === String(last.category_id));
                 this.suggestion = @json(__('Last time:')) + ' ' + [this.types[last.type], category?.name].filter(Boolean).join(' · ');
+            },
+
+            // description autocomplete: what was typed before, most used first
+            searchDescriptions() {
+                clearTimeout(this.descriptionTimer);
+                const term = String(this.description).trim();
+                if (term.length < 2) return this.closeDescriptions();
+                this.descriptionTimer = setTimeout(async () => {
+                    const request = ++this.descriptionRequest;
+                    const response = await fetch(@json(route('financial-movements.suggestions')) + '?' + new URLSearchParams({ q: term }), { headers: { 'Accept': 'application/json' } });
+                    const items = response.ok ? await response.json() : [];
+                    if (request !== this.descriptionRequest) return; // a newer search already answered
+                    // nothing to suggest when the only match is exactly what was typed
+                    const useful = items.filter((item) => item.description.toLowerCase() !== term.toLowerCase() || items.length > 1);
+                    this.descriptionSuggestions = useful;
+                    this.descriptionHighlight = -1;
+                    this.descriptionsOpen = useful.length > 0 && document.activeElement === this.$refs.description;
+                }, 180);
+            },
+            moveDescription(step) {
+                if (!this.descriptionsOpen) return this.searchDescriptions();
+                const count = this.descriptionSuggestions.length;
+                this.descriptionHighlight = (this.descriptionHighlight + step + count) % count;
+            },
+            pickDescription(i) {
+                const item = this.descriptionSuggestions[i];
+                if (!item) return;
+                this.description = item.description;
+                // in a new movement the last type and category come along
+                if (this.mode === 'create') {
+                    if (item.type) this.type = item.type;
+                    if (item.category_id) this.categoryId = item.category_id;
+                    this.typeTouched = this.categoryTouched = true;
+                    this.suggestion = @json(__('Last time:')) + ' ' + [this.types[item.type], item.category, this.money(item.amount)].filter(Boolean).join(' · ');
+                }
+                this.closeDescriptions();
+            },
+            closeDescriptions() {
+                clearTimeout(this.descriptionTimer);
+                this.descriptionRequest++;
+                this.descriptionsOpen = false;
+                this.descriptionHighlight = -1;
             },
 
             // category picker

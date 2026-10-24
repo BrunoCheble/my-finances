@@ -15,6 +15,7 @@ use App\Services\BulkDeleteFinancialMovementService;
 use App\Services\Cache\DashboardCacheService;
 use App\Services\CalculateFinancialBalanceService;
 use App\Services\CategoryOptionsService;
+use App\Services\DescriptionSuggestionsService;
 use App\Services\LoanService;
 use App\Services\ReconciliationService;
 use App\Services\GetFinancialMovementService;
@@ -229,6 +230,11 @@ class FinancialMovementController extends Controller
             ->filter()
             ->map(fn ($m) => $m->only('wallet_id', 'date'))
             ->values();
+    }
+
+    public function suggestions(Request $request): JsonResponse
+    {
+        return response()->json(DescriptionSuggestionsService::search((string) $request->input('q')));
     }
 
     public function fetchLatestTypeAndCategory(Request $request): JsonResponse
