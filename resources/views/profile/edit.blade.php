@@ -8,6 +8,12 @@
             @include('profile.partials.passkeys')
         </div>
 
+        @if (\App\Services\Auth\GoogleSignInService::configured() || Auth::user()->google_id)
+            <div class="card p-5 sm:p-8">
+                @include('profile.partials.google')
+            </div>
+        @endif
+
         <div class="card p-5 sm:p-8">
             <div class="max-w-xl">
                 @include('profile.partials.update-profile-information-form')
