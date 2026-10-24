@@ -40,3 +40,8 @@ it('takes the sign from the balance change and the year from the period', functi
 it('reads the account number', function () {
     expect((new ActivoBankStatementParser())->parse(activoBankFixture())->account)->toBe('00000000000');
 });
+
+it('reads the available balance', function () {
+    expect((new ActivoBankStatementParser())->parse(activoBankFixture())->availableBalance)->toBe(1080.5)
+        ->and((new CgdStatementParser())->parse(file_get_contents(__DIR__ . '/../Fixtures/cgd-statement.txt'))->availableBalance)->toBe(2237.45);
+});

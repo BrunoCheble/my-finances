@@ -78,7 +78,22 @@ class CgdStatementParser implements StatementParser
             openingBalance: $opening,
             closingBalance: $closing,
             account: preg_match('/CONTA EXTRACTO\s+([\d.]+)/u', $text, $match) ? preg_replace('/\D/', '', $match[1]) : null,
+            availableBalance: self::available($text),
         );
+    }
+
+    /**
+     * "Saldo disponível" right after the demand deposit closing balance.
+     */
+    private static function available(string $text): ?float
+    {
+        $closing = preg_match('/^Saldo contabil[íi]stico\s+' . self::AMOUNT . '/mu', $text, $match, PREG_OFFSET_CAPTURE)
+            ? $match[0][1] : null;
+        if ($closing === null
+            || !preg_match('/^Saldo dispon[íi]vel\s+(' . self::AMOUNT . ')/mu', $text, $available, 0, $closing)) {
+            return null;
+        }
+        return self::toFloat($available[1]);
     }
 
     private static function period(string $text): array

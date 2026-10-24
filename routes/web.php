@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/api/financial-movements/{id}', [FinancialMovementController::class, 'delete'])->name('financial-movements.delete');
     Route::resource('financial-movements', FinancialMovementController::class);
 
+    Route::patch('/statement-imports/{statement_import}/reserved-amount', [StatementImportController::class, 'updateReservedAmount'])->name('statement-imports.reserved-amount');
     Route::post('/statement-imports/identify', [StatementImportController::class, 'identify'])->name('statement-imports.identify');
     Route::resource('statement-imports', StatementImportController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 

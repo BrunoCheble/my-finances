@@ -9,6 +9,7 @@ use App\Models\FinancialMovement;
 use App\Models\StatementImport;
 use App\Models\Wallet;
 use App\Repositories\Interfaces\FinancialBalanceRepositoryInterface;
+use App\Services\Cache\DashboardCacheService;
 use App\Services\Statements\ConfirmStatementImportService;
 use App\Services\Statements\CreateStatementImportService;
 use Illuminate\Contracts\View\View;
@@ -102,6 +103,23 @@ class StatementImportController extends Controller
 
         return redirect()->route('statement-imports.show', $statementImport)
             ->with('success', __(':count movements imported.', ['count' => $created]));
+    }
+
+    public function updateReservedAmount(StatementImport $statementImport): RedirectResponse
+    {
+        $amount = $statementImport->suggestedReservedAmount();
+        if ($amount === null || !$statementImport->isLatestForWallet()) {
+            return redirect()->route('statement-imports.show', $statementImport)->with('error', __('Something went wrong'));
+        }
+
+        $statementImport->wallet->update(['reserved_amount' => $amount]);
+        DashboardCacheService::clearAllByUser();
+
+        return redirect()->route('statement-imports.show', $statementImport)
+            ->with('success', __('Reserved amount of :wallet updated to :amount.', [
+                'wallet' => $statementImport->wallet->name,
+                'amount' => format_currency($amount),
+            ]));
     }
 
     public function destroy(StatementImport $statementImport): RedirectResponse

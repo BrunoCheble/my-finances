@@ -88,6 +88,7 @@ class CreateStatementImportService
             'period_end' => $statement->periodEnd,
             'opening_balance' => $statement->openingBalance,
             'closing_balance' => $statement->closingBalance,
+            'available_balance' => $statement->availableBalance,
             'status' => StatementImport::STATUS_PENDING,
         ]);
 

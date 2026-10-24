@@ -18,6 +18,8 @@ class ParsedStatement
         public readonly ?float $openingBalance = null,
         public readonly ?float $closingBalance = null,
         public readonly ?string $account = null,
+        // accounting minus available = amount held by the bank ("valor cativo")
+        public readonly ?float $availableBalance = null,
     ) {
     }
 
