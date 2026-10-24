@@ -36,3 +36,18 @@ it('parses dates, amounts and descriptions', function () {
         ->and($lines[2]->balance)->toBe(2249.75)
         ->and($lines[3]->description)->toBe('UBER TRIP 9876543210');
 });
+
+it('matches merchants ignoring purchase codes and generic bank words', function () {
+    $keywords = fn ($d) => App\Services\Statements\MovementHistory::keywords($d);
+    $same = fn ($a, $b) => App\Services\Statements\MovementHistory::sameMerchant($keywords($a), $keywords($b));
+
+    expect($keywords('COMPRAS C.DEB UBER *TRIP 8K2LQ 1234567890'))->toBe(['UBER', 'TRIP'])
+        ->and($same('UBER *TRIP 8K2LQ', 'UBER TRIP 12'))->toBeTrue()
+        ->and($same('PINGO DOCE S JOAO MA 123', 'COMPRA 4412 PINGO DOCE LISBOA'))->toBeTrue()
+        ->and($same('FARMACIA 77', 'FARMACIA CENTRAL'))->toBeTrue()
+        ->and($same('UBER TRIP', 'UBER EATS'))->toBeFalse()
+        ->and($same('TRF PARA POUPANCA', 'TRF PARA JOAO'))->toBeFalse()
+        ->and($same('TFI INES FILIPA S', 'TFI CATARINA FILIPA L'))->toBeFalse()
+        ->and($same('TRF PARA POUPANCA 001', 'TRANSFERENCIA PARA POUPANCA'))->toBeTrue()
+        ->and($same('1234 5678', '1234 5678'))->toBeFalse();
+});
