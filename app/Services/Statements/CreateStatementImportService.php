@@ -98,7 +98,7 @@ class CreateStatementImportService
 
         foreach ($statement->lines as $position => $line) {
             $suggestion = $history->suggest($line->description);
-            $duplicate = $this->takeDuplicate($candidates, $line->date, $line->amount);
+            $duplicate = $this->takeDuplicate($candidates, $line->date, $line->amount, $line->description);
 
             $mismatch = false;
             if ($runningBalance !== null && $line->balance !== null) {
@@ -165,11 +165,16 @@ class CreateStatementImportService
      * Same wallet, same signed amount, date within a few days; each existing
      * movement can only match one line. Closest date wins.
      */
-    private function takeDuplicate($candidates, string $date, float $amount): ?FinancialMovement
+    private function takeDuplicate($candidates, string $date, float $amount, string $description): ?FinancialMovement
     {
+        $normalizedDescription = MovementHistory::normalize($description);
+
         $match = $candidates
-            ->filter(fn ($movement) => round((float) $movement->amount, 2) === round($amount, 2)
-                && abs(strtotime($movement->date) - strtotime($date)) <= self::DUPLICATE_DAYS * 86400)
+            ->filter(fn ($movement) =>
+                round((float) $movement->amount, 2) === round($amount, 2)
+                && abs(strtotime($movement->date) - strtotime($date)) <= self::DUPLICATE_DAYS * 86400
+                && MovementHistory::normalize($movement->description) === $normalizedDescription
+            )
             ->sortBy(fn ($movement) => abs(strtotime($movement->date) - strtotime($date)))
             ->first();
 
