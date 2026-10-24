@@ -18,8 +18,8 @@ class FinancialMovementRequest extends FormRequest
         $rules = [
             'description' => 'required|string|max:255',
             'date' => 'required|date',
-            'wallet_id' => 'required|exists:wallets,id',
-            'category_id' => 'nullable|exists:financial_categories,id',
+            'wallet_id' => ['required', Rule::exists('wallets', 'id')->where('user_id', auth()->id())],
+            'category_id' => ['nullable', Rule::exists('financial_categories', 'id')->where('user_id', auth()->id())],
             'amount' => 'required|numeric',
             'type' => [
                 'required',
@@ -46,7 +46,7 @@ class FinancialMovementRequest extends FormRequest
             $rules['transfer_to_wallet_id'] = [
                 'required',
                 'different:wallet_id',
-                'exists:wallets,id',
+                Rule::exists('wallets', 'id')->where('user_id', auth()->id()),
             ];
         }
         return $rules;

@@ -13,7 +13,7 @@ class CustomMovementAlert
     {
         $customAlerts = FinancialMovement::query()
             ->where('include_alert', true)
-            ->whereRaw("DATE_FORMAT(date, '%Y-%m') = ?", [$month])
+            ->whereBetween('date', [$month . '-01', date('Y-m-t', strtotime($month . '-01'))])
             ->orderByDesc('date')
             ->get(['id', 'description', 'amount']);
 
@@ -22,7 +22,7 @@ class CustomMovementAlert
             $formattedTotal = number_format($customAlert->amount, 2, ',', '.');
             $alerts[] = [
                 'type' => 'custom_movement',
-                'message' => "<b>{$customAlert->description}</b>: {$formattedTotal} €",
+                'message' => "<b>" . e($customAlert->description) . "</b>: {$formattedTotal} €",
                 'severity' => 25,
             ];
         }
