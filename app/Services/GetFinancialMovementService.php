@@ -7,7 +7,12 @@ class GetFinancialMovementService
 {
     static function execute($attribute, $search, $sort, $order, $date_from, $date_to, $wallet, $paginate = true, $limit = null) {
 
-        $transacations = FinancialMovement::orderBy($sort ?? 'date', $order ?? 'desc')->orderBy('created_at', 'desc');
+        // column names come from the query string: only known ones are accepted
+        $sort = in_array($sort, ['date', 'id', 'category_id', 'wallet_id', 'amount', 'description'], true) ? $sort : 'date';
+        $order = in_array(strtolower((string) $order), ['asc', 'desc'], true) ? $order : 'desc';
+        $attribute = in_array($attribute, ['description', 'type', 'category_id', 'wallet_id', 'amount'], true) ? $attribute : null;
+
+        $transacations = FinancialMovement::orderBy($sort, $order)->orderBy('created_at', 'desc');
 
         $foreignKeys = ['category_id', 'wallet_id'];
 
