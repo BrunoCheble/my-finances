@@ -10,6 +10,7 @@
         'type' => $line->type,
         'category_id' => $line->category_id ? (string) $line->category_id : '',
         'transfer_wallet_id' => $line->transfer_wallet_id ? (string) $line->transfer_wallet_id : '',
+        'loan_person' => $line->loan_person ?? '',
         'is_new' => $line->is_new,
         'duplicate' => $line->duplicate_movement_id !== null,
         'keywords' => \App\Services\Statements\MovementHistory::keywords($line->description),
@@ -209,6 +210,11 @@
                                     </td>
                                     <td class="py-2 px-2 align-top">
                                         @include('statement-imports.category-picker', ['pending' => $statementImport->is_pending])
+                                        <input type="text" name="lines[{{ $line->id }}][loan_person]" x-model="lines[{{ $index }}].loan_person"
+                                            x-show="lines[{{ $index }}].type === 'loan'" list="loan-people" autocomplete="off"
+                                            placeholder="{{ $line->amount < 0 ? __('Lent to whom?') : __('Paid back by whom?') }}"
+                                            :class="lines[{{ $index }}].selected && !lines[{{ $index }}].loan_person ? 'border-red-400' : ''"
+                                            class="{{ $selectClass }}" @disabled(!$statementImport->is_pending)>
                                         <select name="lines[{{ $line->id }}][transfer_wallet_id]" x-model="lines[{{ $index }}].transfer_wallet_id" @change="choose({{ $index }})"
                                             x-show="lines[{{ $index }}].type === 'transfer'"
                                             :class="lines[{{ $index }}].selected && !lines[{{ $index }}].transfer_wallet_id ? 'border-red-400' : ''"
@@ -237,6 +243,12 @@
             @endif
         </div>
     </div>
+
+    <datalist id="loan-people">
+        @foreach (\App\Services\LoanService::openPeople() as $openLoan)
+            <option value="{{ $openLoan['person'] }}"></option>
+        @endforeach
+    </datalist>
 
     <script>
         function categoryPicker(index) {
@@ -413,7 +425,8 @@
                 get missing() {
                     return this.selected.filter(l =>
                         (this.needsCategory(l) && !l.category_id) ||
-                        (l.type === 'transfer' && !l.transfer_wallet_id)
+                        (l.type === 'transfer' && !l.transfer_wallet_id) ||
+                        (l.type === 'loan' && !String(l.loan_person).trim())
                     ).length;
                 },
                 get otherWallets() {

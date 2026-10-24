@@ -60,6 +60,20 @@ class NetWorthHistoryService
             ];
         })->sortByDesc(fn ($wallet) => end($wallet->values))->values();
 
+        // money lent to people is still the user's: shown as its own line
+        $ends = array_map(fn ($month) => Carbon::createFromFormat('Y-m-d', $month . '-01')->endOfMonth()->toDateString(), $months);
+        $toReceive = array_values(LoanService::outstandingAt($ends));
+        if (array_filter($toReceive)) {
+            $series->push((object) [
+                'id' => 'loans',
+                'name' => __('Loans to receive'),
+                'color' => '#d97706',
+                'third_party' => false,
+                'loans' => true,
+                'values' => $toReceive,
+            ]);
+        }
+
         $total = [];
         foreach (array_keys($months) as $i) {
             $total[] = round($series->sum(fn ($wallet) => $wallet->values[$i]), 2);

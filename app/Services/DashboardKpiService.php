@@ -32,8 +32,11 @@ class DashboardKpiService
         $isLatestMonth = $month >= max(array_keys($monthlySummary) ?: [$month]);
         $reserved = $isLatestMonth ? (float) $latest->sum(fn ($balance) => $balance->wallet?->reserved_amount ?? 0) : 0;
 
+        $toReceive = LoanService::outstandingAt([$end])[$end];
+
         return [
-            'net_worth' => (float) $latest->sum('calculated_balance') + $reserved,
+            'to_receive' => $toReceive,
+            'net_worth' => (float) $latest->sum('calculated_balance') + $reserved + $toReceive,
             'in_banks' => (float) $latest->diffKeys($thirdParty)->sum('calculated_balance') + $reserved,
             'third_party' => -(float) $thirdParty->sum('calculated_balance'),
             'net_worth_change' => (float) ($current['balance_change'] ?? 0),
@@ -53,12 +56,13 @@ class DashboardKpiService
     public static function netWorthSeries(array $months): array
     {
         $balances = FinancialBalance::orderBy('start_date')->get(['wallet_id', 'start_date', 'calculated_balance']);
+        $ends = array_map(fn ($month) => Carbon::createFromFormat('Y-m-d', $month . '-01')->endOfMonth()->toDateString(), $months);
+        $toReceive = LoanService::outstandingAt($ends);
         $series = [];
-        foreach ($months as $month) {
-            $end = Carbon::createFromFormat('Y-m-d', $month . '-01')->endOfMonth()->toDateString();
-            $series[$month] = round($balances->where('start_date', '<=', $end)
+        foreach ($months as $i => $month) {
+            $series[$month] = round($balances->where('start_date', '<=', $ends[$i])
                 ->groupBy('wallet_id')
-                ->sum(fn ($walletBalances) => (float) $walletBalances->last()->calculated_balance), 2);
+                ->sum(fn ($walletBalances) => (float) $walletBalances->last()->calculated_balance) + $toReceive[$ends[$i]], 2);
         }
         return $series;
     }

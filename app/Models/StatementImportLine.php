@@ -19,6 +19,7 @@ class StatementImportLine extends Model
         'type',
         'category_id',
         'transfer_wallet_id',
+        'loan_person',
         'is_new',
         'history_match',
         'history_description',

@@ -73,6 +73,7 @@ class ConfirmStatementImportService
             $line->type = $choice['type'] ?? $line->type;
             $line->category_id = ($choice['category_id'] ?? null) ?: null;
             $line->transfer_wallet_id = ($choice['transfer_wallet_id'] ?? null) ?: null;
+            $line->loan_person = trim((string) ($choice['loan_person'] ?? '')) ?: null;
             $line->save();
         }
     }
@@ -87,6 +88,8 @@ class ConfirmStatementImportService
                 $errors["lines.{$line->id}"] = __('Invalid type') . ": $label";
             } elseif (in_array($line->type, self::CATEGORIZED_TYPES) && !$line->category_id) {
                 $errors["lines.{$line->id}"] = __('Choose a category') . ": $label";
+            } elseif ($line->type === FinancialMovementType::LOAN && !$line->loan_person) {
+                $errors["lines.{$line->id}"] = __('Choose the person of the loan') . ": $label";
             } elseif ($line->type === FinancialMovementType::TRANSFER
                 && (!$line->transfer_wallet_id || $line->transfer_wallet_id == $import->wallet_id)) {
                 $errors["lines.{$line->id}"] = __('Choose the other wallet of the transfer') . ": $label";
@@ -118,7 +121,13 @@ class ConfirmStatementImportService
             FinancialMovementType::TRANSFER => array_merge($data, $amount < 0
                 ? ['transfer_to_wallet_id' => $line->transfer_wallet_id]
                 : ['wallet_id' => $line->transfer_wallet_id, 'transfer_to_wallet_id' => $import->wallet_id]),
-            FinancialMovementType::LOAN, FinancialMovementType::ADJUSTMENT => array_merge($data, ['amount' => $amount]),
+            // money leaving the wallet is a loan, money coming back is a repayment
+            FinancialMovementType::LOAN => array_merge($data, [
+                'amount' => abs($amount),
+                'loan_person' => $line->loan_person,
+                'loan_direction' => $amount < 0 ? 'lend' : 'receive',
+            ]),
+            FinancialMovementType::ADJUSTMENT => array_merge($data, ['amount' => $amount]),
             default => $data,
         };
     }

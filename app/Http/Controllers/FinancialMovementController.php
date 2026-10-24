@@ -15,6 +15,7 @@ use App\Services\BulkDeleteFinancialMovementService;
 use App\Services\Cache\DashboardCacheService;
 use App\Services\CalculateFinancialBalanceService;
 use App\Services\CategoryOptionsService;
+use App\Services\LoanService;
 use App\Services\GetFinancialMovementService;
 use App\Services\SaveFinancialMovementService;
 use Illuminate\Http\Request;
@@ -23,6 +24,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\ValidationException;
 
 class FinancialMovementController extends Controller
 {
@@ -42,6 +44,7 @@ class FinancialMovementController extends Controller
         $types = FinancialMovementType::options();
         $categories = ArrayHelper::toKeyValueArray(FinancialCategory::all(), 'id', 'name');
         $categoryOptions = CategoryOptionsService::forPicker();
+        $openLoans = LoanService::openPeople();
 
         $walletsSidebar = Wallet::all();
         $wallets = ArrayHelper::toKeyValueArray($walletsSidebar, 'id', 'name');
@@ -62,7 +65,8 @@ class FinancialMovementController extends Controller
             'availableAttributes',
             'financialMovement',
             'totalBalance',
-            'categoryOptions'
+            'categoryOptions',
+            'openLoans'
         ))->with('i', ($request->input('page', 1) - 1) * 5);
     }
 
@@ -85,6 +89,9 @@ class FinancialMovementController extends Controller
             }
             $dashboardCacheService->clearAllByUser();
             return response()->json(['balances' => $balances, 'movements' => $movements], Response::HTTP_CREATED);
+        } catch (ValidationException $e) {
+            // e.g. a repayment from someone without an open loan: show the reason
+            throw $e;
         } catch (\Exception $e) {
             return response()->json(['error' => __('Something went wrong')], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
