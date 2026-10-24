@@ -15,8 +15,6 @@
 
     <div class="space-y-4 px-4 py-6 sm:px-6 lg:px-8"
         x-data="{ tab: 'expense', search: '' }" x-init="@if ($reopen) $nextTick(() => $dispatch('open-modal', @js($reopen))) @endif">
-        @include('layouts.alert')
-
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div class="inline-flex rounded-lg bg-slate-100 p-1 text-sm font-medium" role="tablist">
                 @foreach (['expense' => __('Total expenses'), 'income' => __('Total income')] as $type => $label)

@@ -19,8 +19,6 @@
     </x-slot>
 
     <div class="space-y-8 px-4 py-6 sm:px-6 lg:px-8" x-data x-init="@if ($reopen) $nextTick(() => $dispatch('open-modal', @js($reopen))) @endif">
-        @include('layouts.alert')
-
         @if ($all->isEmpty())
             <x-card>
                 <x-empty-state icon="wallet" :title="__('No wallets yet')" :description="__('Create your first bank account or card to start registering movements.')">

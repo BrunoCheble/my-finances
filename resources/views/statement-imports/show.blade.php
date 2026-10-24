@@ -33,7 +33,6 @@
     <div class="py-12" x-data="statementImport()">
         <div class="max-w-full mx-auto sm:px-6 lg:px-8 space-y-6">
             <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                @include('layouts.alert')
                 @if ($errors->any())
                     <div class="p-4 mb-4 text-sm text-red-800 border border-red-300 rounded-lg bg-red-50">
                         <ul class="list-disc pl-4 space-y-1">
@@ -355,7 +354,7 @@
                 bankClosing: @json($statementImport->closing_balance !== null ? (float) $statementImport->closing_balance : null),
                 filter: 'all',
                 money(value) {
-                    return Number(value).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+                    return Number(value).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
                 },
                 visible(line) {
                     if (this.filter === 'new') return line.is_new;

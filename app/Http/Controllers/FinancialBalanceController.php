@@ -114,7 +114,7 @@ class FinancialBalanceController extends Controller
             (float) $request->validated()['real_balance']
         );
         DashboardCacheService::clearAllByUser();
-        return redirect()->route('financial-balances.index')->with('success', 'Financial Balance updated successfully.');
+        return redirect()->route('financial-balances.index')->with('success', __('Balance adjusted.'));
     }
 
 
@@ -123,7 +123,7 @@ class FinancialBalanceController extends Controller
         $financial_balance = FinancialBalance::findOrFail($id);
         $calculateFinancialBalanceService->execute($financial_balance->start_date, $financial_balance->wallet_id);
         DashboardCacheService::clearAllByUser();
-        return redirect()->route('financial-balances.index')->with('success', 'Financial Balance recalculated successfully.');
+        return redirect()->route('financial-balances.index')->with('success', __('Balance recalculated.'));
     }
 
     public function recalculateAll(string $startDate, string $endDate, CalculateFinancialBalanceService $calculateFinancialBalanceService)
@@ -133,6 +133,6 @@ class FinancialBalanceController extends Controller
             $calculateFinancialBalanceService->execute($financial_balance->start_date, $financial_balance->wallet_id);
         }
         DashboardCacheService::clearAllByUser();
-        return redirect()->route('financial-balances.index', ['start_date' => $startDate, 'end_date' => $endDate])->with('success', 'Financial Balance recalculated successfully.');
+        return redirect()->route('financial-balances.index', ['start_date' => $startDate, 'end_date' => $endDate])->with('success', __('Balance recalculated.'));
     }
 }

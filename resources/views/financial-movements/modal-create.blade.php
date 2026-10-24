@@ -80,10 +80,6 @@
         </div>
     </x-modal>
 
-    <div x-show="notification" x-cloak x-transition role="status"
-        class="fixed inset-x-4 top-4 z-[60] whitespace-pre-line rounded-lg bg-slate-900 px-4 py-3 text-sm text-white shadow-lg sm:inset-x-auto sm:right-4 sm:max-w-sm"
-        x-text="notification"></div>
-
     {{-- mobile: floating "new movement" button (desktop uses the page header button) --}}
     <button type="button" class="fixed bottom-5 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-lg shadow-brand-600/30 hover:bg-brand-700 md:hidden"
         @click.prevent="$dispatch('open-modal', 'modal-create')">
@@ -98,24 +94,17 @@
         return {
             selectedType: 'income',
             isLoading: false,
-            notification: '',
             errorMessages: [],
             lastMovements: [],
             categoryStatus: null,
             wallets: @json($wallets),
+            // color and kind of each wallet, for the balances in the toast
+            walletInfo: @json($walletsSidebar->mapWithKeys(fn ($wallet) => [$wallet->id => ['color' => $wallet->color ?? '#94a3b8', 'thirdParty' => $wallet->is_third_party]])),
             categories: @json($categories),
             types: @json($types),
 
             money(value) {
-                return Number(value).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
-            },
-
-            init() {
-                // the toast hides itself after a few seconds
-                this.$watch('notification', (value) => {
-                    clearTimeout(this.notificationTimer);
-                    if (value) this.notificationTimer = setTimeout(() => this.notification = '', 6000);
-                });
+                return Number(value).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
             },
 
             handleModalCloseManual() {
@@ -138,16 +127,15 @@
                     .then(response => response.json())
                     .then(data => {
                         this.lastMovements = this.lastMovements.filter(movement => movement.id !== id);
-                        this.notification = @json(__('Movement deleted.'));
+                        window.toast({ type: 'info', title: @json(__('Movement deleted.')) });
                     }).catch(error => {
                         console.error('Error:', error);
-                        this.notification = @json(__('Something went wrong'));
+                        window.toast({ type: 'error', title: @json(__('Something went wrong')) });
                     });
             },
 
             submitForm() {
                 this.isLoading = true;
-                this.notification = '';
                 this.errorMessages = [];
                 let form = this.$refs.financialForm;
 
@@ -181,7 +169,7 @@
                             movement.category_id = movement.category_id ? this.categories[movement.category_id] : this.types[movement.type];
                             movement.type = this.types[movement.type];
 
-                            movement.amount = parseFloat(movement.amount).toLocaleString('pt-PT', {
+                            movement.amount = parseFloat(movement.amount).toLocaleString('de-DE', {
                                 style: 'currency',
                                 currency: 'EUR'
                             });
@@ -189,25 +177,36 @@
                             this.lastMovements.push(movement);
                         }
 
-                        this.notification = @json(__('Movement saved.'));
                         // how the category stands in the month (null for transfers, loans, adjustments)
                         this.categoryStatus = data.category;
-                        if (data.category) this.notification += '\n' + data.category.text;
 
-                        for (let i = 0; i < data['balances'].length; i++) {
-                            const balance = data['balances'][i];
-                            const calculated = parseFloat(balance.calculated_balance).toLocaleString('pt-PT', {
-                                style: 'currency',
-                                currency: 'EUR'
-                            });
-                            this.notification += '\n' + this.wallets[balance.wallet_id] + ': ' + calculated;
-                        }
+                        // the toast: what was saved and the balance of each wallet it touched, in its month
+                        const saved = this.lastMovements[this.lastMovements.length - data.movements.length];
+                        window.toast({
+                            type: 'success',
+                            title: @json(__('Movement saved.')),
+                            message: saved ? saved.description + ' · ' + saved.amount : '',
+                            rows: data.balances.map((balance) => {
+                                const info = this.walletInfo[balance.wallet_id] || {};
+                                const value = Number(balance.calculated_balance);
+                                const start = new Date(balance.start_date + 'T00:00:00');
+                                const month = start.toLocaleDateString('pt-PT', { month: 'short' }).replace('.', '') + '/' + String(start.getFullYear()).slice(2);
+                                return {
+                                    label: this.wallets[balance.wallet_id],
+                                    color: info.color,
+                                    hint: month,
+                                    // third-party money: what is kept for the person
+                                    value: info.thirdParty ? @json(__('kept')) + ' ' + this.money(-value) : this.money(value),
+                                    tone: info.thirdParty ? 'text-purple-700' : (value < 0 ? 'text-rose-600' : 'text-slate-900'),
+                                };
+                            }),
+                        });
                         // clear the form for the next entry (keeps date, wallet and type)
                         window.dispatchEvent(new CustomEvent('movement-form-reset'));
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        this.notification = @json(__('Something went wrong'));
+                        window.toast({ type: 'error', title: @json(__('Something went wrong')) });
                     })
                     .finally(() => this.isLoading = false);
             }

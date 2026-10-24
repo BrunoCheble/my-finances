@@ -91,7 +91,7 @@
                 return this.openLoans.find(l => l.person.toLowerCase() === name) || null;
             },
             money(value) {
-                return Number(value).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+                return Number(value).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
             },
             get amountSign() {
                 if (this.type === 'loan') return this.loanDirection === 'lend' ? '−' : '+';
