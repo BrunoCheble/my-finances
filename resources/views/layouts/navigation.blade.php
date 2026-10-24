@@ -21,38 +21,55 @@
             $classes = $active
                 ? 'bg-brand-50 text-brand-700'
                 : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900';
-            $html .= '<a href="' . e(route($item['route'])) . '" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ' . $classes . '"'
+            // the title shows the name as a tooltip when the sidebar is collapsed to icons
+            $html .= '<a href="' . e(route($item['route'])) . '" title="' . e($item['label']) . '" class="sidebar-link group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ' . $classes . '"'
                 . ($active ? ' aria-current="page"' : '') . '>'
                 . '<i class="fa-solid fa-' . $item['icon'] . ' w-5 text-center ' . ($active ? 'text-brand-600' : 'text-slate-400 group-hover:text-slate-500') . '" aria-hidden="true"></i>'
-                . e($item['label']) . '</a>';
+                . '<span class="sidebar-label">' . e($item['label']) . '</span></a>';
         }
         return $html;
     };
 @endphp
 
-<div x-data="{ drawer: false }" @keydown.escape.window="drawer = false">
-    {{-- Desktop sidebar --}}
-    <aside class="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200 bg-white lg:flex" aria-label="{{ __('Main navigation') }}">
-        <a href="{{ route('dashboard') }}" class="flex h-16 items-center px-5">
+<div x-data="{
+        drawer: false,
+        collapsed: document.documentElement.classList.contains('sidebar-collapsed'),
+        toggleSidebar() {
+            this.collapsed = document.documentElement.classList.toggle('sidebar-collapsed');
+            try { localStorage.setItem('sidebar', this.collapsed ? 'collapsed' : 'expanded'); } catch (e) {}
+        },
+    }" @keydown.escape.window="drawer = false">
+    {{-- Desktop sidebar (collapsible to an icon rail) --}}
+    <aside class="sidebar fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-slate-200 bg-white transition-[width] duration-200 lg:flex" aria-label="{{ __('Main navigation') }}">
+        <a href="{{ route('dashboard') }}" class="sidebar-brand flex h-16 items-center px-5" title="Escudo">
             <x-brand />
         </a>
 
-        <nav class="flex-1 space-y-1 px-3 py-4">{!! $links() !!}</nav>
+        <nav class="flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-3 py-4">{!! $links() !!}</nav>
+
+        <div class="px-3 pb-2">
+            <button type="button" @click="toggleSidebar()" :aria-expanded="(!collapsed).toString()"
+                :title="collapsed ? @js(__('Expand menu')) : @js(__('Collapse menu'))"
+                class="sidebar-link relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-900">
+                <i class="sidebar-toggle-icon fa-solid fa-angles-left w-5 text-center text-slate-400 transition" aria-hidden="true"></i>
+                <span class="sidebar-label" x-text="collapsed ? @js(__('Expand menu')) : @js(__('Collapse menu'))">{{ __('Collapse menu') }}</span>
+            </button>
+        </div>
 
         <div class="border-t border-slate-200 p-3" x-data="{ menu: false }" @click.outside="menu = false">
             <div class="relative">
                 <button type="button" @click="menu = !menu" :aria-expanded="menu"
-                    class="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-slate-100">
+                    class="sidebar-link relative flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-slate-100" title="{{ $user->name }}">
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700" aria-hidden="true">{{ $initials }}</span>
-                    <span class="min-w-0 flex-1">
+                    <span class="sidebar-label min-w-0 flex-1">
                         <span class="block truncate text-sm font-medium text-slate-900">{{ $user->name }}</span>
                         <span class="block truncate text-xs text-slate-500">{{ $user->email }}</span>
                     </span>
-                    <i class="fa-solid fa-chevron-up text-xs text-slate-400" aria-hidden="true"></i>
+                    <i class="sidebar-label fa-solid fa-chevron-up text-xs text-slate-400" aria-hidden="true"></i>
                 </button>
 
                 <div x-show="menu" x-cloak x-transition
-                    class="absolute bottom-full left-0 right-0 mb-2 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
+                    class="sidebar-popup absolute bottom-full left-0 right-0 mb-2 overflow-hidden rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
                     @include('layouts.user-menu')
                 </div>
             </div>
