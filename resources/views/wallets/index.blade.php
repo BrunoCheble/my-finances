@@ -1,74 +1,119 @@
+@php
+    $reopen = old('_modal') ?? $openModal;
+    $titles = [
+        'own' => [__('Your accounts'), __('Banks and cards that are yours.')],
+        'third_party' => [__('Third-party money'), __('Money of other people kept in your banks.')],
+        'inactive' => [__('Inactive wallets'), __('Kept for the history.')],
+    ];
+    $typeLabels = \App\Models\Wallet::types();
+    $all = collect($groups)->flatten(1);
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Wallets') }}
-        </h2>
+        <x-page-header :title="__('Wallets')" :subtitle="__('Your accounts, cards and money you keep for others.')">
+            <x-slot name="actions">
+                <x-button icon="plus" x-data x-on:click="$dispatch('open-modal', 'wallet-new')">{{ __('New wallet') }}</x-button>
+            </x-slot>
+        </x-page-header>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-full mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="w-full">
-                    @include('layouts.alert')
-                    <div class="sm:flex sm:items-center">
-                        <div class="sm:flex-auto">
-                            <h1 class="text-base font-semibold leading-6 text-gray-900">{{ __('Wallets') }}</h1>
-                            <p class="mt-2 text-sm text-gray-700">A list of all the {{ __('Wallets') }}.</p>
-                        </div>
-                        <div class="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-                            <a type="button" href="{{ route('wallets.create') }}" class="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">{{ __('Add new') }}</a>
-                        </div>
-                    </div>
+    <div class="space-y-8 px-4 py-6 sm:px-6 lg:px-8" x-data x-init="@if ($reopen) $nextTick(() => $dispatch('open-modal', @js($reopen))) @endif">
+        @include('layouts.alert')
 
-                    <div class="flow-root">
-                        <div class="mt-8 overflow-x-auto">
-                            <div class="inline-block min-w-full py-2 align-middle">
-                                <table class="w-full divide-y divide-gray-300">
-                                    <thead>
-                                    <tr>
+        @if ($all->isEmpty())
+            <x-card>
+                <x-empty-state icon="wallet" :title="__('No wallets yet')" :description="__('Create your first bank account or card to start registering movements.')">
+                    <x-button class="mt-4" icon="plus" x-on:click="$dispatch('open-modal', 'wallet-new')">{{ __('New wallet') }}</x-button>
+                </x-empty-state>
+            </x-card>
+        @endif
 
-									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Name') }}</th>
-									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Reserved amount') }}</th>
-                                    <th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Color') }}</th>
-									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Type') }}</th>
-									<th scope="col" class="py-3 pl-4 pr-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{{ __('Actived') }}</th>
+        @foreach ($groups as $key => $wallets)
+            @continue($wallets->isEmpty())
+            <section aria-labelledby="group-{{ $key }}" @if ($key === 'inactive') x-data="{ open: false }" @endif>
+                <div class="mb-3">
+                    @if ($key === 'inactive')
+                        <button type="button" id="group-{{ $key }}" @click="open = !open" :aria-expanded="open" class="flex items-center gap-2 text-base font-semibold text-slate-900">
+                            {{ $titles[$key][0] }} <x-badge>{{ $wallets->count() }}</x-badge>
+                            <i class="fa-solid fa-chevron-down text-xs text-slate-400 transition" :class="open && 'rotate-180'" aria-hidden="true"></i>
+                        </button>
+                    @else
+                        <h2 id="group-{{ $key }}" class="text-base font-semibold text-slate-900">{{ $titles[$key][0] }}</h2>
+                    @endif
+                    <p class="text-sm text-slate-500">{{ $titles[$key][1] }}</p>
+                </div>
 
-                                        <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500"></th>
-                                    </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-200 bg-white">
-                                    @foreach ($wallets as $i => $wallet)
-                                        <tr class="even:bg-gray-50">
-
-										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ $wallet->name }}</td>
-										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ format_currency($wallet->reserved_amount) }}</td>
-										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                                            <div class="w-4 h-4 rounded-full" style="background-color: {{ $wallet->color }}"></div>
-                                        </td>
-										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ \App\Models\Wallet::types()[$wallet->type] ?? $wallet->type }}</td>
-										<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ $wallet->active ? __('Yes') : __('No') }}</td>
-
-                                            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900">
-                                                <form action="{{ route('wallets.destroy', $wallet->id) }}" method="POST">
-                                                    <a href="{{ route('wallets.edit', $wallet->id) }}" class="text-indigo-600 font-bold hover:text-indigo-900  mr-2">{{ __('Edit') }}</a>
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <a href="{{ route('wallets.destroy', $wallet->id) }}" class="text-red-600 font-bold hover:text-red-900" onclick="event.preventDefault(); confirm('Are you sure to delete?') ? this.closest('form').submit() : false;">{{ __('Delete') }}</a>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                    </tbody>
-                                </table>
-
-                                <div class="mt-4 px-4">
-                                    {!! $wallets->withQueryString()->links() !!}
+                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" @if ($key === 'inactive') x-show="open" x-cloak @endif>
+                    @foreach ($wallets as $wallet)
+                        <article class="card relative flex flex-col overflow-hidden p-4 sm:p-5">
+                            <span class="absolute inset-x-0 top-0 h-1" style="background-color: {{ $wallet->color ?? '#94a3b8' }}" aria-hidden="true"></span>
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <h3 class="truncate font-semibold text-slate-900">{{ $wallet->name }}</h3>
+                                    <p class="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+                                        <i class="fa-solid fa-{{ ['debit' => 'building-columns', 'credit' => 'credit-card', 'third_party' => 'user-shield'][$wallet->type] ?? 'wallet' }}" aria-hidden="true"></i>
+                                        {{ $typeLabels[$wallet->type] ?? $wallet->type }}
+                                    </p>
+                                </div>
+                                <div class="-mr-2 -mt-1 flex">
+                                    <x-icon-button icon="pen" :label="__('Edit')" x-on:click="$dispatch('open-modal', 'wallet-edit-{{ $wallet->id }}')" />
+                                    @if ($wallet->movements_count > 0)
+                                        <span class="btn-icon cursor-not-allowed opacity-40" title="{{ __('Has movements: deactivate it instead of deleting.') }}">
+                                            <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                                            <span class="sr-only">{{ __('Cannot delete: has movements') }}</span>
+                                        </span>
+                                    @else
+                                        <x-icon-button icon="trash" tone="danger" :label="__('Delete')" x-on:click="$dispatch('open-modal', 'wallet-delete-{{ $wallet->id }}')" />
+                                    @endif
                                 </div>
                             </div>
-                        </div>
-                    </div>
+
+                            <div class="mt-4">
+                                @if ($wallet->is_third_party)
+                                    <p class="text-xs text-slate-500">{{ __('Kept for someone else') }}</p>
+                                    <p class="amount text-2xl font-semibold text-purple-700">{{ format_currency(-$wallet->balance) }}</p>
+                                @else
+                                    <p class="text-xs text-slate-500">{{ __('Balance') }}</p>
+                                    <p @class(['amount text-2xl font-semibold', 'text-rose-600' => $wallet->balance < 0 && $wallet->type === 'debit', 'text-slate-900' => !($wallet->balance < 0 && $wallet->type === 'debit')])>
+                                        {{ format_currency($wallet->balance) }}
+                                    </p>
+                                @endif
+                            </div>
+
+                            <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                                <a href="{{ route('financial-movements.index', ['wallet_id' => $wallet->id]) }}" class="font-medium text-brand-700 hover:text-brand-800">
+                                    {{ trans_choice(':count movement|:count movements', $wallet->movements_count, ['count' => $wallet->movements_count]) }}
+                                </a>
+                                @if ((float) $wallet->reserved_amount != 0)
+                                    <x-badge color="yellow">{{ __('held :amount', ['amount' => format_currency(abs($wallet->reserved_amount))]) }}</x-badge>
+                                @endif
+                            </div>
+                        </article>
+
+                    @endforeach
                 </div>
-            </div>
-        </div>
+            </section>
+        @endforeach
     </div>
+
+    @include('wallets.form-modal', ['wallet' => null])
+    {{-- modals outside the (possibly hidden) groups so they always open --}}
+    @foreach ($all as $wallet)
+        @include('wallets.form-modal', ['wallet' => $wallet])
+        @if ($wallet->movements_count === 0)
+            <x-modal name="wallet-delete-{{ $wallet->id }}" maxWidth="md">
+                <form method="POST" action="{{ route('wallets.destroy', $wallet) }}" class="space-y-4 p-5 sm:p-6">
+                    @csrf
+                    @method('DELETE')
+                    <h3 class="text-lg font-semibold text-slate-900">{{ __('Delete :wallet?', ['wallet' => $wallet->name]) }}</h3>
+                    <p class="text-sm text-slate-600">{{ __('This wallet has no movements and will be removed.') }}</p>
+                    <div class="flex justify-end gap-2">
+                        <x-button variant="secondary" x-on:click="$dispatch('close')">{{ __('Cancel') }}</x-button>
+                        <x-danger-button>{{ __('Delete') }}</x-danger-button>
+                    </div>
+                </form>
+            </x-modal>
+        @endif
+    @endforeach
 </x-app-layout>
