@@ -280,3 +280,16 @@ it('answers a damaged PDF with a clear message instead of an error page', functi
         ->assertStatus(422)
         ->assertJsonPath('error', __('This PDF could not be read. Check that it is the original statement from the bank.'));
 });
+
+it('does not take transfers to different people for duplicates (the TFI case of production)', function () {
+    // same amount, one day apart, another person
+    FinancialMovement::create(['description' => 'TFI GABRIELA SANTOS D', 'date' => '2026-08-19', 'wallet_id' => $this->bank->id, 'amount' => -12.30, 'type' => 'transfer']);
+    FinancialMovement::where('description', 'Uber')->delete();
+    fakeStatementText(str_replace('UBER   TRIP 9876543210', 'TFI CATARINA FILIPA L', file_get_contents(__DIR__ . '/../Fixtures/cgd-statement.txt')));
+
+    uploadStatement($this, $this->bank)->assertRedirect();
+
+    $line = StatementImport::sole()->lines()->where('description', 'TFI CATARINA FILIPA L')->sole();
+    expect($line->duplicate_movement_id)->toBeNull()
+        ->and($line->selected)->toBeTrue();
+});

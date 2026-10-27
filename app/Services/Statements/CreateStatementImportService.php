@@ -162,18 +162,21 @@ class CreateStatementImportService
     }
 
     /**
-     * Same wallet, same signed amount, date within a few days; each existing
-     * movement can only match one line. Closest date wins.
+     * Same wallet, same signed amount, date within a few days and the same merchant (the same keywords, so "Uber"
+     * typed by hand matches "UBER TRIP 4411"; transfers to different people do not match) or the same normalized
+     * text. Each existing movement can only match one line. Closest date wins.
      */
     private function takeDuplicate($candidates, string $date, float $amount, string $description): ?FinancialMovement
     {
         $normalizedDescription = MovementHistory::normalize($description);
+        $keywords = MovementHistory::keywords($description);
 
         $match = $candidates
             ->filter(fn ($movement) =>
                 round((float) $movement->amount, 2) === round($amount, 2)
                 && abs(strtotime($movement->date) - strtotime($date)) <= self::DUPLICATE_DAYS * 86400
-                && MovementHistory::normalize($movement->description) === $normalizedDescription
+                && (MovementHistory::normalize($movement->description) === $normalizedDescription
+                    || MovementHistory::sameMerchant(MovementHistory::keywords($movement->description), $keywords))
             )
             ->sortBy(fn ($movement) => abs(strtotime($movement->date) - strtotime($date)))
             ->first();
