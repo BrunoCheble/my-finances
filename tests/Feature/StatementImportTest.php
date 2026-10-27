@@ -280,3 +280,54 @@ it('answers a damaged PDF with a clear message instead of an error page', functi
         ->assertStatus(422)
         ->assertJsonPath('error', __('This PDF could not be read. Check that it is the original statement from the bank.'));
 });
+
+it('does not take transfers to different people for duplicates (the TFI case of production)', function () {
+    // same amount, one day apart, another person
+    FinancialMovement::create(['description' => 'TFI GABRIELA SANTOS D', 'date' => '2026-08-19', 'wallet_id' => $this->bank->id, 'amount' => -12.30, 'type' => 'transfer']);
+    FinancialMovement::where('description', 'Uber')->delete();
+    fakeStatementText(str_replace('UBER   TRIP 9876543210', 'TFI CATARINA FILIPA L', file_get_contents(__DIR__ . '/../Fixtures/cgd-statement.txt')));
+
+    uploadStatement($this, $this->bank)->assertRedirect();
+
+    $line = StatementImport::sole()->lines()->where('description', 'TFI CATARINA FILIPA L')->sole();
+    expect($line->duplicate_movement_id)->toBeNull()
+        ->and($line->selected)->toBeTrue();
+});
+
+it('checks the duplicates again when a pending import is opened', function () {
+    uploadStatement($this, $this->bank)->assertRedirect();
+    $import = StatementImport::sole();
+    $uber = $import->lines()->where('description', 'like', 'UBER%')->sole();
+    expect($uber->duplicate_movement_id)->not->toBeNull();
+
+    // the movement it matched is deleted: no longer a duplicate, selected again
+    FinancialMovement::where('description', 'Uber')->delete();
+    $this->get(route('statement-imports.show', $import))->assertOk();
+
+    expect($uber->fresh()->duplicate_movement_id)->toBeNull()
+        ->and($uber->fresh()->selected)->toBeTrue();
+});
+
+it('lets the user say a line is not a duplicate, and undo it', function () {
+    uploadStatement($this, $this->bank)->assertRedirect();
+    $import = StatementImport::sole();
+    $uber = $import->lines()->where('description', 'like', 'UBER%')->sole();
+
+    $this->patchJson(route('statement-imports.duplicate', [$import, $uber]), ['duplicate' => false])
+        ->assertOk()->assertJson(['duplicate' => false, 'dismissed' => true, 'selected' => true]);
+    // opening the import again keeps the user's choice
+    $this->get(route('statement-imports.show', $import))->assertOk();
+    expect($uber->fresh()->duplicate_movement_id)->toBeNull();
+
+    $this->patchJson(route('statement-imports.duplicate', [$import, $uber]), ['duplicate' => true])
+        ->assertOk()->assertJson(['duplicate' => true, 'dismissed' => false, 'selected' => false]);
+});
+
+it('does not let a line of another import be changed', function () {
+    uploadStatement($this, $this->bank)->assertRedirect();
+    $import = StatementImport::sole();
+    $other = User::factory()->create();
+    $this->actingAs($other);
+
+    $this->patchJson(route('statement-imports.duplicate', [$import, $import->lines()->first()]), ['duplicate' => false])->assertNotFound();
+});

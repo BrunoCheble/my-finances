@@ -93,7 +93,7 @@ class CreateStatementImportService
         ]);
 
         $history = new MovementHistory();
-        $candidates = $this->duplicateCandidates($statement, $walletId);
+        $candidates = $this->duplicateCandidates(array_map(fn ($line) => $line->date, $statement->lines), $walletId);
         $runningBalance = $statement->openingBalance;
 
         foreach ($statement->lines as $position => $line) {
@@ -124,6 +124,7 @@ class CreateStatementImportService
                 'history_count' => $suggestion?->count ?? 0,
                 'history_last_date' => $suggestion?->last_date,
                 'duplicate_movement_id' => $duplicate?->id,
+                'unselected_as_duplicate' => $duplicate !== null,
                 'selected' => $duplicate === null,
             ]);
         }
@@ -149,9 +150,49 @@ class CreateStatementImportService
         };
     }
 
-    private function duplicateCandidates(ParsedStatement $statement, int $walletId)
+    /**
+     * Checks the duplicates of a pending import again, against the movements registered now and the current rule
+     * (they were found once, when the PDF was read). Lines the user said are not duplicates stay so. A line whose
+     * duplicate status changes is selected (or unselected) accordingly.
+     */
+    public function refreshDuplicates(StatementImport $import): void
     {
-        $dates = array_map(fn ($line) => $line->date, $statement->lines);
+        if (!$import->is_pending) {
+            return;
+        }
+        $lines = $import->lines()->orderBy('position')->get();
+        if ($lines->isEmpty()) {
+            return;
+        }
+
+        $candidates = $this->duplicateCandidates($lines->pluck('date')->all(), $import->wallet_id);
+        foreach ($lines as $line) {
+            $duplicate = $line->duplicate_dismissed
+                ? null
+                : $this->takeDuplicate($candidates, (string) $line->date, (float) $line->amount, $line->description);
+            if ($duplicate) {
+                // newly a duplicate: unselected (by the check)
+                if ($line->duplicate_movement_id === null) {
+                    $line->selected = false;
+                    $line->unselected_as_duplicate = true;
+                }
+                $line->duplicate_movement_id = $duplicate->id;
+            } else {
+                // no longer a duplicate (the movement may have been deleted, which already cleared the link)
+                if ($line->unselected_as_duplicate) {
+                    $line->selected = true;
+                    $line->unselected_as_duplicate = false;
+                }
+                $line->duplicate_movement_id = null;
+            }
+            if ($line->isDirty()) {
+                $line->save();
+            }
+        }
+    }
+
+    private function duplicateCandidates(array $dates, int $walletId)
+    {
         $from = date('Y-m-d', strtotime(min($dates) . ' -' . self::DUPLICATE_DAYS . ' days'));
         $to = date('Y-m-d', strtotime(max($dates) . ' +' . self::DUPLICATE_DAYS . ' days'));
 
@@ -162,18 +203,21 @@ class CreateStatementImportService
     }
 
     /**
-     * Same wallet, same signed amount, date within a few days; each existing
-     * movement can only match one line. Closest date wins.
+     * Same wallet, same signed amount, date within a few days and the same merchant (the same keywords, so "Uber"
+     * typed by hand matches "UBER TRIP 4411"; transfers to different people do not match) or the same normalized
+     * text. Each existing movement can only match one line. Closest date wins.
      */
     private function takeDuplicate($candidates, string $date, float $amount, string $description): ?FinancialMovement
     {
         $normalizedDescription = MovementHistory::normalize($description);
+        $keywords = MovementHistory::keywords($description);
 
         $match = $candidates
             ->filter(fn ($movement) =>
                 round((float) $movement->amount, 2) === round($amount, 2)
                 && abs(strtotime($movement->date) - strtotime($date)) <= self::DUPLICATE_DAYS * 86400
-                && MovementHistory::normalize($movement->description) === $normalizedDescription
+                && (MovementHistory::normalize($movement->description) === $normalizedDescription
+                    || MovementHistory::sameMerchant(MovementHistory::keywords($movement->description), $keywords))
             )
             ->sortBy(fn ($movement) => abs(strtotime($movement->date) - strtotime($date)))
             ->first();

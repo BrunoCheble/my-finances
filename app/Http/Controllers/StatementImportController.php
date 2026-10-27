@@ -6,6 +6,7 @@ use App\Enums\FinancialMovementType;
 use App\Helpers\ArrayHelper;
 use App\Models\FinancialCategory;
 use App\Models\StatementImport;
+use App\Models\StatementImportLine;
 use App\Models\Wallet;
 use App\Repositories\Interfaces\FinancialBalanceRepositoryInterface;
 use App\Services\Cache\DashboardCacheService;
@@ -74,8 +75,10 @@ class StatementImportController extends Controller
         }
     }
 
-    public function show(StatementImport $statementImport, FinancialBalanceRepositoryInterface $balanceRepository): View
+    public function show(StatementImport $statementImport, FinancialBalanceRepositoryInterface $balanceRepository, CreateStatementImportService $createStatementImportService): View
     {
+        // duplicates found when the PDF was read may have changed since (movements added or removed, a better rule)
+        $createStatementImportService->refreshDuplicates($statementImport);
         $statementImport->load('lines.duplicateMovement', 'wallet');
 
         $lastDate = $statementImport->period_end ?? $statementImport->lines->max('date');
@@ -121,6 +124,30 @@ class StatementImportController extends Controller
                 'wallet' => $statementImport->wallet->name,
                 'amount' => format_currency($amount),
             ]));
+    }
+
+    /**
+     * The user decides: "not a duplicate" (the line is imported and no longer checked) or back to the automatic check.
+     */
+    public function duplicate(Request $request, StatementImport $statementImport, StatementImportLine $line, CreateStatementImportService $createStatementImportService): JsonResponse
+    {
+        abort_unless((int) $line->statement_import_id === (int) $statementImport->id && $statementImport->is_pending, 404);
+        $isDuplicate = $request->validate(['duplicate' => 'required|boolean'])['duplicate'];
+
+        if ($isDuplicate) {
+            $line->update(['duplicate_dismissed' => false]);
+            $createStatementImportService->refreshDuplicates($statementImport);
+        } else {
+            $line->update(['duplicate_dismissed' => true, 'duplicate_movement_id' => null, 'selected' => true, 'unselected_as_duplicate' => false]);
+        }
+        $line->refresh()->load('duplicateMovement');
+
+        return response()->json([
+            'duplicate' => $line->duplicate_movement_id !== null,
+            'dismissed' => $line->duplicate_dismissed,
+            'selected' => $line->selected,
+            'label' => $line->duplicateMovement ? $line->duplicateMovement->description . ' (' . date_format_custom($line->duplicateMovement->date) . ')' : null,
+        ]);
     }
 
     public function destroy(StatementImport $statementImport): RedirectResponse
