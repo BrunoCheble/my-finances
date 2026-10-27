@@ -13,6 +13,9 @@
         'loan_person' => $line->loan_person ?? '',
         'is_new' => $line->is_new,
         'duplicate' => $line->duplicate_movement_id !== null,
+        'dismissed' => (bool) $line->duplicate_dismissed,
+        'saving' => false,
+        'duplicate_label' => $line->duplicateMovement ? $line->duplicateMovement->description . ' (' . date_format_custom($line->duplicateMovement->date) . ')' : null,
         'keywords' => \App\Services\Statements\MovementHistory::keywords($line->description),
         'normalized' => $line->normalized_description,
         'transfer_text' => \App\Services\Statements\MovementHistory::isTransferText($line->description),
@@ -217,10 +220,21 @@
                                             </p>
                                         </div>
 
-                                        @if ($line->duplicateMovement)
-                                            <p class="mt-2 flex items-start gap-1.5 rounded-lg bg-orange-50 px-2.5 py-1.5 text-xs text-orange-800">
-                                                <i class="fa-solid fa-clone mt-0.5" aria-hidden="true"></i>
-                                                <span>{{ __('Already registered') }}: {{ $line->duplicateMovement->description }} ({{ date_format_custom($line->duplicateMovement->date) }})</span>
+                                        {{-- duplicate: found by the check, or overruled by the user --}}
+                                        <div x-show="lines[{{ $index }}].duplicate" x-cloak
+                                            class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-orange-50 px-2.5 py-1.5 text-xs text-orange-800">
+                                            <span class="flex items-start gap-1.5"><i class="fa-solid fa-clone mt-0.5" aria-hidden="true"></i>
+                                                <span>{{ __('Already registered') }}: <span x-text="lines[{{ $index }}].duplicate_label"></span></span></span>
+                                            @if ($pending)
+                                                <button type="button" @click="setDuplicate({{ $index }}, false)" :disabled="lines[{{ $index }}].saving"
+                                                    class="font-semibold text-orange-900 underline-offset-2 hover:underline">{{ __('Not a duplicate') }}</button>
+                                            @endif
+                                        </div>
+                                        @if ($pending)
+                                            <p x-show="lines[{{ $index }}].dismissed" x-cloak class="mt-2 text-xs text-slate-500">
+                                                <i class="fa-solid fa-check mr-0.5" aria-hidden="true"></i>{{ __('You said it is not a duplicate.') }}
+                                                <button type="button" @click="setDuplicate({{ $index }}, true)" :disabled="lines[{{ $index }}].saving"
+                                                    class="ml-1 font-semibold text-brand-700 underline-offset-2 hover:underline">{{ __('Undo') }}</button>
                                             </p>
                                         @endif
                                         @if ($line->balance_mismatch)
@@ -457,6 +471,25 @@
                 filter: 'all',
                 money(value) {
                     return Number(value).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
+                },
+                // "not a duplicate" (or back to the automatic check), saved right away
+                async setDuplicate(index, isDuplicate) {
+                    const line = this.lines[index];
+                    line.saving = true;
+                    try {
+                        const response = await fetch(@json(url('/statement-imports/' . $statementImport->id . '/lines')) + '/' + line.id + '/duplicate', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()) },
+                            body: JSON.stringify({ duplicate: isDuplicate }),
+                        });
+                        if (!response.ok) throw new Error();
+                        const data = await response.json();
+                        Object.assign(line, { duplicate: data.duplicate, dismissed: data.dismissed, selected: data.selected, duplicate_label: data.label });
+                    } catch (e) {
+                        window.toast?.({ type: 'error', title: @json(__('Something went wrong')) });
+                    } finally {
+                        line.saving = false;
+                    }
                 },
                 count(filter) {
                     if (filter === 'new') return this.lines.filter((l) => l.is_new).length;

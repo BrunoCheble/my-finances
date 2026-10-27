@@ -293,3 +293,41 @@ it('does not take transfers to different people for duplicates (the TFI case of 
     expect($line->duplicate_movement_id)->toBeNull()
         ->and($line->selected)->toBeTrue();
 });
+
+it('checks the duplicates again when a pending import is opened', function () {
+    uploadStatement($this, $this->bank)->assertRedirect();
+    $import = StatementImport::sole();
+    $uber = $import->lines()->where('description', 'like', 'UBER%')->sole();
+    expect($uber->duplicate_movement_id)->not->toBeNull();
+
+    // the movement it matched is deleted: no longer a duplicate, selected again
+    FinancialMovement::where('description', 'Uber')->delete();
+    $this->get(route('statement-imports.show', $import))->assertOk();
+
+    expect($uber->fresh()->duplicate_movement_id)->toBeNull()
+        ->and($uber->fresh()->selected)->toBeTrue();
+});
+
+it('lets the user say a line is not a duplicate, and undo it', function () {
+    uploadStatement($this, $this->bank)->assertRedirect();
+    $import = StatementImport::sole();
+    $uber = $import->lines()->where('description', 'like', 'UBER%')->sole();
+
+    $this->patchJson(route('statement-imports.duplicate', [$import, $uber]), ['duplicate' => false])
+        ->assertOk()->assertJson(['duplicate' => false, 'dismissed' => true, 'selected' => true]);
+    // opening the import again keeps the user's choice
+    $this->get(route('statement-imports.show', $import))->assertOk();
+    expect($uber->fresh()->duplicate_movement_id)->toBeNull();
+
+    $this->patchJson(route('statement-imports.duplicate', [$import, $uber]), ['duplicate' => true])
+        ->assertOk()->assertJson(['duplicate' => true, 'dismissed' => false, 'selected' => false]);
+});
+
+it('does not let a line of another import be changed', function () {
+    uploadStatement($this, $this->bank)->assertRedirect();
+    $import = StatementImport::sole();
+    $other = User::factory()->create();
+    $this->actingAs($other);
+
+    $this->patchJson(route('statement-imports.duplicate', [$import, $import->lines()->first()]), ['duplicate' => false])->assertNotFound();
+});
