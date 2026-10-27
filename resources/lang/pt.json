@@ -703,5 +703,8 @@
     "You can sign in with your Google account.": "Você pode entrar com sua conta Google.",
     "Sign in with your Google account. Google accounts with the same email as yours are recognized automatically.": "Entre com sua conta Google. Uma conta Google com o mesmo e-mail que o seu é reconhecida automaticamente.",
     "Unlink": "Desconectar",
-    "Link Google": "Conectar Google"
+    "Link Google": "Conectar Google",
+    "Not a duplicate": "Não é duplicado",
+    "You said it is not a duplicate.": "Você marcou que não é duplicado.",
+    "Undo": "Desfazer"
 }

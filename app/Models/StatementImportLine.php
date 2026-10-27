@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class StatementImportLine extends Model
 {
     protected $fillable = [
+        'duplicate_dismissed',
+        'unselected_as_duplicate',
         'statement_import_id',
         'position',
         'date',
@@ -31,6 +33,8 @@ class StatementImportLine extends Model
     ];
 
     protected $casts = [
+        'duplicate_dismissed' => 'boolean',
+        'unselected_as_duplicate' => 'boolean',
         'balance_mismatch' => 'boolean',
         'is_new' => 'boolean',
         'selected' => 'boolean',
