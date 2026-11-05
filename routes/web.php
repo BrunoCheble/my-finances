@@ -30,12 +30,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::resource('wallets', WalletController::class);
-    Route::resource('financial-balances', FinancialBalanceController::class)->only(['index', 'edit', 'update']);
+    Route::resource('financial-balances', FinancialBalanceController::class)->only(['index', 'edit', 'update', 'destroy']);
 
     Route::patch('/financial-balances/recalculate/{id}', [FinancialBalanceController::class, 'recalculate'])->name('financial-balances.recalculate');
     Route::patch('/financial-balances/recalculate/all/{start_date}/{end_date}', [FinancialBalanceController::class, 'recalculateAll'])->name('financial-balances.recalculateAll');
     Route::post('/financial-balances/{financial_balance}/reconcile', [FinancialBalanceController::class, 'reconcile'])->name('financial-balances.reconcile');
     Route::delete('/financial-balances/{financial_balance}/reconcile', [FinancialBalanceController::class, 'unreconcile'])->name('financial-balances.unreconcile');
+    Route::patch('/financial-balances/{financial_balance}/dates', [FinancialBalanceController::class, 'updateDates'])->name('financial-balances.dates');
     Route::post('/financial-balances/{financial_balance}/restore', [FinancialBalanceController::class, 'restore'])->name('financial-balances.restore');
     Route::post('/financial-balances/reconcile-month/{start_date}', [FinancialBalanceController::class, 'reconcileMonth'])->name('financial-balances.reconcileMonth');
 
