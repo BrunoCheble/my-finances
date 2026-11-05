@@ -706,5 +706,13 @@
     "Link Google": "Conectar Google",
     "Not a duplicate": "Não é duplicado",
     "You said it is not a duplicate.": "Você marcou que não é duplicado.",
-    "Undo": "Desfazer"
+    "Undo": "Desfazer",
+    "This balance has movements and cannot be removed.": "Este saldo tem movimentações e não pode ser removido.",
+    "Balance removed.": "Saldo removido.",
+    "Remove the balance of :wallet? It has no movements.": "Remover o saldo de :wallet? Ele não tem movimentações.",
+    "Edit dates": "Editar datas",
+    "Dates updated.": "Datas atualizadas.",
+    "These dates overlap another balance of this wallet.": "Essas datas se sobrepõem a outro saldo deste banco.",
+    "Start Date": "Data inicial",
+    "End Date": "Data final"
 }
