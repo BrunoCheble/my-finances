@@ -147,6 +147,7 @@
         {{-- edit/delete modals rendered once, outside the table (hidden on phones) and the cards --}}
         @foreach ($group->balances as $balance)
             @include('financial-balances.menu.modal-edit')
+            @include('financial-balances.menu.modal-dates')
             @include('financial-balances.reconciliation.modal')
         @endforeach
 

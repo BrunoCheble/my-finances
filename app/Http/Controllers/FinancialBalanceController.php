@@ -6,6 +6,7 @@ use App\Enums\FinancialMovementType;
 use Illuminate\Http\Request;
 use App\Helpers\ArrayHelper;
 use App\Models\FinancialBalance;
+use App\Models\FinancialMovement;
 use App\Http\Requests\FinancialBalanceRequest;
 use App\Models\Wallet;
 use App\Services\AdjustFinancialBalanceService;
@@ -83,12 +84,54 @@ class FinancialBalanceController extends Controller
         return $this->backToMonth($financial_balance->start_date, __('Adjustment created: the balance is back to the confirmed value.'));
     }
 
-    private function backToMonth(string $startDate, string $message)
+    /**
+     * Removes a balance created by mistake: only when the wallet has no movements in its period.
+     */
+    public function destroy(FinancialBalance $financial_balance)
+    {
+        $hasMovements = FinancialMovement::where('wallet_id', $financial_balance->wallet_id)
+            ->whereBetween('date', [$financial_balance->start_date, $financial_balance->end_date])
+            ->exists();
+        if ($hasMovements) {
+            return $this->backToMonth($financial_balance->start_date, __('This balance has movements and cannot be removed.'), 'error');
+        }
+
+        $financial_balance->delete();
+        return $this->backToMonth($financial_balance->start_date, __('Balance removed.'));
+    }
+
+    /**
+     * Changes the period of a balance; it can't overlap another balance of the same wallet.
+     */
+    public function updateDates(Request $request, FinancialBalance $financial_balance, CalculateFinancialBalanceService $calculateFinancialBalanceService)
+    {
+        $bag = 'dates' . $financial_balance->id;
+        $data = $request->validateWithBag($bag, [
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+        ]);
+
+        $overlaps = FinancialBalance::where('wallet_id', $financial_balance->wallet_id)
+            ->where('id', '!=', $financial_balance->id)
+            ->where('start_date', '<=', $data['end_date'])
+            ->where('end_date', '>=', $data['start_date'])
+            ->exists();
+        if ($overlaps) {
+            return back()->withErrors(['start_date' => __('These dates overlap another balance of this wallet.')], $bag)->withInput();
+        }
+
+        $financial_balance->update($data);
+        $calculateFinancialBalanceService->recalculateFrom($financial_balance->wallet_id, $financial_balance->start_date);
+
+        return $this->backToMonth($financial_balance->start_date, __('Dates updated.'));
+    }
+
+    private function backToMonth(string $startDate, string $message, string $type = 'success')
     {
         DashboardCacheService::clearAllByUser();
         return redirect()->route('financial-balances.index', ['year' => substr($startDate, 0, 4)])
             ->withFragment('month-' . substr($startDate, 0, 7))
-            ->with('success', $message);
+            ->with($type, $message);
     }
 
     private function monthName(string $date): string
