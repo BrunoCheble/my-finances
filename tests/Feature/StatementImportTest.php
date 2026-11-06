@@ -461,3 +461,15 @@ it('lets a JSON movement without a description be typed on the review', function
         ->assertRedirect()->assertSessionHasNoErrors();
     expect((float) FinancialMovement::where('description', 'Café')->where('date', '2026-09-02')->value('amount'))->toBe(-5.0);
 });
+
+it('takes a JSON spend always as an expense', function () {
+    $json = json_encode([
+        ['date' => '2026-09-02', 'type' => 'spend', 'description' => 'Pingo Doce', 'amount' => 12.4],
+        ['date' => '2026-09-02', 'normalized_type' => 'spend', 'description' => 'Salário Empresa X', 'amount' => -3],
+    ]);
+    $this->post(route('statement-imports.json'), ['json' => $json, 'wallet_id' => $this->bank->id])->assertRedirect();
+
+    // even a description the history knows as an income stays an expense
+    expect(StatementImport::where('bank', 'json')->sole()->lines()->orderBy('position')->get()->map(fn ($l) => [(float) $l->amount, $l->type])->all())
+        ->toBe([[-12.4, FinancialMovementType::EXPENSE], [-3.0, FinancialMovementType::EXPENSE]]);
+});
