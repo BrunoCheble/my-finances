@@ -8,6 +8,9 @@
         'description' => $line->description,
         'editing' => false,
         'amount' => (float) $line->amount,
+        // came without an amount (e.g. a pasted JSON): typed here, the sign follows the type
+        'missing_amount' => (float) $line->amount == 0 && $statementImport->is_pending,
+        'amount_text' => '',
         'selected' => $line->selected,
         'type' => $line->type,
         'category_id' => $line->category_id ? (string) $line->category_id : '',
@@ -232,9 +235,25 @@
                                                     @endif
                                                 </p>
                                             </div>
-                                            <p class="amount shrink-0 text-base font-semibold {{ $line->amount < 0 ? 'text-slate-900' : 'text-emerald-600' }}">
-                                                {{ ($line->amount > 0 ? '+' : '') . format_currency($line->amount) }}
-                                            </p>
+                                            @if ($pending && (float) $line->amount == 0)
+                                                <div class="shrink-0 text-right" x-effect="lines[{{ $index }}].amount = typedAmount(lines[{{ $index }}])">
+                                                    <label for="amount-{{ $line->id }}" class="sr-only">{{ __('Amount of :description', ['description' => $line->description]) }}</label>
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-sm font-semibold" :class="lines[{{ $index }}].amount < 0 ? 'text-slate-900' : 'text-emerald-600'"
+                                                            x-text="lines[{{ $index }}].amount < 0 ? '−' : (lines[{{ $index }}].amount > 0 ? '+' : '')" aria-hidden="true"></span>
+                                                        <input id="amount-{{ $line->id }}" type="text" inputmode="decimal" autocomplete="off" placeholder="0,00"
+                                                            name="lines[{{ $line->id }}][amount]" x-model="lines[{{ $index }}].amount_text"
+                                                            class="input w-24 py-1 text-right text-sm font-semibold"
+                                                            :class="!lines[{{ $index }}].amount && lines[{{ $index }}].selected ? 'border-amber-400 ring-1 ring-amber-300' : ''">
+                                                        <span class="text-sm font-semibold text-slate-500" aria-hidden="true">€</span>
+                                                    </div>
+                                                    <p x-show="!lines[{{ $index }}].amount" class="mt-0.5 text-[11px] font-medium text-amber-700">{{ __('No amount: type it') }}</p>
+                                                </div>
+                                            @else
+                                                <p class="amount shrink-0 text-base font-semibold {{ $line->amount < 0 ? 'text-slate-900' : 'text-emerald-600' }}">
+                                                    {{ ($line->amount > 0 ? '+' : '') . format_currency($line->amount) }}
+                                                </p>
+                                            @endif
                                         </div>
 
                                         {{-- duplicate: found by the check, or overruled by the user --}}
@@ -564,6 +583,16 @@
                     return needed === 2 || a[0].length >= 4;
                 },
                 // same rule as CreateStatementImportService::typeForSign
+                // the amount typed for a line that came without one: the sign follows its type
+                typedAmount(line) {
+                    if (!line.missing_amount) return line.amount;
+                    let text = String(line.amount_text).replace(/[^\d,.\-]/g, '');
+                    text = text.lastIndexOf(',') > text.lastIndexOf('.') ? text.replace(/\./g, '').replace(',', '.') : text.replace(/,/g, '');
+                    const value = parseFloat(text) || 0;
+                    if (['expense', 'discount'].includes(line.type)) return -Math.abs(value);
+                    if (['income', 'refund'].includes(line.type)) return Math.abs(value);
+                    return value;
+                },
                 typeForSign(type, amount) {
                     const credit = amount > 0;
                     if (type === 'expense' || type === 'refund') return credit ? 'refund' : 'expense';

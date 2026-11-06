@@ -396,8 +396,49 @@ it('finds the list of movements inside a JSON object', function () {
 it('says what is wrong in a pasted JSON', function () {
     $this->post(route('statement-imports.json'), ['json' => '{oops', 'wallet_id' => $this->bank->id])
         ->assertSessionHasErrors(['json' => 'Isto não é um JSON válido.'], null, 'json');
-    $this->post(route('statement-imports.json'), ['json' => '[{"date": "2026-09-02", "description": "x"}]', 'wallet_id' => $this->bank->id])
-        ->assertSessionHasErrors(['json' => 'Movimento 1: valor inválido ou em falta.'], null, 'json');
+    $this->post(route('statement-imports.json'), ['json' => '[{"date": "2026-09-02", "description": "x", "amount": "abc"}]', 'wallet_id' => $this->bank->id])
+        ->assertSessionHasErrors(['json' => 'Movimento 1: valor inválido.'], null, 'json');
 
     expect(StatementImport::where('bank', 'json')->exists())->toBeFalse();
+});
+
+it('keeps a debit negative and a credit positive whatever sign the JSON gives', function () {
+    $json = json_encode([
+        ['date' => '2026-09-02', 'type' => 'debit', 'description' => 'Uber', 'amount' => -8.9],
+        ['date' => '2026-09-02', 'type' => 'debit', 'description' => 'Bolt', 'amount' => '7,50'],
+        ['date' => '2026-09-03', 'type' => 'credit', 'description' => 'Reembolso', 'amount' => '-20,00'],
+    ]);
+
+    $this->post(route('statement-imports.json'), ['json' => $json, 'wallet_id' => $this->bank->id])->assertRedirect();
+
+    expect(StatementImport::where('bank', 'json')->sole()->lines()->orderBy('position')->pluck('amount')->map(fn ($a) => (float) $a)->all())
+        ->toBe([-8.9, -7.5, 20.0]);
+});
+
+it('lets a JSON movement without an amount be typed on the review', function () {
+    $json = json_encode([
+        ['date' => '2026-09-02', 'type' => 'debit', 'description' => 'Pingo Doce', 'amount' => null],
+        ['date' => '2026-09-03', 'type' => 'credit', 'description' => 'Reembolso'],
+    ]);
+    $this->post(route('statement-imports.json'), ['json' => $json, 'wallet_id' => $this->bank->id])->assertRedirect();
+    $import = StatementImport::where('bank', 'json')->sole();
+    [$debit, $credit] = $import->lines()->orderBy('position')->get()->all();
+
+    expect((float) $debit->amount)->toBe(0.0)
+        ->and($credit->type)->toBe(FinancialMovementType::INCOME);
+    $this->get(route('statement-imports.show', $import))->assertOk()->assertSee('name="lines[' . $debit->id . '][amount]"', false);
+
+    $choices = [
+        $debit->id => ['selected' => 1, 'type' => 'expense', 'category_id' => $this->groceries->id],
+        $credit->id => ['selected' => 1, 'type' => 'income', 'category_id' => $this->salary->id, 'amount' => '20'],
+    ];
+    // still without its amount: not imported
+    $this->patch(route('statement-imports.update', $import), ['lines' => $choices])->assertSessionHasErrors("lines.{$debit->id}");
+
+    // typed without sign: the type gives it
+    $choices[$debit->id]['amount'] = '12,40';
+    $this->patch(route('statement-imports.update', $import), ['lines' => $choices])->assertRedirect()->assertSessionHasNoErrors();
+
+    expect((float) FinancialMovement::where('description', 'Pingo Doce')->where('date', '2026-09-02')->value('amount'))->toBe(-12.4)
+        ->and((float) FinancialMovement::where('description', 'Reembolso')->value('amount'))->toBe(20.0);
 });

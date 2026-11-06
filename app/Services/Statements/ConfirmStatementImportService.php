@@ -2,6 +2,8 @@
 
 namespace App\Services\Statements;
 
+use App\Statements\JsonStatementParser;
+
 use App\Enums\FinancialMovementType;
 use App\Models\StatementImport;
 use App\Models\StatementImportLine;
@@ -79,6 +81,15 @@ class ConfirmStatementImportService
             $line->loan_person = trim((string) ($choice['loan_person'] ?? '')) ?: null;
             // edited on the review; left empty, the bank's text stays
             $line->description = mb_substr(trim((string) ($choice['description'] ?? '')), 0, 255) ?: $line->description;
+            // a line that came without an amount (0): typed on the review, the sign follows the type
+            if ((float) $line->amount == 0 && isset($choice['amount'])) {
+                $typed = JsonStatementParser::parseAmount((string) $choice['amount']) ?? 0.0;
+                $line->amount = match ($line->type) {
+                    FinancialMovementType::EXPENSE, FinancialMovementType::DISCOUNT => -abs($typed),
+                    FinancialMovementType::INCOME, FinancialMovementType::REFUND => abs($typed),
+                    default => $typed,
+                };
+            }
             $line->save();
         }
     }
@@ -89,7 +100,9 @@ class ConfirmStatementImportService
         foreach ($lines->where('selected', true) as $line) {
             $label = '#' . ($line->position + 1) . ' ' . $line->description;
 
-            if (!array_key_exists($line->type, FinancialMovementType::options())) {
+            if ((float) $line->amount == 0) {
+                $errors["lines.{$line->id}"] = __('Type the amount') . ": $label";
+            } elseif (!array_key_exists($line->type, FinancialMovementType::options())) {
                 $errors["lines.{$line->id}"] = __('Invalid type') . ": $label";
             } elseif (in_array($line->type, self::CATEGORIZED_TYPES) && !$line->category_id) {
                 $errors["lines.{$line->id}"] = __('Choose a category') . ": $label";
