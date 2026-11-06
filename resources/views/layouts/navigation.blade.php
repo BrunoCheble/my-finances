@@ -77,7 +77,7 @@
     </aside>
 
     {{-- Mobile / tablet top bar --}}
-    <header class="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:hidden">
+    <header class="app-topbar sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:hidden">
         <button type="button" class="btn-icon -ml-2" @click="drawer = true" :aria-expanded="drawer" aria-controls="mobile-drawer">
             <i class="fa-solid fa-bars text-lg" aria-hidden="true"></i>
             <span class="sr-only">{{ __('Open menu') }}</span>
@@ -93,7 +93,7 @@
         <div x-show="drawer"
             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
             x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full"
-            class="fixed inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-xl">
+            class="app-drawer fixed inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-white shadow-xl">
             <div class="flex h-14 items-center justify-between border-b border-slate-200 px-4">
                 <x-brand size="sm" />
                 <button type="button" class="btn-icon -mr-2" @click="drawer = false">

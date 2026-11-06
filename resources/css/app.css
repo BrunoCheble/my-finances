@@ -37,6 +37,52 @@
         --tw-ring-offset-color: rgb(var(--c-white));
     }
 
+    /* "Escudo" theme: the navigation in the blue of the app icon, the content stays light.
+       The navigation's colors are re-pointed by variables, like the dark theme does. */
+    .theme-escudo body {
+        background-color: #eef6fc;
+    }
+    .theme-escudo :is(.sidebar, .app-topbar, .app-drawer) {
+        --c-white: 27 99 162;
+        --c-slate-50: 31 106 172;
+        --c-slate-100: 41 117 184;
+        --c-slate-200: 52 128 194;
+        --c-slate-300: 90 150 205;
+        --c-slate-400: 176 211 239;
+        --c-slate-500: 199 223 243;
+        --c-slate-600: 226 238 248;
+        --c-slate-700: 238 246 252;
+        --c-slate-800: 248 250 252;
+        --c-slate-900: 255 255 255;
+        --c-brand-100: 255 255 255;
+        --tw-ring-offset-color: rgb(27 99 162);
+    }
+    .theme-escudo :is(.sidebar, .app-drawer) {
+        background-image: linear-gradient(170deg, #2479bf 0%, #185084 62%, #16385a 100%);
+    }
+    .theme-escudo .app-topbar {
+        background-image: linear-gradient(90deg, #2479bf, #185084);
+    }
+    .theme-escudo .sidebar-link[aria-current="page"] {
+        background-color: rgb(255 255 255 / 0.16);
+        color: #fff;
+    }
+    .theme-escudo .sidebar-link[aria-current="page"] i {
+        color: #34d399;
+    }
+    .theme-escudo :is(.sidebar, .app-drawer) .menu-install {
+        color: #6ee7b7;
+    }
+    .theme-escudo :is(.sidebar, .app-drawer) .menu-install:hover {
+        background-color: rgb(255 255 255 / 0.1);
+    }
+    /* the logo's blue shield needs a light tile over the blue */
+    .theme-escudo :is(.sidebar, .app-topbar, .app-drawer) svg[aria-label="Escudo"] {
+        background-color: #fff;
+        border-radius: 22%;
+        padding: 2px;
+    }
+
     [x-cloak] {
         display: none !important;
     }

@@ -14,7 +14,7 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
 
     <!-- theme (light / dark / system) applied before the first paint -->
-    <script>try { var t = localStorage.getItem('theme'); if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark'); } catch (e) {}</script>
+    <script>try { var t = localStorage.getItem('theme'); if (t === 'escudo') document.documentElement.classList.add('theme-escudo'); else if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark'); } catch (e) {}</script>
 
     @include('layouts.pwa-head')
 
