@@ -101,6 +101,7 @@
                         class="absolute right-0 top-full z-40 mt-1 w-72 max-w-[80vw] rounded-xl bg-slate-900 p-3 text-left text-xs leading-relaxed text-white shadow-lg">
                         <p class="font-semibold">{{ __('Say what, how much, where, when and the wallet:') }}</p>
                         <p class="mt-1 italic text-slate-300">{{ __('"Spent 12.40 at Pingo Doce yesterday at ActivoBank"') }}</p>
+                        <p class="mt-1.5">{{ __('Or short, keeping the wallet and date already chosen:') }} <span class="italic text-slate-300">{{ __('"expense, 12.40, Pingo Doce"') }}</span></p>
                         <ul class="mt-2 list-disc space-y-0.5 pl-4 text-slate-300">
                             <li>{{ __('spent, paid, received, transferred') }}</li>
                             <li>{{ __('12.40 or "twelve euros and forty"') }}</li>

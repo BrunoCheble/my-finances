@@ -129,8 +129,10 @@ function findWallets(words, wallets) {
 }
 
 export function parseSpokenMovement(text, wallets = [], today = new Date()) {
-    // keep "12,40" and "5/3" as one word; "€" apart
-    const original = String(text).replace(/€/g, ' € ').replace(/(\d)\s*,\s*(\d)/g, '$1,$2').trim().split(/\s+/).filter(Boolean);
+    // keep "12,40" and "5/3" as one word; "€" apart; pauses written as punctuation
+    // ("despesa, 12,40, Pingo Doce") don't stick to the words
+    const original = String(text).replace(/€/g, ' € ').replace(/(\d)\s*,\s*(\d)/g, '$1,$2').trim().split(/\s+/)
+        .map((word) => word.replace(/[,.;:!?]+$/, '')).filter(Boolean);
     const words = original.map((word) => strip(word).replace(/[^\w,./€]/g, ''));
     const used = new Array(words.length).fill(false);
     const take = (start, end) => { for (let i = start; i < end; i++) used[i] = true; };
