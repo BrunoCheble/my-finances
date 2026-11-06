@@ -64,8 +64,8 @@ function findAmount(words) {
             const separator = words[end];
             const euros = ['euro', 'euros', 'eur', '€'].includes(separator);
             const at = euros ? end + 1 : end;
-            // "12 euros e 40 (cêntimos)", "doze vírgula quarenta"
-            if ((euros && words[at] === 'e') || words[at] === 'virgula') {
+            // "12 euros e 40 (cêntimos)", "12 e 48", "doze e quarenta e oito", "doze vírgula quarenta"
+            if (words[at] === 'e' || words[at] === 'virgula') {
                 const cents = number(at + 1);
                 if (cents && cents.value < 100) {
                     value += (cents.value < 10 && words[at] === 'virgula' ? cents.value * 10 : cents.value) / 100;
@@ -160,7 +160,8 @@ function findWallets(words, wallets) {
 export function parseSpokenMovement(text, wallets = [], today = new Date()) {
     // keep "12,40" and "5/3" as one word; "€" apart; pauses written as punctuation
     // ("despesa, 12,40, Pingo Doce") don't stick to the words
-    const original = String(text).replace(/€/g, ' € ').replace(/(\d)\s*,\s*(\d)/g, '$1,$2').trim().split(/\s+/)
+    // "doze e quarenta e oito" sounds like a time and may come as "12:48": it's 12,48
+    const original = String(text).replace(/€/g, ' € ').replace(/\b(\d{1,6}):(\d{2})\b/g, '$1,$2').replace(/(\d)\s*,\s*(\d)/g, '$1,$2').trim().split(/\s+/)
         .map((word) => word.replace(/[,.;:!?]+$/, '')).filter(Boolean);
     const words = original.map((word) => strip(word).replace(/[^\w,./€]/g, ''));
     const used = new Array(words.length).fill(false);
