@@ -21,6 +21,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
 
+// Share menu (Android): the service worker takes the file before it gets here; without it
+// (not installed yet), just open the import screen
+Route::post('/statement-imports/share', fn () => redirect()->route('statement-imports.index'))->name('statement-imports.share');
+
 Route::get('/dashboard',[DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 

@@ -190,6 +190,23 @@
                 info: null,
                 error: null,
                 loading: false,
+                // a PDF shared from the share menu (Android), kept by the service worker
+                async init() {
+                    if (!new URLSearchParams(location.search).has('shared') || !('caches' in window)) return;
+                    history.replaceState(null, '', location.pathname);
+                    const cache = await caches.open('escudo-share');
+                    const key = new URL('shared-statement', @json(url('/') . '/')).href;
+                    const response = await cache.match(key);
+                    if (!response) return;
+                    await cache.delete(key);
+                    const name = decodeURIComponent(response.headers.get('X-File-Name') || 'extrato.pdf');
+                    const file = new File([await response.blob()], name, { type: 'application/pdf' });
+                    // into the input too, so the form sends it
+                    const transfer = new DataTransfer();
+                    transfer.items.add(file);
+                    this.$root.querySelector('#file').files = transfer.files;
+                    this.pick(file);
+                },
                 pick(file) {
                     this.fileName = file ? file.name : '';
                     this.identify(file);

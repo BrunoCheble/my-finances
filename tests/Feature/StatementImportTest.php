@@ -331,3 +331,7 @@ it('does not let a line of another import be changed', function () {
 
     $this->patchJson(route('statement-imports.duplicate', [$import, $import->lines()->first()]), ['duplicate' => false])->assertNotFound();
 });
+
+it('opens the import screen when a PDF is shared before the service worker takes it', function () {
+    $this->post(route('statement-imports.share'))->assertRedirect(route('statement-imports.index'));
+});
