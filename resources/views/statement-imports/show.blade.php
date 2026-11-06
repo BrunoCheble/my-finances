@@ -1,4 +1,5 @@
 @php
+    $amountsEditable = \App\Services\Statements\ConfirmStatementImportService::amountsEditable($statementImport);
     $reconciles = $statementImport->opening_balance !== null && $statementImport->closing_balance !== null
         ? round($statementImport->opening_balance + $statementImport->lines->sum('amount'), 2) == round($statementImport->closing_balance, 2)
         : null;
@@ -9,9 +10,10 @@
         // without description (pasted JSON): the field starts open
         'editing' => $statementImport->is_pending && trim($line->description) === '',
         'amount' => (float) $line->amount,
-        // came without an amount (e.g. a pasted JSON): typed here, the sign follows the type
-        'missing_amount' => (float) $line->amount == 0 && $statementImport->is_pending,
-        'amount_text' => '',
+        // came without an amount, or a JSON's: typed here, the sign follows the type
+        'missing_amount' => $statementImport->is_pending && ((float) $line->amount == 0 || $amountsEditable),
+        'amount_text' => (float) $line->amount == 0 ? '' : number_format(
+            in_array($line->type, ['expense', 'discount', 'income', 'refund']) ? abs((float) $line->amount) : (float) $line->amount, 2, ',', ''),
         'selected' => $line->selected,
         'type' => $line->type,
         'category_id' => $line->category_id ? (string) $line->category_id : '',
@@ -240,7 +242,7 @@
                                                     @endif
                                                 </p>
                                             </div>
-                                            @if ($pending && (float) $line->amount == 0)
+                                            @if ($pending && ((float) $line->amount == 0 || $amountsEditable))
                                                 <div class="shrink-0 text-right" x-effect="lines[{{ $index }}].amount = typedAmount(lines[{{ $index }}])">
                                                     <label for="amount-{{ $line->id }}" class="sr-only">{{ __('Amount of :description', ['description' => $line->description]) }}</label>
                                                     <div class="flex items-center gap-1">
@@ -368,6 +370,12 @@
                                 <span class="hidden sm:inline" x-text="missing + ' ' + @js(__('selected line(s) still need a category or wallet'))"></span>
                             </p>
                             <p x-show="missing === 0 && selectedCount > 0" x-cloak class="text-xs text-slate-300">{{ __('Ready to import.') }}</p>
+                            {{-- the review is kept on the preview as it is filled in --}}
+                            <p class="text-[11px]" aria-live="polite">
+                                <span x-show="saving" x-cloak class="text-slate-400"><i class="fa-solid fa-circle-notch fa-spin mr-0.5" aria-hidden="true"></i>{{ __('Saving...') }}</span>
+                                <span x-show="!saving && saveFailed" x-cloak class="text-rose-300"><i class="fa-solid fa-triangle-exclamation mr-0.5" aria-hidden="true"></i>{{ __('Not saved: check the connection') }}</span>
+                                <span x-show="!saving && !saveFailed && !unsaved" x-cloak class="text-slate-400"><i class="fa-solid fa-cloud mr-0.5" aria-hidden="true"></i>{{ __('Saved in the preview') }}</span>
+                            </p>
                         </div>
                         <button type="submit" :disabled="missing > 0 || selectedCount === 0"
                             class="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40">
@@ -510,6 +518,56 @@
                 systemBalance: {{ $statementImport->is_pending ? $systemBalance : $systemBalance - $statementImport->lines->whereNotNull('financial_movement_id')->sum('amount') }},
                 bankClosing: @json($statementImport->closing_balance !== null ? (float) $statementImport->closing_balance : null),
                 filter: 'all',
+                // the choices as they came: leaving with changes not imported asks first
+                saved: {},
+                leaving: false,
+                // autosave: the review is kept on the pending import as it is filled in
+                saving: false,
+                saveFailed: false,
+                saveTimer: null,
+                init() {
+                    if (!@json($statementImport->is_pending)) return;
+                    this.lines.forEach((line) => { this.saved[line.id] = this.choiceOf(line); });
+                    this.$watch('lines', () => {
+                        if (!this.lines.some((line) => this.choiceOf(line) !== this.saved[line.id])) return;
+                        clearTimeout(this.saveTimer);
+                        this.saveTimer = setTimeout(() => this.saveDraft(), 900);
+                    });
+                    // importing (or any other form of the page) is not leaving the changes behind
+                    document.addEventListener('submit', () => { this.leaving = true; });
+                    window.addEventListener('beforeunload', (event) => {
+                        if (this.leaving || !this.unsaved) return;
+                        event.preventDefault();
+                        event.returnValue = '';
+                    });
+                },
+                async saveDraft() {
+                    if (this.saving) { this.saveTimer = setTimeout(() => this.saveDraft(), 500); return; }
+                    const form = document.getElementById('import-form');
+                    const sent = Object.fromEntries(this.lines.map((line) => [line.id, this.choiceOf(line)]));
+                    this.saving = true;
+                    try {
+                        const response = await fetch(@json(route('statement-imports.draft', $statementImport)), {
+                            method: 'POST',
+                            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()) },
+                            body: new FormData(form),
+                        });
+                        if (!response.ok) throw new Error();
+                        // what was sent is kept; later changes still count as unsaved
+                        Object.assign(this.saved, sent);
+                        this.saveFailed = false;
+                    } catch (e) {
+                        this.saveFailed = true;
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                get unsaved() {
+                    return this.lines.some((line) => this.choiceOf(line) !== this.saved[line.id]);
+                },
+                choiceOf(line) {
+                    return JSON.stringify([line.selected, line.type, line.category_id, line.transfer_wallet_id, line.loan_person, line.description, line.amount_text]);
+                },
                 money(value) {
                     return Number(value).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
                 },
@@ -526,6 +584,8 @@
                         if (!response.ok) throw new Error();
                         const data = await response.json();
                         Object.assign(line, { duplicate: data.duplicate, dismissed: data.dismissed, selected: data.selected, duplicate_label: data.label });
+                        // saved already: not a pending change
+                        this.saved[line.id] = this.choiceOf(line);
                     } catch (e) {
                         window.toast?.({ type: 'error', title: @json(__('Something went wrong')) });
                     } finally {

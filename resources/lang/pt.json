@@ -757,5 +757,8 @@
     "Amount of :description": "Valor de :description",
     "No amount: type it": "Sem valor: digite",
     "Type the description": "Digite a descrição",
-    "No description: type it": "Sem descrição: digite"
+    "No description: type it": "Sem descrição: digite",
+    "Saving...": "Guardando...",
+    "Saved in the preview": "Guardado no preview",
+    "Not saved: check the connection": "Não guardado: verifique a ligação"
 }
