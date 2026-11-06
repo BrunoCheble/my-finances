@@ -211,3 +211,38 @@ it('ignores the arrival date for movements that are not transfers', function () 
 
     expect(FinancialMovement::sole()->date)->toBe('2026-01-10');
 });
+
+it('warns about a confirmed month of the other bank by the date it arrives', function () {
+    storeMovement($this, ['date' => '2026-01-05', 'wallet_id' => $this->other->id, 'amount' => 100]);
+    $this->post(route('financial-balances.reconcile', balanceOf($this->other, '2026-01-01')));
+    $transfer = [
+        'description' => 'Teste',
+        'date' => '2026-01-30',
+        'wallet_id' => $this->wallet->id,
+        'transfer_to_wallet_id' => $this->other->id,
+        'type' => FinancialMovementType::TRANSFER,
+        'amount' => 30,
+    ];
+
+    // arriving in the confirmed January: asks before changing it
+    $this->postJson(route('financial-movements.store'), $transfer)->assertUnprocessable()->assertJsonValidationErrors('confirm_reconciled');
+    // arriving in February: January stays as confirmed
+    $this->postJson(route('financial-movements.store'), $transfer + ['transfer_date' => '2026-02-02'])->assertCreated();
+});
+
+it('keeps the alert on both sides of a transfer that arrives on another day', function () {
+    storeMovement($this, [
+        'date' => '2026-01-30',
+        'transfer_date' => '2026-02-02',
+        'wallet_id' => $this->wallet->id,
+        'transfer_to_wallet_id' => $this->other->id,
+        'type' => FinancialMovementType::TRANSFER,
+        'amount' => 30,
+        'include_alert' => 1,
+    ]);
+
+    $origin = FinancialMovement::whereNull('original_movement_id')->where('wallet_id', $this->wallet->id)->sole();
+    expect((bool) $origin->include_alert)->toBeTrue()
+        ->and((bool) $origin->destinationMovement->include_alert)->toBeTrue()
+        ->and($origin->destinationMovement->date)->toBe('2026-02-02');
+});
