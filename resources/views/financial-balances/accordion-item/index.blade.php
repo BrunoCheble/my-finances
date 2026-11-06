@@ -117,6 +117,27 @@
                             </td>
                         </tr>
                     @endforeach
+                    {{-- wallets not in this month that would come with a balance: out of the totals until included --}}
+                    @foreach ($group->missing ?? [] as $missing)
+                        <tr class="bg-slate-50/60 text-slate-400">
+                            <td class="td whitespace-nowrap">
+                                <span class="flex items-center gap-2">
+                                    <span class="h-2.5 w-2.5 rounded-full opacity-50" style="background-color: {{ $missing->wallet->color ?? '#94a3b8' }}" aria-hidden="true"></span>
+                                    <span class="font-medium text-slate-500">{{ $missing->wallet->name }}</span>
+                                    <span class="text-xs">· {{ __('not in this month') }}</span>
+                                </span>
+                            </td>
+                            <td class="td whitespace-nowrap text-right"><span class="amount">{{ format_currency($missing->wallet->is_third_party ? -$missing->carried : $missing->carried) }}</span></td>
+                            <td class="td text-right" colspan="5"><span class="sr-only">{{ __('Not counted in the totals') }}</span></td>
+                            <td class="td whitespace-nowrap py-1.5 text-right">
+                                <form method="POST" action="{{ route('financial-balances.addWallet', $group->startDate) }}">
+                                    @csrf
+                                    <input type="hidden" name="wallet_id" value="{{ $missing->wallet->id }}">
+                                    <x-button type="submit" variant="secondary" size="sm" icon="plus" aria-label="{{ __('Include :wallet in this month', ['wallet' => $missing->wallet->name]) }}">{{ __('Include') }}</x-button>
+                                </form>
+                            </td>
+                        </tr>
+                    @endforeach
                 </tbody>
                 <tfoot class="border-t border-slate-200 bg-slate-50 font-semibold">
                     <tr>
@@ -182,6 +203,20 @@
                         </span>
                         <span class="-mr-2">@include('financial-balances.menu.index', ['modals' => false])</span>
                     </div>
+                </li>
+            @endforeach
+            @foreach ($group->missing ?? [] as $missing)
+                <li class="flex items-center gap-2 bg-slate-50/60 px-4 py-3 text-slate-400">
+                    <span class="h-2.5 w-2.5 shrink-0 rounded-full opacity-50" style="background-color: {{ $missing->wallet->color ?? '#94a3b8' }}" aria-hidden="true"></span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block truncate text-sm font-medium text-slate-500">{{ $missing->wallet->name }}</span>
+                        <span class="block text-xs">{{ __('not in this month') }} · <span class="amount">{{ format_currency($missing->wallet->is_third_party ? -$missing->carried : $missing->carried) }}</span></span>
+                    </span>
+                    <form method="POST" action="{{ route('financial-balances.addWallet', $group->startDate) }}">
+                        @csrf
+                        <input type="hidden" name="wallet_id" value="{{ $missing->wallet->id }}">
+                        <x-button type="submit" variant="secondary" size="sm" icon="plus" aria-label="{{ __('Include :wallet in this month', ['wallet' => $missing->wallet->name]) }}">{{ __('Include') }}</x-button>
+                    </form>
                 </li>
             @endforeach
         </ul>
