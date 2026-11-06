@@ -30,8 +30,9 @@ async function receiveShare(request) {
     const file = (await request.formData()).get('file');
     if (file && typeof file !== 'string') {
         const cache = await caches.open(SHARE_CACHE);
+        // bank apps often send the PDF as a generic file; the server checks the content anyway
         await cache.put(SHARED_FILE, new Response(file, {
-            headers: { 'Content-Type': file.type || 'application/pdf', 'X-File-Name': encodeURIComponent(file.name || 'extrato.pdf') },
+            headers: { 'Content-Type': 'application/pdf', 'X-File-Name': encodeURIComponent(file.name || 'extrato.pdf') },
         }));
     }
     return Response.redirect(new URL('statement-imports?shared=1', self.registration.scope).href, 303);
