@@ -28,8 +28,20 @@
             heard: '',
             voiceError: '',
             recognition: null,
+            // from the shortcut: saved by itself when everything needed was understood
+            voiceAuto: false,
+            voiceMissing: '',
 
             init() {
+                // opened from the "voice" shortcut of the app: open the form and listen right away
+                if (this.mode === 'create' && new URLSearchParams(location.search).has('voice')) {
+                    history.replaceState(null, '', location.pathname);
+                    this.voiceAuto = true;
+                    this.$nextTick(() => {
+                        window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-create' }));
+                        if (this.voiceSupported) this.toggleVoice();
+                    });
+                }
                 // after a successful create, keep date, wallet and type for the next entry
                 window.addEventListener('movement-form-reset', () => {
                     if (this.mode !== 'create') return;
@@ -137,8 +149,9 @@
                 }
             },
             // only what was understood is filled; the rest stays as it was
-            applyVoice(text) {
+            async applyVoice(text) {
                 this.heard = text;
+                this.voiceMissing = '';
                 const spoken = window.escudoVoice.parse(text, this.wallets, new Date());
                 if (spoken.type) this.setType(spoken.type);
                 if (spoken.amount) this.amount = spoken.amount.toFixed(2).replace('.', ',');
@@ -147,8 +160,24 @@
                 if (spoken.transferToWalletId && spoken.transferToWalletId !== this.walletId) this.transferToWalletId = spoken.transferToWalletId;
                 if (spoken.description) {
                     this.description = spoken.description;
-                    this.lookupHistory();
+                    await this.lookupHistory();
                 }
+                if (!this.voiceAuto) return;
+                if (this.voiceComplete) {
+                    window.dispatchEvent(new CustomEvent('movement-voice-complete'));
+                } else {
+                    this.voiceMissing = @json(__('Complete what is missing and save.'));
+                }
+            },
+            // all the form needs to save, for the voice shortcut
+            get voiceComplete() {
+                return Number(this.normalizedAmount) > 0
+                    && String(this.description).trim() !== ''
+                    && !!this.walletId
+                    && ['expense', 'income', 'transfer'].includes(this.type)
+                    && (!this.needsCategory || !!this.categoryId)
+                    && (this.type !== 'transfer' || (!!this.transferToWalletId && this.transferToWalletId !== this.walletId))
+                    && !this.reconciledWarning;
             },
 
             today() { return iso(new Date()); },

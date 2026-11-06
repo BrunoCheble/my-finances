@@ -63,6 +63,11 @@
             next: 1,
             init() {
                 initial.forEach((toast) => this.push(toast));
+                // a toast left by the page before a reload (e.g. a movement saved by voice)
+                try {
+                    const pending = sessionStorage.getItem('escudo-toast');
+                    if (pending) { sessionStorage.removeItem('escudo-toast'); this.push(JSON.parse(pending)); }
+                } catch (e) {}
             },
             push(detail) {
                 const type = detail.type || 'success';
