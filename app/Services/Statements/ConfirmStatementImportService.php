@@ -42,7 +42,7 @@ class ConfirmStatementImportService
         }
 
         $lines = $import->lines()->get();
-        $this->applyChoices($lines, $choices);
+        $this->applyChoices($lines, $choices, self::amountsEditable($import));
         $this->validate($import, $lines);
 
         return DB::transaction(function () use ($import, $lines) {
@@ -70,7 +70,28 @@ class ConfirmStatementImportService
         });
     }
 
-    private function applyChoices($lines, array $choices): void
+    /**
+     * The review as it is filled in, kept on the pending import (nothing is imported): a partial
+     * review is found again after a reload.
+     */
+    public function saveDraft(StatementImport $import, array $choices): void
+    {
+        if (!$import->is_pending) {
+            throw ValidationException::withMessages(['import' => __('This import was already confirmed.')]);
+        }
+        $this->applyChoices($import->lines()->get(), $choices, self::amountsEditable($import));
+    }
+
+    /**
+     * A pasted JSON is the user's own data: its amounts can be corrected on the review. A PDF's
+     * amounts are the bank's; only a line that came without one is typed.
+     */
+    public static function amountsEditable(StatementImport $import): bool
+    {
+        return $import->bank === JsonStatementParser::BANK;
+    }
+
+    private function applyChoices($lines, array $choices, bool $amountsEditable = false): void
     {
         foreach ($lines as $line) {
             $choice = $choices[$line->id] ?? [];
@@ -81,8 +102,8 @@ class ConfirmStatementImportService
             $line->loan_person = trim((string) ($choice['loan_person'] ?? '')) ?: null;
             // edited on the review; left empty, the bank's text stays
             $line->description = mb_substr(trim((string) ($choice['description'] ?? '')), 0, 255) ?: $line->description;
-            // a line that came without an amount (0): typed on the review, the sign follows the type
-            if ((float) $line->amount == 0 && isset($choice['amount'])) {
+            // a line that came without an amount (0), or of a JSON: typed on the review, the sign follows the type
+            if (($amountsEditable || (float) $line->amount == 0) && array_key_exists('amount', $choice)) {
                 $typed = JsonStatementParser::parseAmount((string) $choice['amount']) ?? 0.0;
                 $line->amount = match ($line->type) {
                     FinancialMovementType::EXPENSE, FinancialMovementType::DISCOUNT => -abs($typed),
