@@ -51,6 +51,8 @@ class FinancialMovementRequest extends FormRequest
                 'different:wallet_id',
                 Rule::exists('wallets', 'id')->where('user_id', auth()->id()),
             ];
+            // the day the money gets to the other bank, when not the same day
+            $rules['transfer_date'] = ['nullable', 'date'];
         }
         return $rules;
     }
@@ -81,7 +83,7 @@ class FinancialMovementRequest extends FormRequest
     {
         $positions = [['wallet_id' => $this->input('wallet_id'), 'date' => $this->input('date')]];
         if ($this->input('type') === FinancialMovementType::TRANSFER) {
-            $positions[] = ['wallet_id' => $this->input('transfer_to_wallet_id'), 'date' => $this->input('date')];
+            $positions[] = ['wallet_id' => $this->input('transfer_to_wallet_id'), 'date' => $this->input('transfer_date') ?: $this->input('date')];
         }
         $existing = $this->route('financial_movement');
         if ($existing instanceof FinancialMovement) {

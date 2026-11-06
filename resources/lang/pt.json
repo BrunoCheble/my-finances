@@ -715,5 +715,8 @@
     "These dates overlap another balance of this wallet.": "Essas datas se sobrepõem a outro saldo deste banco.",
     "Start Date": "Data inicial",
     "End Date": "Data final",
-    "Edit description": "Editar descrição"
+    "Edit description": "Editar descrição",
+    "Date it arrives (if another day)": "Data de entrada (se for outro dia)",
+    "Same day": "Mesmo dia",
+    "Empty: it arrives the same day it leaves.": "Vazio: entra no mesmo dia em que sai."
 }
