@@ -3,8 +3,11 @@
      use, the page tells the server now and then, so a page being worked on does not lock. --}}
 <div x-data="appLock(@js(['ping' => route('lock.ping'), 'idleMinutes' => \App\Services\Passkeys\SessionLock::IDLE_MINUTES]))"
     x-show="locked" x-cloak @app-unlocked.window="unlocked()" role="dialog" aria-modal="true" aria-label="{{ __('Escudo locked') }}"
-    class="fixed inset-0 z-[90] grid place-items-center overflow-y-auto bg-slate-50 p-6">
-    @include('layouts.partials.lock-panel', ['overlay' => true])
+    class="fixed inset-0 z-[90] grid place-items-center overflow-hidden bg-slate-50 p-6">
+    @include('layouts.partials.auth-backdrop', ['tone' => 'light'])
+    <div class="relative z-10 grid w-full place-items-center overflow-y-auto" style="max-height: 100%">
+        @include('layouts.partials.lock-panel', ['overlay' => true])
+    </div>
 </div>
 
 @once

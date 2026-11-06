@@ -28,12 +28,7 @@
     <div class="flex min-h-screen">
         {{-- Brand panel (large screens) --}}
         <aside class="theme-light relative hidden w-[44%] overflow-hidden bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 lg:flex lg:flex-col lg:justify-between lg:p-12">
-            <svg class="pointer-events-none absolute -right-24 -top-24 h-[28rem] w-[28rem] text-white/5" viewBox="0 0 100 100" aria-hidden="true">
-                <circle cx="50" cy="50" r="50" fill="currentColor" />
-            </svg>
-            <svg class="pointer-events-none absolute -bottom-32 -left-16 h-[24rem] w-[24rem] text-white/5" viewBox="0 0 100 100" aria-hidden="true">
-                <circle cx="50" cy="50" r="50" fill="currentColor" />
-            </svg>
+            @include('layouts.partials.auth-backdrop', ['tone' => 'dark'])
 
             <div class="relative flex items-center gap-3">
                 <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm"><x-application-logo class="h-9 w-9" /></span>
@@ -49,8 +44,9 @@
         </aside>
 
         {{-- Form --}}
-        <main class="flex flex-1 items-center justify-center bg-slate-50 px-4 py-12 sm:px-6">
-            <div class="w-full max-w-sm">
+        <main class="relative flex flex-1 items-center justify-center overflow-hidden px-4 py-12 sm:px-6">
+            @include('layouts.partials.auth-backdrop', ['tone' => 'light'])
+            <div class="relative z-10 w-full max-w-sm">
                 <div class="mb-8 flex justify-center lg:hidden">
                     <x-brand size="lg" />
                 </div>
