@@ -8,7 +8,7 @@ use InvalidArgumentException;
 /**
  * Movements pasted as JSON, for any bank (the user picks the wallet): a list of objects, or an
  * object with that list inside (e.g. "transactions"). Each one: date, normalized_type / type
- * (debit, credit, adjustment), merchant_name / description, amount / value. A movement without
+ * (debit, credit, adjustment, spend), merchant_name / description, amount / value. A movement without
  * an amount (0) or a description ('') comes in anyway, to be typed on the review.
  */
 class JsonStatementParser
@@ -45,10 +45,11 @@ class JsonStatementParser
             }
             $description = trim((string) (self::text($item['merchant_name'] ?? null) ?: self::text($item['description'] ?? null)));
 
-            // the sign comes from the type: debit leaves, credit enters, an adjustment keeps its own sign
+            // the sign comes from the type: debit leaves, credit enters, an adjustment keeps its own sign;
+            // a spend is always an expense
             $type = strtolower(trim((string) ($item['normalized_type'] ?? $item['type'] ?? '')));
             $amount = match ($type) {
-                'debit' => -abs($amount),
+                'debit', 'spend' => -abs($amount),
                 'credit' => abs($amount),
                 default => $amount,
             };
@@ -60,6 +61,7 @@ class JsonStatementParser
                 // without an amount the sign is unknown: a credit starts as an income
                 type: match (true) {
                     $type === 'adjustment' => FinancialMovementType::ADJUSTMENT,
+                    $type === 'spend' => FinancialMovementType::EXPENSE,
                     $missing && $type === 'credit' => FinancialMovementType::INCOME,
                     default => null,
                 },
