@@ -83,16 +83,37 @@
 
         {{-- Fill by voice: "Gastei 12,40 no Pingo Doce ontem no ActivoBank" --}}
         <div x-show="voiceSupported && mode === 'create'" x-cloak class="text-center">
-            <button type="button" @click="toggleVoice()" :aria-pressed="listening.toString()"
-                :class="listening ? 'bg-rose-600 text-white ring-rose-600 hover:bg-rose-700' : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50'"
-                class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset transition">
-                <i class="fa-solid" :class="listening ? 'fa-stop' : 'fa-microphone'" aria-hidden="true"></i>
-                <span x-text="listening ? @js(__('Listening... tap to stop')) : @js(__('Fill by voice'))"></span>
-            </button>
+            <div class="inline-flex items-center gap-1.5">
+                <button type="button" @click="toggleVoice()" :aria-pressed="listening.toString()"
+                    :class="listening ? 'bg-rose-600 text-white ring-rose-600 hover:bg-rose-700' : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50'"
+                    class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset transition">
+                    <i class="fa-solid" :class="listening ? 'fa-stop' : 'fa-microphone'" aria-hidden="true"></i>
+                    <span x-text="listening ? @js(__('Listening... tap to stop')) : @js(__('Fill by voice'))"></span>
+                </button>
+                {{-- how to speak: a tooltip (hover, focus or tap) --}}
+                <div class="relative" x-data="{ tip: false }" @mouseenter="tip = true" @mouseleave="tip = false" @click.outside="tip = false" @keydown.escape.stop="tip = false">
+                    <button type="button" @click="tip = !tip" @focus="tip = true" @blur="tip = false" :aria-expanded="tip.toString()"
+                        aria-describedby="voice-help-{{ $uid }}" aria-label="{{ __('How to fill by voice') }}"
+                        class="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                        <i class="fa-solid fa-circle-question" aria-hidden="true"></i>
+                    </button>
+                    <div id="voice-help-{{ $uid }}" role="tooltip" x-show="tip" x-cloak x-transition.opacity.duration.100ms
+                        class="absolute right-0 top-full z-40 mt-1 w-72 max-w-[80vw] rounded-xl bg-slate-900 p-3 text-left text-xs leading-relaxed text-white shadow-lg">
+                        <p class="font-semibold">{{ __('Say what, how much, where, when and the wallet:') }}</p>
+                        <p class="mt-1 italic text-slate-300">{{ __('"Spent 12.40 at Pingo Doce yesterday at ActivoBank"') }}</p>
+                        <ul class="mt-2 list-disc space-y-0.5 pl-4 text-slate-300">
+                            <li>{{ __('spent, paid, received, transferred') }}</li>
+                            <li>{{ __('12.40 or "twelve euros and forty"') }}</li>
+                            <li>{{ __('today, yesterday, "day 5"') }}</li>
+                            <li>{{ __('the name of your wallets; "from X to Y" in transfers') }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
             <div aria-live="polite" class="mt-1.5 text-xs">
-                <p x-show="!listening && !heard && !voiceError" class="text-slate-400">{{ __('E.g. "Spent 12.40 at Pingo Doce yesterday"') }}</p>
                 <p x-show="heard" class="text-slate-500">{{ __('Heard:') }} “<span x-text="heard"></span>”</p>
                 <p x-show="voiceError" class="text-rose-600" x-text="voiceError"></p>
+                <p x-show="voiceMissing" class="font-medium text-amber-700" x-text="voiceMissing"></p>
             </div>
         </div>
 

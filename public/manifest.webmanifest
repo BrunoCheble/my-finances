@@ -24,6 +24,7 @@
         "params": { "files": [{ "name": "file", "accept": ["application/pdf", "application/x-pdf", "application/octet-stream"] }] }
     },
     "shortcuts": [
+        { "name": "Lançar por voz", "short_name": "Por voz", "url": "./financial-movements?voice=1", "icons": [{ "src": "icons/icon-v2-192.png", "sizes": "192x192" }] },
         { "name": "Movimentações", "url": "./financial-movements", "icons": [{ "src": "icons/icon-v2-192.png", "sizes": "192x192" }] },
         { "name": "Importar extrato", "url": "./statement-imports", "icons": [{ "src": "icons/icon-v2-192.png", "sizes": "192x192" }] },
         { "name": "Patrimônio", "url": "./financial-balances", "icons": [{ "src": "icons/icon-v2-192.png", "sizes": "192x192" }] }
