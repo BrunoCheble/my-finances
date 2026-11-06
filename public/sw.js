@@ -4,6 +4,9 @@
  * financial data - so without connection the app shows the offline page.
  */
 const VERSION = 'escudo-v1';
+// a PDF shared from the system's share menu, kept until the import screen picks it up
+const SHARE_CACHE = 'escudo-share';
+const SHARED_FILE = new URL('shared-statement', self.registration.scope).href;
 const OFFLINE_URL = new URL('offline.html', self.registration.scope).href;
 const PRECACHE = [OFFLINE_URL, new URL('icons/icon-192.png', self.registration.scope).href];
 
@@ -14,7 +17,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys()
-            .then((keys) => Promise.all(keys.filter((key) => key !== VERSION).map((key) => caches.delete(key))))
+            .then((keys) => Promise.all(keys.filter((key) => key !== VERSION && key !== SHARE_CACHE).map((key) => caches.delete(key))))
             .then(() => self.clients.claim())
     );
 });
@@ -22,10 +25,26 @@ self.addEventListener('activate', (event) => {
 // fingerprinted build files and icons never change under the same URL
 const isStatic = (url) => url.origin === self.location.origin && /\/(build|icons)\//.test(url.pathname);
 
+// share menu (Android): keep the PDF and open the import screen, which picks it up
+async function receiveShare(request) {
+    const file = (await request.formData()).get('file');
+    if (file && typeof file !== 'string') {
+        const cache = await caches.open(SHARE_CACHE);
+        await cache.put(SHARED_FILE, new Response(file, {
+            headers: { 'Content-Type': file.type || 'application/pdf', 'X-File-Name': encodeURIComponent(file.name || 'extrato.pdf') },
+        }));
+    }
+    return Response.redirect(new URL('statement-imports?shared=1', self.registration.scope).href, 303);
+}
+
 self.addEventListener('fetch', (event) => {
     const request = event.request;
-    if (request.method !== 'GET') return;
     const url = new URL(request.url);
+    if (request.method === 'POST' && url.pathname.endsWith('/statement-imports/share')) {
+        event.respondWith(receiveShare(request));
+        return;
+    }
+    if (request.method !== 'GET') return;
 
     if (request.mode === 'navigate') {
         event.respondWith(fetch(request).catch(() => caches.match(OFFLINE_URL)));

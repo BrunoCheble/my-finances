@@ -15,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(\App\Http\Middleware\RunDeployTasks::class);
         // The app's lock: after 15 minutes without use it asks for the fingerprint / Face ID or the password again.
         $middleware->appendToGroup('web', \App\Http\Middleware\EnsureSessionUnlocked::class);
+        // PDFs shared from Android are posted by the system's share menu, without a CSRF token
+        $middleware->validateCsrfTokens(except: ['statement-imports/share']);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
