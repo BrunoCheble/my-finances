@@ -77,6 +77,8 @@ class ConfirmStatementImportService
             $line->category_id = ($choice['category_id'] ?? null) ?: null;
             $line->transfer_wallet_id = ($choice['transfer_wallet_id'] ?? null) ?: null;
             $line->loan_person = trim((string) ($choice['loan_person'] ?? '')) ?: null;
+            // edited on the review; left empty, the bank's text stays
+            $line->description = mb_substr(trim((string) ($choice['description'] ?? '')), 0, 255) ?: $line->description;
             $line->save();
         }
     }

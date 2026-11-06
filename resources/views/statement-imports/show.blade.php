@@ -5,6 +5,8 @@
     $mismatches = $statementImport->lines->where('balance_mismatch', true)->count();
     $linesData = $statementImport->lines->map(fn ($line) => [
         'id' => $line->id,
+        'description' => $line->description,
+        'editing' => false,
         'amount' => (float) $line->amount,
         'selected' => $line->selected,
         'type' => $line->type,
@@ -200,8 +202,23 @@
 
                                     <div class="min-w-0 flex-1">
                                         <div class="flex items-start justify-between gap-3">
-                                            <div class="min-w-0">
-                                                <p class="break-words text-sm font-semibold text-slate-900">{{ $line->description }}</p>
+                                            <div class="min-w-0 flex-1">
+                                                @if ($pending)
+                                                    {{-- the description can be changed before importing; it always goes with the form --}}
+                                                    <div class="flex items-start gap-1">
+                                                        <p x-show="!lines[{{ $index }}].editing" class="break-words text-sm font-semibold text-slate-900" x-text="lines[{{ $index }}].description">{{ $line->description }}</p>
+                                                        <input x-show="lines[{{ $index }}].editing" x-cloak type="text" name="lines[{{ $line->id }}][description]" x-model="lines[{{ $index }}].description"
+                                                            maxlength="255" aria-label="{{ __('Description') }}" class="input block w-full py-1 text-sm"
+                                                            @keydown.enter.prevent="lines[{{ $index }}].editing = false" @keydown.escape.stop="lines[{{ $index }}].editing = false" @blur="lines[{{ $index }}].editing = false">
+                                                        <button type="button" x-show="!lines[{{ $index }}].editing" aria-label="{{ __('Edit description') }}"
+                                                            @click="lines[{{ $index }}].editing = true; $nextTick(() => $el.parentElement.querySelector('input').focus())"
+                                                            class="-mt-1 shrink-0 rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+                                                            <i class="fa-solid fa-pen text-[10px]" aria-hidden="true"></i>
+                                                        </button>
+                                                    </div>
+                                                @else
+                                                    <p class="break-words text-sm font-semibold text-slate-900">{{ $line->description }}</p>
+                                                @endif
                                                 <p class="mt-0.5 text-xs text-slate-500">
                                                     @if ($line->is_new)
                                                         <span class="font-medium text-amber-700">{{ __('New: never registered before') }}</span>

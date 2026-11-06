@@ -335,3 +335,23 @@ it('does not let a line of another import be changed', function () {
 it('opens the import screen when a PDF is shared before the service worker takes it', function () {
     $this->post(route('statement-imports.share'))->assertRedirect(route('statement-imports.index'));
 });
+
+it('imports a line with the description edited on the review', function () {
+    uploadStatement($this, $this->bank);
+    $import = StatementImport::sole();
+    $lines = $import->lines()->get();
+
+    $choices = [];
+    foreach ($lines as $line) {
+        $choices[$line->id] = ['selected' => $line->selected ? 1 : null, 'type' => $line->type, 'category_id' => $line->category_id, 'description' => $line->description];
+    }
+    $choices[$lines[2]->id] = ['selected' => 1, 'type' => 'transfer', 'transfer_wallet_id' => $this->savings->id, 'description' => '  Poupança do mês  '];
+    // left empty: the bank's text stays
+    $choices[$lines[0]->id]['description'] = '';
+
+    $this->patch(route('statement-imports.update', $import), ['lines' => $choices])->assertRedirect();
+
+    expect(FinancialMovement::where('description', 'Poupança do mês')->where('wallet_id', $this->savings->id)->value('amount'))->toEqual(200)
+        ->and(FinancialMovement::where('description', 'TRF PARA POUPANCA')->exists())->toBeFalse()
+        ->and($lines[0]->fresh()->description)->toBe($lines[0]->description);
+});
