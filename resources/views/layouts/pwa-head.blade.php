@@ -1,7 +1,7 @@
 {{-- Installable app (PWA): manifest, icons, theme color and the service worker --}}
 {{-- versioned by content: a changed manifest has a new address, so no browser keeps using an old copy --}}
 <link rel="manifest" href="{{ asset('manifest.webmanifest') }}?v={{ substr(md5_file(public_path('manifest.webmanifest')), 0, 8) }}">
-<link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+<link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon-v2.png') }}">
 <meta name="theme-color" content="#ffffff">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
