@@ -9,7 +9,7 @@ use InvalidArgumentException;
  * Movements pasted as JSON, for any bank (the user picks the wallet): a list of objects, or an
  * object with that list inside (e.g. "transactions"). Each one: date, normalized_type / type
  * (debit, credit, adjustment), merchant_name / description, amount / value. A movement without
- * an amount comes in with 0, to be typed on the review.
+ * an amount (0) or a description ('') comes in anyway, to be typed on the review.
  */
 class JsonStatementParser
 {
@@ -44,9 +44,6 @@ class JsonStatementParser
                 throw new InvalidArgumentException(__('Movement :n: invalid amount.', ['n' => $position]));
             }
             $description = trim((string) (self::text($item['merchant_name'] ?? null) ?: self::text($item['description'] ?? null)));
-            if ($description === '') {
-                throw new InvalidArgumentException(__('Movement :n: missing description.', ['n' => $position]));
-            }
 
             // the sign comes from the type: debit leaves, credit enters, an adjustment keeps its own sign
             $type = strtolower(trim((string) ($item['normalized_type'] ?? $item['type'] ?? '')));
