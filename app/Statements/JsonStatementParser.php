@@ -8,7 +8,8 @@ use InvalidArgumentException;
 /**
  * Movements pasted as JSON, for any bank (the user picks the wallet): a list of objects, or an
  * object with that list inside (e.g. "transactions"). Each one: date, normalized_type / type
- * (debit, credit, adjustment), merchant_name / description, amount / value.
+ * (debit, credit, adjustment), merchant_name / description, amount / value. A movement without
+ * an amount comes in with 0, to be typed on the review.
  */
 class JsonStatementParser
 {
@@ -36,9 +37,11 @@ class JsonStatementParser
             if (!$date) {
                 throw new InvalidArgumentException(__('Movement :n: invalid or missing date.', ['n' => $position]));
             }
-            $amount = self::amount($item['amount'] ?? $item['value'] ?? null);
+            $raw = $item['amount'] ?? $item['value'] ?? null;
+            $missing = $raw === null || (is_string($raw) && trim($raw) === '');
+            $amount = $missing ? 0.0 : self::parseAmount($raw);
             if ($amount === null) {
-                throw new InvalidArgumentException(__('Movement :n: invalid or missing amount.', ['n' => $position]));
+                throw new InvalidArgumentException(__('Movement :n: invalid amount.', ['n' => $position]));
             }
             $description = trim((string) (self::text($item['merchant_name'] ?? null) ?: self::text($item['description'] ?? null)));
             if ($description === '') {
@@ -57,7 +60,12 @@ class JsonStatementParser
                 date: $date,
                 description: mb_substr($description, 0, 255),
                 amount: round($amount, 2),
-                type: $type === 'adjustment' ? FinancialMovementType::ADJUSTMENT : null,
+                // without an amount the sign is unknown: a credit starts as an income
+                type: match (true) {
+                    $type === 'adjustment' => FinancialMovementType::ADJUSTMENT,
+                    $missing && $type === 'credit' => FinancialMovementType::INCOME,
+                    default => null,
+                },
             );
         }
 
@@ -100,7 +108,7 @@ class JsonStatementParser
     }
 
     /** A number, or text like "12,40", "-1.234,56", "1,234.56" or "12.40 €". */
-    private static function amount(mixed $value): ?float
+    public static function parseAmount(mixed $value): ?float
     {
         if (is_int($value) || is_float($value)) {
             return (float) $value;

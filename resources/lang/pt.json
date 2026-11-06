@@ -746,12 +746,15 @@
     "No movements found in the JSON.": "Nenhum movimento encontrado no JSON.",
     "Movement :n is not an object.": "O movimento :n não é um objeto.",
     "Movement :n: invalid or missing date.": "Movimento :n: data inválida ou em falta.",
-    "Movement :n: invalid or missing amount.": "Movimento :n: valor inválido ou em falta.",
+    "Movement :n: invalid amount.": "Movimento :n: valor inválido.",
     "Movement :n: missing description.": "Movimento :n: descrição em falta.",
     "Pasted JSON": "JSON colado",
     "Or paste a JSON": "Ou colar um JSON",
     "Movements in JSON": "Movimentos em JSON",
     "A list (or an object with the list inside) with: date, normalized_type or type (debit, credit, adjustment), merchant_name or description, amount or value.": "Uma lista (ou um objeto com a lista dentro) com: date, normalized_type ou type (debit, credit, adjustment), merchant_name ou description, amount ou value.",
     "Which wallet are these movements from?": "De que conta são estes movimentos?",
-    "Read JSON": "Ler JSON"
+    "Read JSON": "Ler JSON",
+    "Type the amount": "Digite o valor",
+    "Amount of :description": "Valor de :description",
+    "No amount: type it": "Sem valor: digite"
 }
