@@ -473,3 +473,36 @@ it('takes a JSON spend always as an expense', function () {
     expect(StatementImport::where('bank', 'json')->sole()->lines()->orderBy('position')->get()->map(fn ($l) => [(float) $l->amount, $l->type])->all())
         ->toBe([[-12.4, FinancialMovementType::EXPENSE], [-3.0, FinancialMovementType::EXPENSE]]);
 });
+
+it('keeps the review as it is filled in, without importing anything', function () {
+    uploadStatement($this, $this->bank);
+    $import = StatementImport::sole();
+    $line = $import->lines()->orderBy('position')->first();
+
+    $this->patch(route('statement-imports.draft', $import), ['lines' => [
+        $line->id => ['type' => 'expense', 'category_id' => $this->salary->id, 'description' => 'Mercado do bairro'],
+    ]])->assertOk();
+
+    $line->refresh();
+    expect($line->selected)->toBeFalse()
+        ->and($line->category_id)->toBe($this->salary->id)
+        ->and($line->description)->toBe('Mercado do bairro')
+        ->and($import->fresh()->is_pending)->toBeTrue()
+        ->and(FinancialMovement::where('description', 'Mercado do bairro')->exists())->toBeFalse();
+    // a PDF's amount is the bank's: not changed by the review
+    $amount = (float) $line->amount;
+    $this->patch(route('statement-imports.draft', $import), ['lines' => [$line->id => ['amount' => '999']]])->assertOk();
+    expect((float) $line->fresh()->amount)->toBe($amount);
+});
+
+it('lets the amounts of a pasted JSON be corrected on the review', function () {
+    $json = json_encode([['date' => '2026-09-02', 'type' => 'debit', 'description' => 'Uber', 'amount' => 8.9]]);
+    $this->post(route('statement-imports.json'), ['json' => $json, 'wallet_id' => $this->bank->id]);
+    $import = StatementImport::where('bank', 'json')->sole();
+    $line = $import->lines()->sole();
+
+    $this->patch(route('statement-imports.draft', $import), ['lines' => [$line->id => ['selected' => 1, 'type' => 'expense', 'amount' => '9,90']]])->assertOk();
+
+    expect((float) $line->fresh()->amount)->toBe(-9.9);
+    $this->get(route('statement-imports.show', $import))->assertSee('"amount_text":"9,90"', false);
+});

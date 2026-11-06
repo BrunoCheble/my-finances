@@ -128,6 +128,16 @@ class StatementImportController extends Controller
             ->with('success', __(':count movements imported.', ['count' => $created]));
     }
 
+    /**
+     * Keeps the review as it is being filled in (autosave); nothing is imported.
+     */
+    public function draft(Request $request, StatementImport $statementImport, ConfirmStatementImportService $confirmStatementImportService): JsonResponse
+    {
+        $confirmStatementImportService->saveDraft($statementImport, $request->input('lines', []));
+
+        return response()->json(['saved' => true]);
+    }
+
     public function updateReservedAmount(StatementImport $statementImport): RedirectResponse
     {
         $amount = $statementImport->suggestedReservedAmount();
