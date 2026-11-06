@@ -81,6 +81,21 @@
             </div>
         </div>
 
+        {{-- Fill by voice: "Gastei 12,40 no Pingo Doce ontem no ActivoBank" --}}
+        <div x-show="voiceSupported && mode === 'create'" x-cloak class="text-center">
+            <button type="button" @click="toggleVoice()" :aria-pressed="listening.toString()"
+                :class="listening ? 'bg-rose-600 text-white ring-rose-600 hover:bg-rose-700' : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50'"
+                class="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset transition">
+                <i class="fa-solid" :class="listening ? 'fa-stop' : 'fa-microphone'" aria-hidden="true"></i>
+                <span x-text="listening ? @js(__('Listening... tap to stop')) : @js(__('Fill by voice'))"></span>
+            </button>
+            <div aria-live="polite" class="mt-1.5 text-xs">
+                <p x-show="!listening && !heard && !voiceError" class="text-slate-400">{{ __('E.g. "Spent 12.40 at Pingo Doce yesterday"') }}</p>
+                <p x-show="heard" class="text-slate-500">{{ __('Heard:') }} “<span x-text="heard"></span>”</p>
+                <p x-show="voiceError" class="text-rose-600" x-text="voiceError"></p>
+            </div>
+        </div>
+
         {{-- Amount --}}
         <div class="text-center">
             <label for="amount-{{ $uid }}" class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ __('Amount') }}</label>
