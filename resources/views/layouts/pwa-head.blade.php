@@ -10,6 +10,7 @@
 <script>
     // the bar color follows the theme chosen before paint
     if (document.documentElement.classList.contains('dark')) document.querySelector('meta[name=theme-color]').content = '#141c2b';
+    else if (document.documentElement.classList.contains('theme-escudo')) document.querySelector('meta[name=theme-color]').content = '#1b63a2';
     // the install prompt can fire before the bundle loads: keep it for the "Install app" button
     window.addEventListener('beforeinstallprompt', (event) => {
         event.preventDefault();

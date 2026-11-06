@@ -5,8 +5,9 @@ import Alpine from 'alpinejs';
 window.Alpine = Alpine;
 
 /**
- * Theme: 'light', 'dark' or 'system' (default). The class is first applied by an
- * inline script in the layouts, before paint; this keeps it in sync afterwards.
+ * Theme: 'light', 'dark', 'system' (default) or 'escudo' (light, with the navigation
+ * in the blue of the app icon). The classes are first applied by an inline script in
+ * the layouts, before paint; this keeps them in sync afterwards.
  */
 const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
 window.escudoTheme = {
@@ -20,9 +21,11 @@ window.escudoTheme = {
     apply() {
         const theme = this.get();
         const dark = theme === 'dark' || (theme === 'system' && darkQuery.matches);
+        const escudo = theme === 'escudo';
+        document.documentElement.classList.toggle('theme-escudo', escudo);
+        document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#141c2b' : (escudo ? '#1b63a2' : '#ffffff'));
         if (document.documentElement.classList.contains('dark') !== dark) {
             document.documentElement.classList.toggle('dark', dark);
-            document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#141c2b' : '#ffffff');
             window.dispatchEvent(new CustomEvent('theme-changed', { detail: { dark } }));
         }
     },
