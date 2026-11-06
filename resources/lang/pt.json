@@ -725,5 +725,21 @@
     "not in this month": "fora deste mês",
     "Not counted in the totals": "Não conta nos totais",
     "Include": "Incluir",
-    "Include :wallet in this month": "Incluir :wallet neste mês"
+    "Include :wallet in this month": "Incluir :wallet neste mês",
+    "Fill by voice": "Preencher por voz",
+    "Listening... tap to stop": "Ouvindo... toque para parar",
+    "Heard:": "Ouvi:",
+    "Allow the microphone for this site to fill by voice.": "Permita o microfone para este site para preencher por voz.",
+    "Nothing was heard. Try again.": "Não ouvi nada. Tente de novo.",
+    "Could not listen. Try again.": "Não foi possível ouvir. Tente de novo.",
+    "Complete what is missing and save.": "Complete o que faltou e salve.",
+    "How to fill by voice": "Como preencher por voz",
+    "Say what, how much, where, when and the wallet:": "Diga o quê, quanto, onde, quando e a conta:",
+    "\"Spent 12.40 at Pingo Doce yesterday at ActivoBank\"": "“Gastei 12,40 no Pingo Doce ontem no ActivoBank”",
+    "spent, paid, received, transferred": "gastei, paguei, recebi, transferi",
+    "12.40 or \"twelve euros and forty\"": "12,40 ou “doze euros e quarenta”",
+    "today, yesterday, \"day 5\"": "hoje, ontem, “dia 5”",
+    "the name of your wallets; \"from X to Y\" in transfers": "o nome das suas contas, ou só parte dele (“activo”); “do X para o Y” nas transferências",
+    "Or short, keeping the wallet and date already chosen:": "Ou curto, mantendo a conta e a data já escolhidas:",
+    "\"expense, 12.40, Pingo Doce\"": "“despesa, 12,40, Pingo Doce”"
 }

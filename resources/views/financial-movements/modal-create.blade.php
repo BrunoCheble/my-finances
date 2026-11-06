@@ -1,4 +1,4 @@
-<div x-data="submitForm()" @keydown.escape.window="handleModalCloseManual">
+<div x-data="submitForm()" @keydown.escape.window="handleModalCloseManual" @movement-voice-complete.window="submitForm(true)">
 
     <x-modal name="modal-create" :show="false" sheet>
         <div class="flex flex-1 flex-col">
@@ -54,7 +54,7 @@
                 </section>
             </template>
 
-            <form x-ref="financialForm" @submit.prevent="submitForm" method="POST" class="flex flex-1 flex-col"
+            <form x-ref="financialForm" id="movement-create-form" @submit.prevent="submitForm()" method="POST" class="flex flex-1 flex-col"
                 action="{{ route('financial-movements.store') }}" enctype="multipart/form-data">
                 @csrf
                 @include('financial-movements.form', ['busy' => 'isLoading', 'cancel' => 'handleModalCloseManual()'])
@@ -149,10 +149,12 @@
                     });
             },
 
-            submitForm() {
+            // byVoice: from the voice shortcut, once saved the list opens with the new movement
+            submitForm(byVoice = false) {
                 this.isLoading = true;
                 this.errorMessages = [];
-                let form = this.$refs.financialForm;
+                // by id too: the voice shortcut saves from a window event, where the ref isn't reachable
+                let form = this.$refs.financialForm || document.getElementById('movement-create-form');
 
                 if (!form) {
                     console.error('Form reference not found.');
@@ -200,7 +202,7 @@
 
                         // the toast: what was saved and the balance of each wallet it touched, in its month
                         const saved = batch[0];
-                        window.toast({
+                        const savedToast = {
                             type: 'success',
                             title: @json(__('Movement saved.')),
                             message: saved ? saved.description + ' · ' + saved.amount : '',
@@ -218,9 +220,19 @@
                                     tone: info.thirdParty ? 'text-purple-700' : (value < 0 ? 'text-rose-600' : 'text-slate-900'),
                                 };
                             }),
-                        });
+                        };
+                        // the list reloads after a voice entry: the toast is shown there
+                        if (byVoice) {
+                            try { sessionStorage.setItem('escudo-toast', JSON.stringify(savedToast)); } catch (e) {}
+                        } else {
+                            window.toast(savedToast);
+                        }
                         // clear the form for the next entry (keeps date, wallet and type)
                         window.dispatchEvent(new CustomEvent('movement-form-reset'));
+                        if (byVoice) {
+                            this.$dispatch('close-modal', 'modal-create');
+                            window.location.href = @json(route('financial-movements.index'));
+                        }
                     })
                     .catch(error => {
                         console.error('Error:', error);

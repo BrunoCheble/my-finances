@@ -22,8 +22,26 @@
             descriptionHighlight: -1,
             descriptionTimer: null,
             descriptionRequest: 0,
+            // filling by voice: the browser turns speech into text, rules turn it into fields
+            voiceSupported: !!window.escudoVoice?.supported(),
+            listening: false,
+            heard: '',
+            voiceError: '',
+            recognition: null,
+            // from the shortcut: saved by itself when everything needed was understood
+            voiceAuto: false,
+            voiceMissing: '',
 
             init() {
+                // opened from the "voice" shortcut of the app: open the form and listen right away
+                if (this.mode === 'create' && new URLSearchParams(location.search).has('voice')) {
+                    history.replaceState(null, '', location.pathname);
+                    this.voiceAuto = true;
+                    this.$nextTick(() => {
+                        window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-create' }));
+                        if (this.voiceSupported) this.toggleVoice();
+                    });
+                }
                 // after a successful create, keep date, wallet and type for the next entry
                 window.addEventListener('movement-form-reset', () => {
                     if (this.mode !== 'create') return;
@@ -33,6 +51,7 @@
                     this.includeAlert = false;
                     this.loanPerson = '';
                     this.transferDate = '';
+                    this.heard = this.voiceError = '';
                     this.suggestion = '';
                     this.typeTouched = this.categoryTouched = false;
                     // back to the top of the modal, where the category status of the saved movement shows
@@ -105,6 +124,60 @@
                 if (['expense', 'discount'].includes(this.type)) return 'text-rose-600';
                 if (['income', 'refund'].includes(this.type)) return 'text-emerald-600';
                 return 'text-slate-900';
+            },
+
+            toggleVoice() {
+                if (this.listening) { this.recognition?.stop(); return; }
+                this.voiceError = '';
+                this.heard = '';
+                this.listening = true;
+                const lang = (navigator.language || '').toLowerCase().startsWith('pt') ? navigator.language : 'pt-BR';
+                try {
+                    this.recognition = window.escudoVoice.listen({
+                        lang,
+                        onResult: (text) => this.applyVoice(text),
+                        onError: (error) => {
+                            this.voiceError = error === 'not-allowed' || error === 'service-not-allowed'
+                                ? @json(__('Allow the microphone for this site to fill by voice.'))
+                                : (error === 'no-speech' ? @json(__('Nothing was heard. Try again.')) : @json(__('Could not listen. Try again.')));
+                        },
+                        onEnd: () => { this.listening = false; },
+                    });
+                } catch (e) {
+                    this.listening = false;
+                    this.voiceError = @json(__('Could not listen. Try again.'));
+                }
+            },
+            // only what was understood is filled; the rest stays as it was
+            async applyVoice(text) {
+                this.heard = text;
+                this.voiceMissing = '';
+                const spoken = window.escudoVoice.parse(text, this.wallets, new Date());
+                if (spoken.type) this.setType(spoken.type);
+                if (spoken.amount) this.amount = spoken.amount.toFixed(2).replace('.', ',');
+                if (spoken.date) this.date = spoken.date;
+                if (spoken.walletId) this.walletId = spoken.walletId;
+                if (spoken.transferToWalletId && spoken.transferToWalletId !== this.walletId) this.transferToWalletId = spoken.transferToWalletId;
+                if (spoken.description) {
+                    this.description = spoken.description;
+                    await this.lookupHistory();
+                }
+                if (!this.voiceAuto) return;
+                if (this.voiceComplete) {
+                    window.dispatchEvent(new CustomEvent('movement-voice-complete'));
+                } else {
+                    this.voiceMissing = @json(__('Complete what is missing and save.'));
+                }
+            },
+            // all the form needs to save, for the voice shortcut
+            get voiceComplete() {
+                return Number(this.normalizedAmount) > 0
+                    && String(this.description).trim() !== ''
+                    && !!this.walletId
+                    && ['expense', 'income', 'transfer'].includes(this.type)
+                    && (!this.needsCategory || !!this.categoryId)
+                    && (this.type !== 'transfer' || (!!this.transferToWalletId && this.transferToWalletId !== this.walletId))
+                    && !this.reconciledWarning;
             },
 
             today() { return iso(new Date()); },

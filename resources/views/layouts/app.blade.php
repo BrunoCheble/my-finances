@@ -15,7 +15,7 @@
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
 
         <!-- theme (light / dark / system) applied before the first paint -->
-        <script>try { var t = localStorage.getItem('theme'); if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark'); } catch (e) {}</script>
+        <script>try { var t = localStorage.getItem('theme'); if (t === 'escudo') document.documentElement.classList.add('theme-escudo'); else if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark'); } catch (e) {}</script>
         <!-- colors for Chart.js, read from the CSS variables of the current theme (inline: page scripts run before the bundle) -->
         <script>
             window.chartInk = () => {
