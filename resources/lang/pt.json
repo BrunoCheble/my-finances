@@ -739,7 +739,7 @@
     "spent, paid, received, transferred": "gastei, paguei, recebi, transferi",
     "12.40 or \"twelve euros and forty\"": "12,40 ou “doze euros e quarenta”",
     "today, yesterday, \"day 5\"": "hoje, ontem, “dia 5”",
-    "the name of your wallets; \"from X to Y\" in transfers": "o nome das suas contas; “do X para o Y” nas transferências",
+    "the name of your wallets; \"from X to Y\" in transfers": "o nome das suas contas, ou só parte dele (“activo”); “do X para o Y” nas transferências",
     "Or short, keeping the wallet and date already chosen:": "Ou curto, mantendo a conta e a data já escolhidas:",
     "\"expense, 12.40, Pingo Doce\"": "“despesa, 12,40, Pingo Doce”"
 }

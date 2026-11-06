@@ -108,23 +108,52 @@ function dayOf(day, month, today) {
     return iso(date);
 }
 
-/** Wallets said in the sentence, by full name, else by a word of the name only that wallet has. */
+/**
+ * Wallets said in the sentence, also in part: the full name (even said apart, "Activo Bank" for
+ * "ActivoBank"), else a word of the name only that wallet has ("Continente"), else the start of
+ * the name, 4 letters or more, of a single wallet ("activo").
+ */
 function findWallets(words, wallets) {
     const found = [];
-    const tokens = wallets.map((wallet) => ({ wallet, words: strip(wallet.name).split(/\s+/).filter(Boolean) }));
-    for (const { wallet, words: name } of tokens) {
-        for (let i = 0; i + name.length <= words.length; i++) {
-            if (name.every((word, k) => words[i + k] === word)) { found.push({ wallet, start: i, end: i + name.length }); break; }
+    const names = wallets.map((wallet) => {
+        const parts = strip(wallet.name).split(/\s+/).filter(Boolean);
+        return { wallet, parts, joined: parts.join('') };
+    });
+    const free = (start, end) => !found.some((f) => start < f.end && end > f.start);
+    const add = (wallet, start, end) => found.push({ wallet, start, end });
+    const unique = (test) => {
+        const matches = names.filter(test);
+        return matches.length === 1 ? matches[0] : null;
+    };
+
+    // 1. the full name, in one word or in pieces
+    for (const name of names) {
+        for (let i = 0; i < words.length; i++) {
+            let joined = '';
+            for (let k = i; k < Math.min(words.length, i + 4); k++) {
+                joined += words[k];
+                if (joined === name.joined && free(i, k + 1)) { add(name.wallet, i, k + 1); break; }
+                if (!name.joined.startsWith(joined)) break;
+            }
+            if (found.some((f) => f.wallet === name.wallet)) break;
         }
     }
-    for (const { wallet, words: name } of tokens) {
-        if (found.some((f) => f.wallet === wallet)) continue;
-        for (const word of name) {
-            if (word.length < 4 || tokens.some((t) => t.wallet !== wallet && t.words.includes(word))) continue;
-            const i = words.indexOf(word);
-            if (i >= 0 && !found.some((f) => i >= f.start && i < f.end)) { found.push({ wallet, start: i, end: i + 1 }); break; }
-        }
-    }
+    const pending = () => names.filter((name) => !found.some((f) => f.wallet === name.wallet));
+
+    // 2. a word of the name that only that wallet has
+    words.forEach((word, i) => {
+        if (word.length < 4 || !free(i, i + 1)) return;
+        const name = unique((n) => n.parts.includes(word));
+        if (name && pending().includes(name)) add(name.wallet, i, i + 1);
+    });
+
+    // 3. the start of the name (or of a word of it) of a single wallet
+    words.forEach((word, i) => {
+        if (word.length < 4 || !/^[a-z]+$/.test(word) || !free(i, i + 1)) return;
+        const name = unique((n) => n.joined.startsWith(word) || n.parts.some((part) => part.startsWith(word)));
+        if (name && pending().includes(name)) add(name.wallet, i, i + 1);
+    });
+
     return found.sort((a, b) => a.start - b.start);
 }
 
