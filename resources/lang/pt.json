@@ -747,7 +747,6 @@
     "Movement :n is not an object.": "O movimento :n não é um objeto.",
     "Movement :n: invalid or missing date.": "Movimento :n: data inválida ou em falta.",
     "Movement :n: invalid amount.": "Movimento :n: valor inválido.",
-    "Movement :n: missing description.": "Movimento :n: descrição em falta.",
     "Pasted JSON": "JSON colado",
     "Or paste a JSON": "Ou colar um JSON",
     "Movements in JSON": "Movimentos em JSON",
@@ -756,5 +755,7 @@
     "Read JSON": "Ler JSON",
     "Type the amount": "Digite o valor",
     "Amount of :description": "Valor de :description",
-    "No amount: type it": "Sem valor: digite"
+    "No amount: type it": "Sem valor: digite",
+    "Type the description": "Digite a descrição",
+    "No description: type it": "Sem descrição: digite"
 }

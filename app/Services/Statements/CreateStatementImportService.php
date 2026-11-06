@@ -108,7 +108,8 @@ class CreateStatementImportService
         $runningBalance = $statement->openingBalance;
 
         foreach ($statement->lines as $position => $line) {
-            $suggestion = $history->suggest($line->description);
+            // a line without description (pasted JSON) has nothing to look up
+            $suggestion = trim($line->description) === '' ? null : $history->suggest($line->description);
             $duplicate = $this->takeDuplicate($candidates, $line->date, $line->amount, $line->description);
 
             $mismatch = false;
@@ -220,6 +221,9 @@ class CreateStatementImportService
      */
     private function takeDuplicate($candidates, string $date, float $amount, string $description): ?FinancialMovement
     {
+        if (trim($description) === '') {
+            return null;
+        }
         $normalizedDescription = MovementHistory::normalize($description);
         $keywords = MovementHistory::keywords($description);
 

@@ -442,3 +442,22 @@ it('lets a JSON movement without an amount be typed on the review', function () 
     expect((float) FinancialMovement::where('description', 'Pingo Doce')->where('date', '2026-09-02')->value('amount'))->toBe(-12.4)
         ->and((float) FinancialMovement::where('description', 'Reembolso')->value('amount'))->toBe(20.0);
 });
+
+it('lets a JSON movement without a description be typed on the review', function () {
+    $json = json_encode([['date' => '2026-09-02', 'type' => 'debit', 'amount' => 5]]);
+    $this->post(route('statement-imports.json'), ['json' => $json, 'wallet_id' => $this->bank->id])->assertRedirect();
+    $import = StatementImport::where('bank', 'json')->sole();
+    $line = $import->lines()->sole();
+
+    expect($line->description)->toBe('')
+        ->and($line->duplicate_movement_id)->toBeNull();
+    $this->get(route('statement-imports.show', $import))->assertOk()->assertSee('name="lines[' . $line->id . '][description]"', false);
+
+    $choice = ['selected' => 1, 'type' => 'expense', 'category_id' => $this->groceries->id];
+    // still empty: not imported
+    $this->patch(route('statement-imports.update', $import), ['lines' => [$line->id => $choice]])->assertSessionHasErrors("lines.{$line->id}");
+
+    $this->patch(route('statement-imports.update', $import), ['lines' => [$line->id => $choice + ['description' => 'Café']]])
+        ->assertRedirect()->assertSessionHasNoErrors();
+    expect((float) FinancialMovement::where('description', 'Café')->where('date', '2026-09-02')->value('amount'))->toBe(-5.0);
+});

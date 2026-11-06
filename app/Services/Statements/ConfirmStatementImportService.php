@@ -100,7 +100,9 @@ class ConfirmStatementImportService
         foreach ($lines->where('selected', true) as $line) {
             $label = '#' . ($line->position + 1) . ' ' . $line->description;
 
-            if ((float) $line->amount == 0) {
+            if (trim($line->description) === '') {
+                $errors["lines.{$line->id}"] = __('Type the description') . ': #' . ($line->position + 1);
+            } elseif ((float) $line->amount == 0) {
                 $errors["lines.{$line->id}"] = __('Type the amount') . ": $label";
             } elseif (!array_key_exists($line->type, FinancialMovementType::options())) {
                 $errors["lines.{$line->id}"] = __('Invalid type') . ": $label";
