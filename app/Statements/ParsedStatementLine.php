@@ -10,6 +10,8 @@ class ParsedStatementLine
         public readonly float $amount,
         public readonly ?string $valueDate = null,
         public readonly ?float $balance = null,
+        // a movement type the source already knows (e.g. an adjustment in a pasted JSON)
+        public readonly ?string $type = null,
     ) {
     }
 }
