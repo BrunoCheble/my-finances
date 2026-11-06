@@ -24,12 +24,13 @@
     RewriteRule ^ index.php [L]
 </IfModule>
 
-# installable app (PWA): manifest type, and always check the service worker for updates
+# installable app (PWA): manifest type, and always check the service worker and the manifest for updates
+# (a cached manifest made Android install the app without the share target)
 <IfModule mod_mime.c>
     AddType application/manifest+json .webmanifest
 </IfModule>
 <IfModule mod_headers.c>
-    <Files "sw.js">
+    <FilesMatch "^(sw\.js|manifest\.webmanifest)$">
         Header set Cache-Control "no-cache"
-    </Files>
+    </FilesMatch>
 </IfModule>
