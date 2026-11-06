@@ -1,6 +1,10 @@
 import './bootstrap';
 
 import Alpine from 'alpinejs';
+import { parseSpokenMovement, speechSupported, listen } from './voice-movement';
+
+// filling a movement by voice (see voice-movement.js)
+window.escudoVoice = { parse: parseSpokenMovement, supported: speechSupported, listen };
 
 window.Alpine = Alpine;
 
