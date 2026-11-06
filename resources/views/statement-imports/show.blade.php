@@ -6,7 +6,8 @@
     $linesData = $statementImport->lines->map(fn ($line) => [
         'id' => $line->id,
         'description' => $line->description,
-        'editing' => false,
+        // without description (pasted JSON): the field starts open
+        'editing' => $statementImport->is_pending && trim($line->description) === '',
         'amount' => (float) $line->amount,
         // came without an amount (e.g. a pasted JSON): typed here, the sign follows the type
         'missing_amount' => (float) $line->amount == 0 && $statementImport->is_pending,
@@ -40,7 +41,8 @@
     $avatar = function ($line) use ($avatarColors) {
         $words = \App\Services\Statements\MovementHistory::keywords($line->description);
         $key = $words[0] ?? $line->description;
-        return [mb_strtoupper(mb_substr($key, 0, 1)), $avatarColors[crc32($key) % count($avatarColors)]];
+        // no description yet (pasted JSON): a question mark
+        return [mb_strtoupper(mb_substr($key, 0, 1)) ?: '?', $avatarColors[crc32($key) % count($avatarColors)]];
     };
     $typeIcons = ['expense' => 'arrow-down', 'income' => 'arrow-up', 'refund' => 'rotate-left', 'discount' => 'percent', 'transfer' => 'arrow-right-arrow-left', 'loan' => 'handshake', 'adjustment' => 'sliders'];
 @endphp
@@ -209,9 +211,12 @@
                                                 @if ($pending)
                                                     {{-- the description can be changed before importing; it always goes with the form --}}
                                                     <div class="flex items-start gap-1">
-                                                        <p x-show="!lines[{{ $index }}].editing" class="break-words text-sm font-semibold text-slate-900" x-text="lines[{{ $index }}].description">{{ $line->description }}</p>
+                                                        <p x-show="!lines[{{ $index }}].editing" class="break-words text-sm font-semibold"
+                                                            :class="lines[{{ $index }}].description.trim() ? 'text-slate-900' : 'text-amber-700'"
+                                                            x-text="lines[{{ $index }}].description.trim() || @js(__('No description: type it'))">{{ $line->description }}</p>
                                                         <input x-show="lines[{{ $index }}].editing" x-cloak type="text" name="lines[{{ $line->id }}][description]" x-model="lines[{{ $index }}].description"
-                                                            maxlength="255" aria-label="{{ __('Description') }}" class="input block w-full py-1 text-sm"
+                                                            maxlength="255" aria-label="{{ __('Description') }}" placeholder="{{ __('Description') }}"
+                                                            class="input block w-full py-1 text-sm" :class="!lines[{{ $index }}].description.trim() && 'border-amber-400 ring-1 ring-amber-300'"
                                                             @keydown.enter.prevent="lines[{{ $index }}].editing = false" @keydown.escape.stop="lines[{{ $index }}].editing = false" @blur="lines[{{ $index }}].editing = false">
                                                         <button type="button" x-show="!lines[{{ $index }}].editing" aria-label="{{ __('Edit description') }}"
                                                             @click="lines[{{ $index }}].editing = true; $nextTick(() => $el.parentElement.querySelector('input').focus())"
