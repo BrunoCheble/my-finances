@@ -6,6 +6,7 @@ use App\Enums\FinancialMovementType;
 use App\Models\FinancialMovement;
 use App\Models\StatementAccount;
 use App\Models\StatementImport;
+use App\Statements\JsonStatementParser;
 use App\Statements\ParsedStatement;
 use App\Statements\PdfTextExtractor;
 use App\Statements\StatementParserRegistry;
@@ -34,6 +35,16 @@ class CreateStatementImportService
             StatementAccount::remember($statement, $walletId);
             return $this->store($statement, $fileName, $walletId);
         });
+    }
+
+    /**
+     * Movements pasted as JSON, into the wallet the user picked; reviewed like a PDF.
+     */
+    public function executeFromJson(string $json, int $walletId): StatementImport
+    {
+        $statement = (new JsonStatementParser())->parse($json);
+
+        return DB::transaction(fn () => $this->store($statement, __('Pasted JSON'), $walletId));
     }
 
     /**
@@ -115,7 +126,7 @@ class CreateStatementImportService
                 'amount' => $line->amount,
                 'bank_balance' => $line->balance,
                 'balance_mismatch' => $mismatch,
-                'type' => self::typeForSign($suggestion?->type, $line->amount),
+                'type' => $line->type ?? self::typeForSign($suggestion?->type, $line->amount),
                 'category_id' => $suggestion?->category_id,
                 'transfer_wallet_id' => $suggestion?->transfer_wallet_id != $walletId ? $suggestion?->transfer_wallet_id : null,
                 'is_new' => $suggestion === null,

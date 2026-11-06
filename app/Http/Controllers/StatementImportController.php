@@ -33,6 +33,25 @@ class StatementImportController extends Controller
         return view('statement-imports.index', compact('imports', 'wallets', 'banks'));
     }
 
+    /**
+     * Movements pasted as JSON, for the wallet the user picked.
+     */
+    public function storeJson(Request $request, CreateStatementImportService $createStatementImportService): RedirectResponse
+    {
+        $data = $request->validateWithBag('json', [
+            'json' => 'required|string|max:2000000',
+            'wallet_id' => ['required', Rule::exists('wallets', 'id')->where('user_id', auth()->id())->where('active', true)->whereNot('type', Wallet::TYPE_THIRD_PARTY)],
+        ]);
+
+        try {
+            $import = $createStatementImportService->executeFromJson($data['json'], (int) $data['wallet_id']);
+        } catch (InvalidArgumentException $e) {
+            return redirect()->route('statement-imports.index')->withInput()->withErrors(['json' => $e->getMessage()], 'json');
+        }
+
+        return redirect()->route('statement-imports.show', $import);
+    }
+
     public function store(Request $request, CreateStatementImportService $createStatementImportService): RedirectResponse
     {
         $data = $request->validate([

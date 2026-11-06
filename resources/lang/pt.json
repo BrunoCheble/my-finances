@@ -741,5 +741,17 @@
     "today, yesterday, \"day 5\"": "hoje, ontem, “dia 5”",
     "the name of your wallets; \"from X to Y\" in transfers": "o nome das suas contas, ou só parte dele (“activo”); “do X para o Y” nas transferências",
     "Or short, keeping the wallet and date already chosen:": "Ou curto, mantendo a conta e a data já escolhidas:",
-    "\"expense, 12.40, Pingo Doce\"": "“despesa, 12,40, Pingo Doce”"
+    "\"expense, 12.40, Pingo Doce\"": "“despesa, 12,40, Pingo Doce”",
+    "This is not valid JSON.": "Isto não é um JSON válido.",
+    "No movements found in the JSON.": "Nenhum movimento encontrado no JSON.",
+    "Movement :n is not an object.": "O movimento :n não é um objeto.",
+    "Movement :n: invalid or missing date.": "Movimento :n: data inválida ou em falta.",
+    "Movement :n: invalid or missing amount.": "Movimento :n: valor inválido ou em falta.",
+    "Movement :n: missing description.": "Movimento :n: descrição em falta.",
+    "Pasted JSON": "JSON colado",
+    "Or paste a JSON": "Ou colar um JSON",
+    "Movements in JSON": "Movimentos em JSON",
+    "A list (or an object with the list inside) with: date, normalized_type or type (debit, credit, adjustment), merchant_name or description, amount or value.": "Uma lista (ou um objeto com a lista dentro) com: date, normalized_type ou type (debit, credit, adjustment), merchant_name ou description, amount ou value.",
+    "Which wallet are these movements from?": "De que conta são estes movimentos?",
+    "Read JSON": "Ler JSON"
 }
