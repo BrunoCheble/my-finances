@@ -42,6 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/financial-balances/{financial_balance}/reconcile', [FinancialBalanceController::class, 'unreconcile'])->name('financial-balances.unreconcile');
     Route::patch('/financial-balances/{financial_balance}/dates', [FinancialBalanceController::class, 'updateDates'])->name('financial-balances.dates');
     Route::post('/financial-balances/{financial_balance}/restore', [FinancialBalanceController::class, 'restore'])->name('financial-balances.restore');
+    Route::post('/financial-balances/add-wallet/{start_date}', [FinancialBalanceController::class, 'addWallet'])->name('financial-balances.addWallet');
     Route::post('/financial-balances/reconcile-month/{start_date}', [FinancialBalanceController::class, 'reconcileMonth'])->name('financial-balances.reconcileMonth');
 
     Route::resource('financial-categories', FinancialCategoryController::class);

@@ -126,6 +126,30 @@ class FinancialBalanceController extends Controller
         return $this->backToMonth($financial_balance->start_date, __('Dates updated.'));
     }
 
+    /**
+     * Adds a wallet to a month it isn't in: it is calculated like the others (balance carried
+     * from before plus the month's movements). With nothing carried and no movements there is
+     * nothing to show, and no balance is created.
+     */
+    public function addWallet(Request $request, string $startDate, CalculateFinancialBalanceService $calculateFinancialBalanceService)
+    {
+        abort_unless(preg_match('/^\d{4}-\d{2}-01$/', $startDate), 404);
+        $walletId = (int) $request->validate(['wallet_id' => ['required', 'integer', 'exists:wallets,id']])['wallet_id'];
+        $wallet = Wallet::findOrFail($walletId);
+        $month = $this->monthName($startDate);
+
+        if (FinancialBalance::where('wallet_id', $walletId)->where('start_date', '<=', $startDate)->where('end_date', '>=', $startDate)->exists()) {
+            return $this->backToMonth($startDate, __(':wallet is already in :month.', ['wallet' => $wallet->name, 'month' => $month]), 'error');
+        }
+
+        $calculateFinancialBalanceService->recalculateFrom($walletId, $startDate);
+
+        if (!FinancialBalance::where('wallet_id', $walletId)->where('start_date', $startDate)->exists()) {
+            return $this->backToMonth($startDate, __(':wallet has no balance nor movements in :month.', ['wallet' => $wallet->name, 'month' => $month]), 'error');
+        }
+        return $this->backToMonth($startDate, __(':wallet added to :month.', ['wallet' => $wallet->name, 'month' => $month]));
+    }
+
     private function backToMonth(string $startDate, string $message, string $type = 'success')
     {
         DashboardCacheService::clearAllByUser();

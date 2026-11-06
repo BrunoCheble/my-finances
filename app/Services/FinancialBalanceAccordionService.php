@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\FinancialBalance;
+use App\Models\Wallet;
 
 class FinancialBalanceAccordionService
 {
@@ -31,6 +32,8 @@ class FinancialBalanceAccordionService
             return $result;
         }
 
+        self::addMissing($result);
+
         $result[0]->balances
             ->filter(fn ($b) => $b->wallet->reserved_amount != 0)
             ->each(function ($balance) {
@@ -40,6 +43,28 @@ class FinancialBalanceAccordionService
             });
 
         return $result;
+    }
+
+    /**
+     * Wallets that are not in a month but would come with a balance (carried from before), e.g. savings
+     * without movements or an inactive wallet: shown apart, out of the totals, ready to be included.
+     */
+    private static function addMissing($groups): void
+    {
+        $history = FinancialBalance::orderBy('end_date')->get(['wallet_id', 'end_date', 'calculated_balance'])->toBase()->groupBy('wallet_id');
+        $wallets = Wallet::orderBy('name')->get()->keyBy('id');
+
+        foreach ($groups as $group) {
+            $present = $group->balances->pluck('wallet_id')->flip();
+            $group->missing = $history->except($present->keys()->all())
+                ->map(fn ($balances, $walletId) => (object) [
+                    'wallet' => $wallets[$walletId] ?? null,
+                    'carried' => (float) ($balances->where('end_date', '<', $group->startDate)->last()?->calculated_balance ?? 0),
+                ])
+                ->filter(fn ($row) => $row->wallet && abs($row->carried) >= 0.005)
+                ->sortBy(fn ($row) => $row->wallet->name)
+                ->values();
+        }
     }
 
     public static function getYears()

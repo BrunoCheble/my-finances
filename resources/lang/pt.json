@@ -718,5 +718,12 @@
     "Edit description": "Editar descrição",
     "Date it arrives (if another day)": "Data de entrada (se for outro dia)",
     "Same day": "Mesmo dia",
-    "Empty: it arrives the same day it leaves.": "Vazio: entra no mesmo dia em que sai."
+    "Empty: it arrives the same day it leaves.": "Vazio: entra no mesmo dia em que sai.",
+    ":wallet is already in :month.": ":wallet já está em :month.",
+    ":wallet has no balance nor movements in :month.": ":wallet não tem saldo nem movimentações em :month.",
+    ":wallet added to :month.": ":wallet adicionado a :month.",
+    "not in this month": "fora deste mês",
+    "Not counted in the totals": "Não conta nos totais",
+    "Include": "Incluir",
+    "Include :wallet in this month": "Incluir :wallet neste mês"
 }
