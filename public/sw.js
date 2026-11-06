@@ -3,12 +3,12 @@
  * CSS/JS, icons) cached. Pages and data are never cached - they are personal
  * financial data - so without connection the app shows the offline page.
  */
-const VERSION = 'escudo-v1';
+const VERSION = 'escudo-v2';
 // a PDF shared from the system's share menu, kept until the import screen picks it up
 const SHARE_CACHE = 'escudo-share';
 const SHARED_FILE = new URL('shared-statement', self.registration.scope).href;
 const OFFLINE_URL = new URL('offline.html', self.registration.scope).href;
-const PRECACHE = [OFFLINE_URL, new URL('icons/icon-192.png', self.registration.scope).href];
+const PRECACHE = [OFFLINE_URL, new URL('icons/icon-v2-192.png', self.registration.scope).href];
 
 self.addEventListener('install', (event) => {
     event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()));
