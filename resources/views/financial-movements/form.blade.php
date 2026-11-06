@@ -15,6 +15,8 @@
         'categoryId' => (string) old('category_id', $fm?->category_id ?? ''),
         'walletId' => (string) old('wallet_id', $fm?->wallet_id ?? $walletSection?->id ?? $walletsSidebar->firstWhere('type', '!=', 'third_party')?->id ?? ''),
         'transferToWalletId' => (string) old('transfer_to_wallet_id', $fm?->destinationMovement?->wallet_id ?? ''),
+        // only when the other bank got it on another day (empty: the same day)
+        'transferDate' => old('transfer_date', $fm?->destinationMovement && $fm->destinationMovement->date !== $fm->date ? $fm->destinationMovement->date : ''),
         'includeAlert' => (bool) old('include_alert', $fm?->include_alert),
         'loanPerson' => old('loan_person', $fm?->loan?->person ?? ''),
         'loanDirection' => old('loan_direction', $fm?->exists && $fm->type === \App\Enums\FinancialMovementType::LOAN && $fm->amount > 0 ? 'receive' : 'lend'),
@@ -42,6 +44,7 @@
     <input type="hidden" name="category_id" :value="needsCategory ? categoryId : ''">
     <input type="hidden" name="wallet_id" :value="walletId">
     <input type="hidden" name="transfer_to_wallet_id" :value="transferToWalletId" :disabled="type !== 'transfer'">
+    <input type="hidden" name="transfer_date" :value="transferDate" :disabled="type !== 'transfer'">
     <input type="hidden" name="include_alert" value="1" :disabled="!includeAlert">
     <input type="hidden" name="loan_person" :value="loanPerson" :disabled="type !== 'loan'">
     <input type="hidden" name="loan_direction" :value="loanDirection" :disabled="type !== 'loan'">
@@ -226,6 +229,17 @@
                     </template>
                 </div>
                 <x-input-error class="mt-2" :messages="$errors->get('transfer_to_wallet_id')" />
+
+                <div class="mt-3">
+                    <x-input-label for="transfer-date-{{ $uid }}" :value="__('Date it arrives (if another day)')" />
+                    <div class="mt-1 flex flex-wrap items-center gap-2">
+                        <x-text-input id="transfer-date-{{ $uid }}" type="date" x-model="transferDate" ::min="date" class="min-w-0 flex-1 sm:flex-none"
+                            aria-describedby="transfer-date-hint-{{ $uid }}" />
+                        <button type="button" x-show="transferDate" @click="transferDate = ''" class="text-sm font-medium text-brand-700 hover:text-brand-800">{{ __('Same day') }}</button>
+                    </div>
+                    <p id="transfer-date-hint-{{ $uid }}" class="mt-1 text-xs text-slate-500">{{ __('Empty: it arrives the same day it leaves.') }}</p>
+                    <x-input-error class="mt-2" :messages="$errors->get('transfer_date')" />
+                </div>
             </fieldset>
         </div>
 
