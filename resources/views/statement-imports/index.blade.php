@@ -77,6 +77,40 @@
                         </x-button>
                     </div>
                 </form>
+
+                {{-- the same review, from movements pasted as JSON (any bank: the wallet is chosen) --}}
+                @php($jsonErrors = $errors->getBag('json'))
+                <details class="mt-5 border-t border-slate-200 pt-4" @if ($jsonErrors->isNotEmpty() || old('json')) open @endif>
+                    <summary class="cursor-pointer text-sm font-semibold text-brand-700 hover:text-brand-800">
+                        <i class="fa-solid fa-code mr-1" aria-hidden="true"></i>{{ __('Or paste a JSON') }}
+                    </summary>
+                    <form method="POST" action="{{ route('statement-imports.json') }}" class="mt-4 space-y-4">
+                        @csrf
+                        <div>
+                            <x-input-label for="json" :value="__('Movements in JSON')" />
+                            <textarea id="json" name="json" rows="8" required spellcheck="false" aria-describedby="json-help"
+                                class="input mt-1 block w-full font-mono text-xs"
+                                placeholder='[{"date": "2026-11-05", "type": "debit", "description": "Pingo Doce", "amount": 12.40}]'>{{ old('json') }}</textarea>
+                            <p id="json-help" class="mt-1 text-xs text-slate-500">{{ __('A list (or an object with the list inside) with: date, normalized_type or type (debit, credit, adjustment), merchant_name or description, amount or value.') }}</p>
+                            <x-input-error class="mt-2" :messages="$jsonErrors->get('json')" />
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                            <div>
+                                <x-input-label for="json-wallet" :value="__('Which wallet are these movements from?')" />
+                                <select id="json-wallet" name="wallet_id" required class="input mt-1 block w-full py-2.5">
+                                    <option value="">{{ __('Select wallet') }}</option>
+                                    @foreach ($wallets as $id => $name)
+                                        <option value="{{ $id }}" @selected((string) old('wallet_id') === (string) $id)>{{ $name }}</option>
+                                    @endforeach
+                                </select>
+                                <x-input-error class="mt-2" :messages="$jsonErrors->get('wallet_id')" />
+                            </div>
+                            <x-button type="submit" class="py-2.5 sm:px-6">
+                                {{ __('Read JSON') }} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                            </x-button>
+                        </div>
+                    </form>
+                </details>
             </section>
 
             {{-- How it works and the banks it reads --}}

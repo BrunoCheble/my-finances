@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
 
     Route::patch('/statement-imports/{statement_import}/reserved-amount', [StatementImportController::class, 'updateReservedAmount'])->name('statement-imports.reserved-amount');
     Route::patch('/statement-imports/{statement_import}/lines/{line}/duplicate', [StatementImportController::class, 'duplicate'])->name('statement-imports.duplicate');
+    Route::post('/statement-imports/json', [StatementImportController::class, 'storeJson'])->name('statement-imports.json');
     Route::post('/statement-imports/identify', [StatementImportController::class, 'identify'])->name('statement-imports.identify');
     Route::resource('statement-imports', StatementImportController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 

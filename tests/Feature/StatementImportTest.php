@@ -355,3 +355,49 @@ it('imports a line with the description edited on the review', function () {
         ->and(FinancialMovement::where('description', 'TRF PARA POUPANCA')->exists())->toBeFalse()
         ->and($lines[0]->fresh()->description)->toBe($lines[0]->description);
 });
+
+it('reads movements pasted as JSON into the review of the chosen wallet', function () {
+    $json = json_encode([
+        ['date' => '2026-09-02', 'normalized_type' => 'debit', 'merchant_name' => 'Pingo Doce', 'description' => 'COMPRA 1234 PINGO DOCE', 'amount' => 12.4],
+        ['date' => '2026-09-03T08:15:00Z', 'type' => 'credit', 'description' => 'Salário Empresa X', 'value' => '1.500,00'],
+        ['date' => '04/09/2026', 'type' => 'adjustment', 'description' => 'Acerto', 'amount' => '-0,35'],
+    ]);
+
+    $response = $this->post(route('statement-imports.json'), ['json' => $json, 'wallet_id' => $this->bank->id]);
+
+    $import = StatementImport::where('bank', 'json')->sole();
+    $response->assertRedirect(route('statement-imports.show', $import));
+    $lines = $import->lines()->orderBy('position')->get();
+
+    expect($import->wallet_id)->toBe($this->bank->id)
+        ->and($import->period_start)->toStartWith('2026-09-02')
+        ->and($import->period_end)->toStartWith('2026-09-04')
+        ->and($lines->map(fn ($l) => [$l->date, $l->description, (float) $l->amount])->all())->toEqual([
+            ['2026-09-02', 'Pingo Doce', -12.4],
+            ['2026-09-03', 'Salário Empresa X', 1500.0],
+            ['2026-09-04', 'Acerto', -0.35],
+        ])
+        // the history still suggests the category; the adjustment stays an adjustment
+        ->and($lines[0]->category_id)->toBe($this->groceries->id)
+        ->and($lines[1]->type)->toBe(FinancialMovementType::INCOME)
+        ->and($lines[2]->type)->toBe(FinancialMovementType::ADJUSTMENT);
+
+    $this->get(route('statement-imports.show', $import))->assertOk()->assertSee('Pingo Doce');
+});
+
+it('finds the list of movements inside a JSON object', function () {
+    $json = json_encode(['account' => 'x', 'transactions' => [['date' => '2026-09-02', 'type' => 'debit', 'description' => 'Uber', 'amount' => 8.9]]]);
+
+    $this->post(route('statement-imports.json'), ['json' => $json, 'wallet_id' => $this->bank->id])->assertRedirect();
+
+    expect((float) StatementImport::where('bank', 'json')->sole()->lines()->sole()->amount)->toBe(-8.9);
+});
+
+it('says what is wrong in a pasted JSON', function () {
+    $this->post(route('statement-imports.json'), ['json' => '{oops', 'wallet_id' => $this->bank->id])
+        ->assertSessionHasErrors(['json' => 'Isto não é um JSON válido.'], null, 'json');
+    $this->post(route('statement-imports.json'), ['json' => '[{"date": "2026-09-02", "description": "x"}]', 'wallet_id' => $this->bank->id])
+        ->assertSessionHasErrors(['json' => 'Movimento 1: valor inválido ou em falta.'], null, 'json');
+
+    expect(StatementImport::where('bank', 'json')->exists())->toBeFalse();
+});

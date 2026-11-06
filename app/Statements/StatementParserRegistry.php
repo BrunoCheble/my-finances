@@ -41,6 +41,9 @@ class StatementParserRegistry
 
     public function name(string $bank): string
     {
+        if ($bank === JsonStatementParser::BANK) {
+            return 'JSON';
+        }
         foreach (self::PARSERS as $class) {
             $parser = app($class);
             if ($parser->bank() === $bank) {
