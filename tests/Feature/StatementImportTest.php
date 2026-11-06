@@ -401,3 +401,16 @@ it('says what is wrong in a pasted JSON', function () {
 
     expect(StatementImport::where('bank', 'json')->exists())->toBeFalse();
 });
+
+it('keeps a debit negative and a credit positive whatever sign the JSON gives', function () {
+    $json = json_encode([
+        ['date' => '2026-09-02', 'type' => 'debit', 'description' => 'Uber', 'amount' => -8.9],
+        ['date' => '2026-09-02', 'type' => 'debit', 'description' => 'Bolt', 'amount' => '7,50'],
+        ['date' => '2026-09-03', 'type' => 'credit', 'description' => 'Reembolso', 'amount' => '-20,00'],
+    ]);
+
+    $this->post(route('statement-imports.json'), ['json' => $json, 'wallet_id' => $this->bank->id])->assertRedirect();
+
+    expect(StatementImport::where('bank', 'json')->sole()->lines()->orderBy('position')->pluck('amount')->map(fn ($a) => (float) $a)->all())
+        ->toBe([-8.9, -7.5, 20.0]);
+});
