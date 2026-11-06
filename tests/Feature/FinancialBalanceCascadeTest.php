@@ -170,3 +170,44 @@ it('não grava nada em dry-run', function () {
     expect(FinancialMovement::count())->toBe(0)
         ->and((float) balanceOf($this->wallet, '2026-01-01')->initial_balance)->toBe(70.0);
 });
+
+it('lets the other bank of a transfer receive it on another day', function () {
+    storeMovement($this, [
+        'date' => '2026-01-30',
+        'transfer_date' => '2026-02-02',
+        'wallet_id' => $this->wallet->id,
+        'transfer_to_wallet_id' => $this->other->id,
+        'type' => FinancialMovementType::TRANSFER,
+        'amount' => 30,
+    ]);
+
+    $origin = FinancialMovement::whereNull('original_movement_id')->where('wallet_id', $this->wallet->id)->sole();
+    expect($origin->date)->toBe('2026-01-30')
+        ->and($origin->destinationMovement->date)->toBe('2026-02-02')
+        ->and((float) balanceOf($this->wallet, '2026-01-01')->calculated_balance)->toBe(-30.0)
+        ->and(balanceOf($this->other, '2026-01-01'))->toBeNull()
+        ->and((float) balanceOf($this->other, '2026-02-01')->calculated_balance)->toBe(30.0);
+
+    // edited back to the same day: the other bank's months follow
+    $this->patch(route('financial-movements.update', $origin), [
+        'description' => 'Teste',
+        'date' => '2026-01-30',
+        'transfer_date' => '',
+        'wallet_id' => $this->wallet->id,
+        'transfer_to_wallet_id' => $this->other->id,
+        'type' => FinancialMovementType::TRANSFER,
+        'amount' => 30,
+    ])->assertRedirect();
+
+    expect($origin->fresh()->destinationMovement->date)->toBe('2026-01-30')
+        ->and((float) balanceOf($this->other, '2026-01-01')->calculated_balance)->toBe(30.0)
+        // February only carries January's balance now
+        ->and((float) balanceOf($this->other, '2026-02-01')->initial_balance)->toBe(30.0)
+        ->and((float) balanceOf($this->other, '2026-02-01')->total_unidentified)->toBe(0.0);
+});
+
+it('ignores the arrival date for movements that are not transfers', function () {
+    storeMovement($this, ['date' => '2026-01-10', 'transfer_date' => '2026-02-02', 'wallet_id' => $this->wallet->id, 'amount' => 10]);
+
+    expect(FinancialMovement::sole()->date)->toBe('2026-01-10');
+});

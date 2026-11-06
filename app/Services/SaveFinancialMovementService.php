@@ -61,11 +61,15 @@ class SaveFinancialMovementService
             $mirror = null;
         }
 
+        // the other bank may receive it on another day
+        $transferDate = $data['transfer_date'] ?? null;
+        unset($data['transfer_date']);
+
         $financial = $this->repository->save($data, $id);
         $financials = new Collection([$financial]);
 
         if (isset($data['transfer_to_wallet_id'])) {
-            $transferFinancial = $this->executeForTransfer($data, $financial->id, $mirror?->id);
+            $transferFinancial = $this->executeForTransfer(array_merge($data, ['date' => $transferDate ?: $data['date']]), $financial->id, $mirror?->id);
             $financials->push($transferFinancial);
         }
 

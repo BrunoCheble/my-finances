@@ -32,6 +32,7 @@
                     this.categoryId = '';
                     this.includeAlert = false;
                     this.loanPerson = '';
+                    this.transferDate = '';
                     this.suggestion = '';
                     this.typeTouched = this.categoryTouched = false;
                     // back to the top of the modal, where the category status of the saved movement shows
@@ -63,7 +64,7 @@
             // the latest confirmed month this save would change, as a sentence ('' when none)
             get reconciledWarning() {
                 const positions = [{ walletId: this.walletId, date: this.date }];
-                if (this.type === 'transfer') positions.push({ walletId: this.transferToWalletId, date: this.date });
+                if (this.type === 'transfer') positions.push({ walletId: this.transferToWalletId, date: this.transferDate || this.date });
                 positions.push(...this.originalPositions);
 
                 for (const position of positions) {
