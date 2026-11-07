@@ -30,7 +30,7 @@
         {{-- New reminder --}}
         <section class="card p-4 sm:p-5" aria-labelledby="new-title">
             <h2 id="new-title" class="mb-3 font-semibold text-slate-900">{{ __('New reminder') }}</h2>
-            <form method="POST" action="{{ route('payment-reminders.store') }}" class="grid gap-3 sm:grid-cols-[1fr_7rem_9rem_auto] sm:items-end">
+            <form method="POST" action="{{ route('payment-reminders.store') }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_7rem_9rem_1fr_auto] sm:items-end">
                 @csrf
                 <div>
                     <x-input-label for="reminder-name" :value="__('Name')" />
@@ -44,7 +44,12 @@
                     <x-input-label for="reminder-amount" :value="__('Amount (optional)')" />
                     <x-text-input id="reminder-amount" name="amount" type="number" step="0.01" min="0" class="mt-1 w-full" :value="old('amount')" />
                 </div>
+                <div>
+                    <x-input-label for="reminder-reference" :value="__('Reference in the description (optional)')" />
+                    <x-text-input id="reminder-reference" name="reference" class="mt-1 w-full" :value="old('reference')" maxlength="255" placeholder="{{ __('e.g. RENDA') }}" />
+                </div>
                 <x-primary-button class="justify-center">{{ __('Add') }}</x-primary-button>
+                <p class="text-xs text-slate-500 sm:col-span-2 lg:col-span-5">{{ __('With a reference, the reminder is marked as paid when a movement of the month has it in the description (no push then).') }}</p>
             </form>
         </section>
 
@@ -58,23 +63,86 @@
             @else
                 <ul class="card divide-y divide-slate-100">
                     @foreach ($reminders as $reminder)
-                        <li class="flex items-center gap-3 px-4 py-3">
-                            <span class="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-slate-100 text-slate-700" aria-hidden="true">
-                                <span class="text-sm font-semibold leading-none">{{ $reminder->day }}</span>
+                        @php
+                            $payment = $reminder->paymentIn($month);
+                            $due = $reminder->dueDate($month);
+                            $late = !$payment && $due->lt(now()->startOfDay());
+                        @endphp
+                        <li class="flex flex-wrap items-center gap-3 px-4 py-3">
+                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-semibold {{ $payment ? 'bg-emerald-50 text-emerald-700' : ($late ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-700') }}" aria-hidden="true">
+                                {{ $reminder->day }}
                             </span>
                             <div class="min-w-0 flex-1">
                                 <p class="truncate font-medium text-slate-900">{{ $reminder->name }}</p>
                                 <p class="text-xs text-slate-500">
                                     {{ __('Every month on day :day', ['day' => $reminder->day]) }}@if ($reminder->amount) · {{ format_currency($reminder->amount) }}@endif
+                                    @if ($reminder->reference) · {{ __('reference') }} “{{ $reminder->reference }}”@endif
+                                </p>
+                                <p class="mt-0.5 text-xs font-medium {{ $payment ? 'text-emerald-700' : ($late ? 'text-amber-700' : 'text-slate-500') }}">
+                                    @if ($payment && $payment['movement'])
+                                        <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+                                        {{ __('Paid on :date', ['date' => date_format_custom($payment['movement']->date)]) }} · {{ format_currency(abs($payment['movement']->amount)) }} · {{ $payment['movement']->description }}
+                                    @elseif ($payment)
+                                        <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ __('Marked as paid this month') }}
+                                    @elseif ($late)
+                                        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> {{ __('Late: it was due on :date', ['date' => date_format_custom($due->toDateString())]) }}
+                                    @else
+                                        {{ __('Due on :date', ['date' => date_format_custom($due->toDateString())]) }}
+                                    @endif
                                 </p>
                             </div>
-                            <form method="POST" action="{{ route('payment-reminders.destroy', $reminder) }}" onsubmit="return confirm(@js(__('Remove this reminder?')))">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600" aria-label="{{ __('Remove') }} {{ $reminder->name }}">
-                                    <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                            <div class="ml-[3.25rem] flex w-full items-center gap-1 sm:ml-0 sm:w-auto">
+                                @if (!$payment || $payment['manual'])
+                                    <form method="POST" action="{{ route('payment-reminders.paid', $reminder) }}">
+                                        @csrf
+                                        @method('PATCH')
+                                        <x-button size="sm" variant="secondary" type="submit" :icon="$payment ? 'rotate-left' : 'check'">
+                                            {{ $payment ? __('Unmark') : __('Mark as paid') }}
+                                        </x-button>
+                                    </form>
+                                @endif
+                                <button type="button" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="{{ __('Edit') }} {{ $reminder->name }}"
+                                    x-data x-on:click="$dispatch('open-modal', 'reminder-edit-{{ $reminder->id }}')">
+                                    <i class="fa-solid fa-pen" aria-hidden="true"></i>
                                 </button>
-                            </form>
+                                <form method="POST" action="{{ route('payment-reminders.destroy', $reminder) }}" onsubmit="return confirm(@js(__('Remove this reminder?')))">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="rounded-lg p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600" aria-label="{{ __('Remove') }} {{ $reminder->name }}">
+                                        <i class="fa-solid fa-trash" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            </div>
+
+                            <x-modal name="reminder-edit-{{ $reminder->id }}" maxWidth="md">
+                                <form method="POST" action="{{ route('payment-reminders.update', $reminder) }}" class="space-y-4 p-5 sm:p-6">
+                                    @csrf
+                                    @method('PUT')
+                                    <h3 class="text-lg font-semibold text-slate-900">{{ __('Edit reminder') }}</h3>
+                                    <div>
+                                        <x-input-label for="edit-name-{{ $reminder->id }}" :value="__('Name')" />
+                                        <x-text-input id="edit-name-{{ $reminder->id }}" name="name" class="mt-1 w-full" :value="$reminder->name" required maxlength="255" />
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <x-input-label for="edit-day-{{ $reminder->id }}" :value="__('Day of the month')" />
+                                            <x-text-input id="edit-day-{{ $reminder->id }}" name="day" type="number" min="1" max="31" class="mt-1 w-full" :value="$reminder->day" required />
+                                        </div>
+                                        <div>
+                                            <x-input-label for="edit-amount-{{ $reminder->id }}" :value="__('Amount (optional)')" />
+                                            <x-text-input id="edit-amount-{{ $reminder->id }}" name="amount" type="number" step="0.01" min="0" class="mt-1 w-full" :value="$reminder->amount" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <x-input-label for="edit-reference-{{ $reminder->id }}" :value="__('Reference in the description (optional)')" />
+                                        <x-text-input id="edit-reference-{{ $reminder->id }}" name="reference" class="mt-1 w-full" :value="$reminder->reference" maxlength="255" placeholder="{{ __('e.g. RENDA') }}" />
+                                    </div>
+                                    <div class="flex justify-end gap-2">
+                                        <x-button variant="secondary" x-on:click="$dispatch('close')">{{ __('Cancel') }}</x-button>
+                                        <x-primary-button>{{ __('Save') }}</x-primary-button>
+                                    </div>
+                                </form>
+                            </x-modal>
                         </li>
                     @endforeach
                 </ul>

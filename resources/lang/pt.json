@@ -786,5 +786,20 @@
     "Escudo notifications are on": "As notificações do Escudo estão ativas",
     "You will be notified on the morning of each payment day.": "Será avisado na manhã de cada dia de pagamento.",
     "Payment today: :name": "Pagamento hoje: :name",
-    "Due today": "Vence hoje"
+    "Due today": "Vence hoje",
+    "Reference in the description (optional)": "Referência na descrição (opcional)",
+    "e.g. RENDA": "ex.: RENDA",
+    "With a reference, the reminder is marked as paid when a movement of the month has it in the description (no push then).": "Com referência, o lembrete fica pago quando um movimento do mês a tiver na descrição (e o push já não é enviado).",
+    "reference": "referência",
+    "Paid on :date": "Pago a :date",
+    "Marked as paid this month": "Marcado como pago este mês",
+    "Late: it was due on :date": "Em atraso: vencia a :date",
+    "Due on :date": "Vence a :date",
+    "Unmark": "Desmarcar",
+    "Mark as paid": "Marcar como pago",
+    "Edit reminder": "Editar lembrete",
+    "Reminder updated.": "Lembrete atualizado.",
+    ":name not paid yet": ":name ainda não pago",
+    "Due on :date, no movement with its reference yet.": "Vencia a :date e ainda não há movimento com a referência.",
+    "See reminders": "Ver lembretes"
 }

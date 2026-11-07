@@ -6,7 +6,7 @@ use App\Models\PaymentReminder;
 use Carbon\Carbon;
 
 /**
- * Sends the push of the payments due today, from 9h on, once per reminder and day. Safe to call
+ * Sends the push of the payments due today and not paid yet, from 9h on, once per reminder and day. Safe to call
  * many times (the scheduled trigger runs a few times each morning).
  */
 class PaymentReminderNotifier
@@ -29,6 +29,11 @@ class PaymentReminderNotifier
             ->where(fn ($q) => $q->whereNull('last_sent_on')->orWhere('last_sent_on', '<', $today))
             ->get();
         foreach ($reminders as $reminder) {
+            // already paid this month: nothing to remind
+            if ($reminder->paymentIn($now->format('Y-m'))) {
+                $reminder->update(['last_sent_on' => $today]);
+                continue;
+            }
             $sent += WebPush::sendToUser($reminder->user_id, [
                 'title' => __('Payment today: :name', ['name' => $reminder->name]),
                 'body' => $reminder->amount ? format_currency($reminder->amount) : __('Due today'),
