@@ -45,6 +45,9 @@
     <td class="py-3 pr-4">
         <div class="flex justify-end gap-1 opacity-100 transition lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100">
             <x-icon-button icon="pen" :label="__('Edit')" x-on:click.prevent="$dispatch('open-modal', 'modal-edit-{{ $target->id }}')" />
+            @if ($target->type === \App\Enums\FinancialMovementType::EXPENSE)
+                <x-icon-button icon="bell" :label="__('Create reminder')" :href="\App\Models\PaymentReminder::urlFromMovement($target)" />
+            @endif
             <x-icon-button icon="trash" tone="danger" :label="__('Delete')" x-on:click.prevent="$dispatch('open-modal', 'modal-delete-{{ $target->id }}')" />
         </div>
     </td>

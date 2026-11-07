@@ -56,7 +56,7 @@ class PaymentReminderController extends Controller
             'day' => 'required|integer|min:1|max:31',
             'amount' => 'nullable|numeric|min:0',
             'reference' => 'nullable|string|max:255',
-        ]);
+        ]) + ['notify_before' => $request->boolean('notify_before')];
     }
 
     public function destroy(PaymentReminder $paymentReminder): RedirectResponse
