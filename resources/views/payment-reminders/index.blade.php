@@ -34,22 +34,26 @@
                 @csrf
                 <div>
                     <x-input-label for="reminder-name" :value="__('Name')" />
-                    <x-text-input id="reminder-name" name="name" class="mt-1 w-full" :value="old('name')" required maxlength="255" placeholder="{{ __('e.g. Rent') }}" />
+                    <x-text-input id="reminder-name" name="name" class="mt-1 w-full" :value="old('name', request('name'))" required maxlength="255" placeholder="{{ __('e.g. Rent') }}" />
                 </div>
                 <div>
                     <x-input-label for="reminder-day" :value="__('Day of the month')" />
-                    <x-text-input id="reminder-day" name="day" type="number" min="1" max="31" class="mt-1 w-full" :value="old('day')" required />
+                    <x-text-input id="reminder-day" name="day" type="number" min="1" max="31" class="mt-1 w-full" :value="old('day', request('day'))" required />
                 </div>
                 <div>
                     <x-input-label for="reminder-amount" :value="__('Amount (optional)')" />
-                    <x-text-input id="reminder-amount" name="amount" type="number" step="0.01" min="0" class="mt-1 w-full" :value="old('amount')" />
+                    <x-text-input id="reminder-amount" name="amount" type="number" step="0.01" min="0" class="mt-1 w-full" :value="old('amount', request('amount'))" />
                 </div>
                 <div>
                     <x-input-label for="reminder-reference" :value="__('Reference in the description (optional)')" />
-                    <x-text-input id="reminder-reference" name="reference" class="mt-1 w-full" :value="old('reference')" maxlength="255" placeholder="{{ __('e.g. RENDA') }}" />
+                    <x-text-input id="reminder-reference" name="reference" class="mt-1 w-full" :value="old('reference', request('reference'))" maxlength="255" placeholder="{{ __('e.g. RENDA') }}" />
                 </div>
                 <x-primary-button class="justify-center">{{ __('Add') }}</x-primary-button>
-                <p class="text-xs text-slate-500 sm:col-span-2 lg:col-span-5">{{ __('With a reference, the reminder is marked as paid when a movement of the month has it in the description (no push then).') }}</p>
+                <label class="flex items-center gap-2 text-sm text-slate-700 sm:col-span-2 lg:col-span-5">
+                    <input type="checkbox" name="notify_before" value="1" class="rounded border-slate-300 text-brand-600" @checked(old('notify_before'))>
+                    {{ __('Also notify the day before') }}
+                </label>
+                <p class="text-xs text-slate-500 sm:col-span-2 lg:col-span-5">{{ __('With a reference, the reminder is marked as paid when a movement of the month has it in the description (no push then).') }} {{ __('Not paid 2 days after its day, it notifies again.') }}</p>
             </form>
         </section>
 
@@ -77,6 +81,7 @@
                                 <p class="text-xs text-slate-500">
                                     {{ __('Every month on day :day', ['day' => $reminder->day]) }}@if ($reminder->amount) · {{ format_currency($reminder->amount) }}@endif
                                     @if ($reminder->reference) · {{ __('reference') }} “{{ $reminder->reference }}”@endif
+                                    @if ($reminder->notify_before) · {{ __('also the day before') }}@endif
                                 </p>
                                 <p class="mt-0.5 text-xs font-medium {{ $payment ? 'text-emerald-700' : ($late ? 'text-amber-700' : 'text-slate-500') }}">
                                     @if ($payment && $payment['movement'])
@@ -137,6 +142,10 @@
                                         <x-input-label for="edit-reference-{{ $reminder->id }}" :value="__('Reference in the description (optional)')" />
                                         <x-text-input id="edit-reference-{{ $reminder->id }}" name="reference" class="mt-1 w-full" :value="$reminder->reference" maxlength="255" placeholder="{{ __('e.g. RENDA') }}" />
                                     </div>
+                                    <label class="flex items-center gap-2 text-sm text-slate-700">
+                                        <input type="checkbox" name="notify_before" value="1" class="rounded border-slate-300 text-brand-600" @checked($reminder->notify_before)>
+                                        {{ __('Also notify the day before') }}
+                                    </label>
                                     <div class="flex justify-end gap-2">
                                         <x-button variant="secondary" x-on:click="$dispatch('close')">{{ __('Cancel') }}</x-button>
                                         <x-primary-button>{{ __('Save') }}</x-primary-button>
