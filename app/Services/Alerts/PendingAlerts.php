@@ -4,12 +4,14 @@ namespace App\Services\Alerts;
 
 use App\Models\FinancialBalance;
 use App\Models\Loan;
+use App\Models\PaymentReminder;
 use App\Models\Wallet;
 use Carbon\Carbon;
 
 /**
  * Things waiting for the user: uncategorized movements, overdrawn wallets,
- * loans open for a long time and manual reminders ("include alert").
+ * loans open for a long time, manual reminders ("include alert") and payments of this month past
+ * their day and not paid yet.
  */
 class PendingAlerts
 {
@@ -22,6 +24,7 @@ class PendingAlerts
             self::overdrawn($context),
             self::oldLoans($context),
             self::reminders($context),
+            self::unpaid($context),
         );
     }
 
@@ -112,5 +115,32 @@ class PendingAlerts
             $context->movementsLink(search: $movement->description),
             0,
         ))->values()->all();
+    }
+
+    private static function unpaid(AlertContext $context): array
+    {
+        if (!$context->isCurrentMonth()) {
+            return [];
+        }
+        $alerts = [];
+        foreach (PaymentReminder::orderBy('day')->get() as $reminder) {
+            $due = $reminder->dueDate($context->month);
+            // not due yet, or created after its day (it starts next month)
+            if ($due->gte(now()->startOfDay()) || $reminder->created_at->gt($due->copy()->endOfDay()) || $reminder->paymentIn($context->month)) {
+                continue;
+            }
+            $alerts[] = AlertContext::alert(
+                "unpaid-{$reminder->id}",
+                'warning',
+                'calendar-xmark',
+                __(':name not paid yet', ['name' => $reminder->name]),
+                ($reminder->amount ? format_currency($reminder->amount) . ' · ' : '')
+                    . __('Due on :date, no movement with its reference yet.', ['date' => date_format_custom($due->toDateString())]),
+                __('See reminders'),
+                route('payment-reminders.index'),
+                $due->diffInDays(now()),
+            );
+        }
+        return $alerts;
     }
 }

@@ -110,3 +110,62 @@ it('encrypts the payload so that only the device can read it (RFC 8291)', functi
 
     expect($plain)->toBe("{\"title\":\"Renda\"}\x02");
 });
+
+function movement(string $description, string $date, float $amount = -750): void
+{
+    $wallet = App\Models\Wallet::firstOrCreate(['name' => 'Banco'], ['type' => 'debit', 'active' => true]);
+    test()->post(route('financial-movements.store'), [
+        'description' => $description, 'date' => $date, 'wallet_id' => $wallet->id,
+        'amount' => abs($amount), 'type' => App\Enums\FinancialMovementType::EXPENSE,
+    ], ['Accept' => 'application/json'])->assertCreated();
+}
+
+it('is paid when a movement of the month has the reference as a word', function () {
+    $reminder = PaymentReminder::create(['name' => 'Renda', 'day' => 8, 'reference' => 'renda']);
+    movement('Prendas de Natal', '2026-11-03', -40);
+    expect($reminder->paymentIn('2026-11'))->toBeNull();
+
+    movement('DD Débito RENDA-NOV', '2026-11-07');
+    expect($reminder->paymentIn('2026-11')['movement']->description)->toBe('DD Débito RENDA-NOV')
+        ->and($reminder->paymentIn('2026-12'))->toBeNull();
+});
+
+it('does not push a reminder already paid', function () {
+    Http::fake(['push.example.com/*' => Http::response('', 201)]);
+    subscribe();
+    PaymentReminder::create(['name' => 'Renda', 'day' => 8, 'reference' => 'RENDA']);
+    movement('Renda novembro', '2026-11-06');
+
+    expect(PaymentReminderNotifier::run(Carbon::parse('2026-11-08 09:05')))->toBe(0);
+    Http::assertNothingSent();
+});
+
+it('is marked and unmarked as paid by hand for the current month', function () {
+    $reminder = PaymentReminder::create(['name' => 'Seguro', 'day' => 3]);
+    $this->patch(route('payment-reminders.paid', $reminder))->assertRedirect();
+    expect($reminder->fresh()->paymentIn(now()->format('Y-m'))['manual'])->toBeTrue();
+
+    $this->patch(route('payment-reminders.paid', $reminder));
+    expect($reminder->fresh()->paymentIn(now()->format('Y-m')))->toBeNull();
+});
+
+it('updates the reminder', function () {
+    $reminder = PaymentReminder::create(['name' => 'Renda', 'day' => 8]);
+    $this->put(route('payment-reminders.update', $reminder), ['name' => 'Renda casa', 'day' => 9, 'reference' => 'RENDA'])->assertRedirect();
+    expect($reminder->fresh()->only('name', 'day', 'reference'))->toBe(['name' => 'Renda casa', 'day' => 9, 'reference' => 'RENDA']);
+});
+
+it('alerts a payment of this month past its day and not paid', function () {
+    Carbon::setTestNow('2026-11-10 12:00');
+    $renda = PaymentReminder::create(['name' => 'Renda', 'day' => 8, 'reference' => 'RENDA']);
+    $renda->forceFill(['created_at' => '2026-11-01'])->save();
+    $later = PaymentReminder::create(['name' => 'Ginásio', 'day' => 20]);
+
+    $keys = fn () => collect(App\Services\Alerts\AlertService::for('2026-11'))->pluck('key');
+    expect($keys())->toContain("unpaid-{$renda->id}")->not->toContain("unpaid-{$later->id}");
+
+    movement('Renda novembro', '2026-11-09');
+    expect($keys())->not->toContain("unpaid-{$renda->id}");
+    expect(collect(App\Services\Alerts\AlertService::for('2026-10'))->pluck('key'))->not->toContain("unpaid-{$renda->id}");
+    Carbon::setTestNow();
+});
