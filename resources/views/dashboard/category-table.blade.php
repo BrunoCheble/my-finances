@@ -7,6 +7,12 @@
     $selectedKey = $categoryTable['selected'];
     $groupLabels = ['expense' => __('Total expenses'), 'income' => __('Total income')];
     $hidden = collect($categoryTable['groups'])->flatten(1)->where('empty', true)->count();
+    // how many movements each category had in the selected month
+    $selectedStart = \Carbon\Carbon::createFromFormat('Y-m-d', $selectedKey . '-01');
+    $counts = \App\Models\FinancialMovement::whereBetween('date', [$selectedStart->toDateString(), $selectedStart->copy()->endOfMonth()->toDateString()])
+        ->whereNotNull('category_id')
+        ->selectRaw('category_id, count(*) as total')->groupBy('category_id')
+        ->pluck('total', 'category_id');
 @endphp
 
 <section class="card" aria-labelledby="categories-title" x-data="categoryMonths()">
@@ -42,13 +48,14 @@
                         <th scope="col" @class(['th whitespace-nowrap text-right', 'bg-brand-50 text-brand-700' => $m['key'] === $selectedKey])>{{ $m['label'] }}</th>
                     @endforeach
                     <th scope="col" class="th whitespace-nowrap border-l border-slate-200 text-right">{{ __('Average') }}</th>
+                    <th scope="col" class="th whitespace-nowrap text-right"><abbr title="{{ __('Movements in :month', ['month' => $selectedStart->translatedFormat('F Y')]) }}" class="no-underline">{{ __('Qty.') }}</abbr></th>
                     <th scope="col" class="th whitespace-nowrap text-right">{{ __('Forecast') }}</th>
                 </tr>
             </thead>
             @foreach ($categoryTable['groups'] as $type => $rows)
                 <tbody class="divide-y divide-slate-100 border-t border-slate-200">
                     <tr class="bg-white">
-                        <th scope="colgroup" colspan="{{ count($months) + 3 }}" class="sticky left-0 bg-white px-3 pb-1 pt-4 text-left text-xs font-semibold uppercase tracking-wide {{ $type === 'expense' ? 'text-rose-600' : 'text-emerald-600' }}">
+                        <th scope="colgroup" colspan="{{ count($months) + 4 }}" class="sticky left-0 bg-white px-3 pb-1 pt-4 text-left text-xs font-semibold uppercase tracking-wide {{ $type === 'expense' ? 'text-rose-600' : 'text-emerald-600' }}">
                             {{ $type === 'expense' ? __('Total expenses') : __('Total income') }}
                         </th>
                     </tr>
@@ -78,6 +85,7 @@
                             <td class="td whitespace-nowrap border-l border-slate-200 text-right tabular-nums text-slate-500">
                                 {{ $row->average !== null && $row->average != 0 ? format_currency($row->average) : '—' }}
                             </td>
+                            <td class="td whitespace-nowrap text-right tabular-nums text-slate-500">{{ $counts[$row->id] ?? '—' }}</td>
                             <td class="td whitespace-nowrap text-right">
                                 <div class="flex items-center justify-end gap-1">
                                     @if ($row->average)
@@ -102,7 +110,7 @@
                                 @if ($m['key'] < $categoryTable['firstMonth'])<span class="font-normal text-slate-300">—</span>@else{{ format_currency($categoryTable['totals'][$type][$m['key']]) }}@endif
                             </td>
                         @endforeach
-                        <td class="td border-l border-slate-200" colspan="2"></td>
+                        <td class="td border-l border-slate-200" colspan="3"></td>
                     </tr>
                 </tbody>
             @endforeach
@@ -114,7 +122,7 @@
                             @if ($m['key'] < $categoryTable['firstMonth'])<span class="font-normal text-slate-300">—</span>@else<x-money :value="$categoryTable['result'][$m['key']]" />@endif
                         </td>
                     @endforeach
-                    <td class="td border-l border-slate-200" colspan="2"></td>
+                    <td class="td border-l border-slate-200" colspan="3"></td>
                 </tr>
             </tfoot>
         </table>
@@ -150,6 +158,7 @@
                     </div>
                     <div class="mt-2 flex items-center justify-between gap-2 text-xs text-slate-500">
                         <span>{{ __('Average') }} {{ $row->average ? format_currency($row->average) : '—' }}</span>
+                        <span>{{ __('Qty.') }} {{ $counts[$row->id] ?? 0 }}</span>
                         <label class="flex items-center gap-1.5">
                             {{ __('Forecast') }}
                             <input type="number" step="0.01" min="0" inputmode="decimal" placeholder="—"
