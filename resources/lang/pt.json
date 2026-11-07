@@ -810,5 +810,6 @@
     "Not paid 2 days after its day, it notifies again.": "Se não estiver pago 2 dias depois, avisa outra vez.",
     "Create reminder": "Criar lembrete",
     "Qty.": "Qtd.",
-    "Movements in :month": "Movimentos em :month"
+    "Movements in :month": "Movimentos em :month",
+    ":count mov.": ":count mov."
 }
