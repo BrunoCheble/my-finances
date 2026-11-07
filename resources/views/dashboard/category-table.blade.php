@@ -8,6 +8,8 @@
     $groupLabels = ['expense' => __('Total expenses'), 'income' => __('Total income')];
     $hidden = collect($categoryTable['groups'])->flatten(1)->where('empty', true)->count();
     $forecastTotals = collect($categoryTable['groups'])->map(fn ($rows) => collect($rows)->sum(fn ($row) => (float) $row->forecast));
+    // forecast income minus forecast expenses
+    $forecastBalance = ($forecastTotals['income'] ?? 0) - ($forecastTotals['expense'] ?? 0);
     // how many movements each category had in the selected month
     $selectedStart = \Carbon\Carbon::createFromFormat('Y-m-d', $selectedKey . '-01');
     $counts = \App\Models\FinancialMovement::whereBetween('date', [$selectedStart->toDateString(), $selectedStart->copy()->endOfMonth()->toDateString()])
@@ -125,7 +127,8 @@
                             @if ($m['key'] < $categoryTable['firstMonth'])<span class="font-normal text-slate-300">—</span>@else<x-money :value="$categoryTable['result'][$m['key']]" />@endif
                         </td>
                     @endforeach
-                    <td class="td border-l border-slate-200" colspan="3"></td>
+                    <td class="td border-l border-slate-200" colspan="2"></td>
+                    <td class="td whitespace-nowrap pr-6 text-right">@if ($forecastBalance != 0)<x-money :value="$forecastBalance" />@endif</td>
                 </tr>
             </tfoot>
         </table>
@@ -173,6 +176,12 @@
                 </div>
             @endforeach
         @endforeach
+        @if ($forecastBalance != 0)
+            <div class="flex items-center justify-between bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900">
+                <span>{{ __('Forecast balance') }}</span>
+                <x-money :value="$forecastBalance" />
+            </div>
+        @endif
     </div>
 
     <div class="flex flex-col-reverse gap-3 border-t border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
