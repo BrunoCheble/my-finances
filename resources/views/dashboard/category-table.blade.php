@@ -144,7 +144,7 @@
                 <div class="px-4 py-3" @if ($row->empty) x-show="showEmpty" x-cloak @endif>
                     <div class="flex items-baseline justify-between gap-3">
                         <button type="button" class="min-w-0 truncate text-left text-sm font-medium text-slate-800"
-                            @click="openMonth('{{ \Carbon\Carbon::createFromFormat('Y-m', $selectedKey)->format('m/Y') }}', '{{ $row->id }}', @js($row->name))">{{ $row->name }}</button>
+                            @click="openMonth('{{ \Carbon\Carbon::createFromFormat('Y-m', $selectedKey)->format('m/Y') }}', '{{ $row->id }}', @js($row->name))">{{ $row->name }}@if ($counts[$row->id] ?? 0)<span class="font-normal text-slate-400"> · {{ __(':count mov.', ['count' => $counts[$row->id]]) }}</span>@endif</button>
                         <span class="amount text-sm font-semibold {{ $over ? 'text-rose-600' : 'text-slate-900' }}">
                             @if ($over)<i class="fa-solid fa-triangle-exclamation text-[10px]" aria-hidden="true"></i>@endif
                             {{ format_currency($current) }}
@@ -158,7 +158,6 @@
                     </div>
                     <div class="mt-2 flex items-center justify-between gap-2 text-xs text-slate-500">
                         <span>{{ __('Average') }} {{ $row->average ? format_currency($row->average) : '—' }}</span>
-                        <span>@if ($counts[$row->id] ?? 0){{ __('Qty.') }} {{ $counts[$row->id] }}@endif</span>
                         <label class="flex items-center gap-1.5">
                             {{ __('Forecast') }}
                             <input type="number" step="0.01" min="0" inputmode="decimal" placeholder="—"
