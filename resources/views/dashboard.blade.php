@@ -173,13 +173,16 @@
                             <li>
                                 <div class="flex items-baseline justify-between gap-3 text-sm">
                                     <span class="truncate font-medium text-slate-800">{{ $row->name }}</span>
-                                    <span class="amount shrink-0 font-semibold text-slate-900">{{ format_currency($spent) }}</span>
+                                    <span class="shrink-0 text-right">
+                                        <span class="amount font-semibold text-slate-900">{{ format_currency($spent) }}</span>
+                                        <span class="block text-xs font-normal text-slate-500">{{ trans_choice(':count movement|:count movements', $spendingCounts[$row->id] ?? 0, ['count' => $spendingCounts[$row->id] ?? 0]) }}</span>
+                                    </span>
                                 </div>
                                 <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
                                     <div class="h-full rounded-full bg-brand-500" style="width: {{ max(2, round($spent / $spendingMax * 100)) }}%"></div>
                                 </div>
                                 <div class="mt-1 flex justify-between gap-3 text-xs text-slate-500">
-                                    <span>{{ round($spent / max($spendingTotal, 0.01) * 100) }}% {{ __('of spending') }} · {{ trans_choice(':count movement|:count movements', $spendingCounts[$row->id] ?? 0, ['count' => $spendingCounts[$row->id] ?? 0]) }}</span>
+                                    <span>{{ round($spent / max($spendingTotal, 0.01) * 100) }}% {{ __('of spending') }}</span>
                                     @if ($forecast)
                                         <span @class(['font-medium text-rose-700' => $over])>
                                             @if ($over)<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> {{ __('above forecast') }} · @endif
