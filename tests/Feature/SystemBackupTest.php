@@ -12,6 +12,8 @@ beforeEach(function () {
     config(['backup.public_key' => $path]);
 });
 
+afterEach(fn () => @unlink(storage_path('framework/testing-backup-public.pem')));
+
 function openBackup(string $file, $privateKey): array
 {
     $keyFile = storage_path('framework/testing-backup-private.pem');
