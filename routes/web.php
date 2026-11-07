@@ -63,6 +63,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/loans', [LoanController::class, 'index'])->name('loans.index');
     Route::get('/payment-reminders', [PaymentReminderController::class, 'index'])->name('payment-reminders.index');
     Route::post('/payment-reminders', [PaymentReminderController::class, 'store'])->name('payment-reminders.store');
+    Route::put('/payment-reminders/{paymentReminder}', [PaymentReminderController::class, 'update'])->name('payment-reminders.update');
+    Route::patch('/payment-reminders/{paymentReminder}/paid', [PaymentReminderController::class, 'paid'])->name('payment-reminders.paid');
     Route::delete('/payment-reminders/{paymentReminder}', [PaymentReminderController::class, 'destroy'])->name('payment-reminders.destroy');
     Route::post('/push-subscriptions', [PaymentReminderController::class, 'subscribe'])->name('push-subscriptions.store');
     Route::post('/push-subscriptions/test', [PaymentReminderController::class, 'test'])->name('push-subscriptions.test');

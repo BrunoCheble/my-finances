@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PaymentReminder;
 use App\Models\PushSubscription;
+use App\Services\Cache\DashboardCacheService;
 use App\Services\Push\PaymentReminderNotifier;
 use App\Services\Push\WebPush;
 use Illuminate\Contracts\View\View;
@@ -17,24 +18,51 @@ class PaymentReminderController extends Controller
     {
         return view('payment-reminders.index', [
             'reminders' => PaymentReminder::orderBy('day')->orderBy('name')->get(),
+            'month' => now()->format('Y-m'),
             'vapidKey' => WebPush::publicKey(),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        PaymentReminder::create($request->validate([
+        PaymentReminder::create($this->validated($request));
+        DashboardCacheService::clearAllByUser();
+
+        return redirect()->route('payment-reminders.index')->with('success', __('Reminder created.'));
+    }
+
+    public function update(Request $request, PaymentReminder $paymentReminder): RedirectResponse
+    {
+        $paymentReminder->update($this->validated($request));
+        DashboardCacheService::clearAllByUser();
+
+        return redirect()->route('payment-reminders.index')->with('success', __('Reminder updated.'));
+    }
+
+    /** Marks (or unmarks) the current month as paid by hand: the bank's text didn't have the reference. */
+    public function paid(PaymentReminder $paymentReminder): RedirectResponse
+    {
+        $month = now()->format('Y-m');
+        $paymentReminder->update(['paid_month' => $paymentReminder->paid_month === $month ? null : $month]);
+        DashboardCacheService::clearAllByUser();
+
+        return redirect()->route('payment-reminders.index');
+    }
+
+    private function validated(Request $request): array
+    {
+        return $request->validate([
             'name' => 'required|string|max:255',
             'day' => 'required|integer|min:1|max:31',
             'amount' => 'nullable|numeric|min:0',
-        ]));
-
-        return redirect()->route('payment-reminders.index')->with('success', __('Reminder created.'));
+            'reference' => 'nullable|string|max:255',
+        ]);
     }
 
     public function destroy(PaymentReminder $paymentReminder): RedirectResponse
     {
         $paymentReminder->delete();
+        DashboardCacheService::clearAllByUser();
 
         return redirect()->route('payment-reminders.index')->with('success', __('Reminder removed.'));
     }
