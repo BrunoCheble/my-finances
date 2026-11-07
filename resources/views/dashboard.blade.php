@@ -37,12 +37,6 @@
     $spendingTop = $spending->take(7);
     $spendingOthers = abs($spending->slice(7)->sum('amount'));
     $spendingMax = abs($spendingTop->first()->amount ?? 1) ?: 1;
-    // how many movements each category had in the month
-    $spendingCounts = \App\Models\FinancialMovement::whereBetween('date', [$selected->toDateString(), $selected->copy()->endOfMonth()->toDateString()])
-        ->whereIn('type', \App\Services\Alerts\AlertContext::SPENDING_TYPES)
-        ->whereNotNull('category_id')
-        ->selectRaw('category_id, count(*) as total')->groupBy('category_id')
-        ->pluck('total', 'category_id');
 
 @endphp
 
@@ -179,7 +173,7 @@
                                     <div class="h-full rounded-full bg-brand-500" style="width: {{ max(2, round($spent / $spendingMax * 100)) }}%"></div>
                                 </div>
                                 <div class="mt-1 flex justify-between gap-3 text-xs text-slate-500">
-                                    <span>{{ round($spent / max($spendingTotal, 0.01) * 100) }}% {{ __('of spending') }}<span class="block">{{ trans_choice(':count movement|:count movements', $spendingCounts[$row->id] ?? 0, ['count' => $spendingCounts[$row->id] ?? 0]) }}</span></span>
+                                    <span>{{ round($spent / max($spendingTotal, 0.01) * 100) }}% {{ __('of spending') }}</span>
                                     @if ($forecast)
                                         <span @class(['font-medium text-rose-700' => $over])>
                                             @if ($over)<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><span class="sr-only">{{ __('above forecast') }}</span> @endif
