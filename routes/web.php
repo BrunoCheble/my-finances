@@ -17,6 +17,7 @@ use App\Http\Controllers\LoanController;
 use App\Http\Controllers\LockController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\PasskeyController;
+use App\Http\Controllers\PaymentReminderController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -24,6 +25,9 @@ Route::redirect('/', '/dashboard');
 // Share menu (Android): the service worker takes the file before it gets here; without it
 // (not installed yet), just open the import screen
 Route::post('/statement-imports/share', fn () => redirect()->route('statement-imports.index'))->name('statement-imports.share');
+
+// Payment reminders: the scheduled trigger sends today's pushes (once per reminder and day)
+Route::post('/payment-reminders/run', [PaymentReminderController::class, 'run'])->middleware('throttle:10,1')->name('payment-reminders.run');
 
 Route::get('/dashboard',[DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -57,6 +61,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('financial-movements', FinancialMovementController::class);
 
     Route::get('/loans', [LoanController::class, 'index'])->name('loans.index');
+    Route::get('/payment-reminders', [PaymentReminderController::class, 'index'])->name('payment-reminders.index');
+    Route::post('/payment-reminders', [PaymentReminderController::class, 'store'])->name('payment-reminders.store');
+    Route::delete('/payment-reminders/{paymentReminder}', [PaymentReminderController::class, 'destroy'])->name('payment-reminders.destroy');
+    Route::post('/push-subscriptions', [PaymentReminderController::class, 'subscribe'])->name('push-subscriptions.store');
+    Route::post('/push-subscriptions/test', [PaymentReminderController::class, 'test'])->name('push-subscriptions.test');
     Route::post('/loans', [LoanController::class, 'store'])->name('loans.store');
     Route::post('/loans/{loan}/receive', [LoanController::class, 'receive'])->name('loans.receive');
     Route::patch('/loans/{loan}/write-off', [LoanController::class, 'writeOff'])->name('loans.write-off');
