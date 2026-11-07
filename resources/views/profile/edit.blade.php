@@ -15,6 +15,10 @@
         @endif
 
         <div class="card p-5 sm:p-8">
+            @include('profile.partials.auto-backup')
+        </div>
+
+        <div class="card p-5 sm:p-8">
             <div class="max-w-xl">
                 @include('profile.partials.update-profile-information-form')
             </div>
