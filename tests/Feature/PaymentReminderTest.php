@@ -169,3 +169,44 @@ it('alerts a payment of this month past its day and not paid', function () {
     expect(collect(App\Services\Alerts\AlertService::for('2026-10'))->pluck('key'))->not->toContain("unpaid-{$renda->id}");
     Carbon::setTestNow();
 });
+
+it('notifies the day before when asked, and again 2 days after if still unpaid', function () {
+    Http::fake(['push.example.com/*' => Http::response('', 201)]);
+    subscribe();
+    $renda = PaymentReminder::create(['name' => 'Renda', 'day' => 8, 'reference' => 'RENDA', 'notify_before' => true]);
+    $renda->forceFill(['created_at' => '2026-10-01'])->save();
+    $titles = function () {
+        $titles = [];
+        Http::assertSent(function ($request) use (&$titles) { $titles[] = $request->url(); return true; });
+        return count($titles);
+    };
+
+    expect(PaymentReminderNotifier::run(Carbon::parse('2026-11-07 09:05')))->toBe(1); // tomorrow
+    expect(PaymentReminderNotifier::run(Carbon::parse('2026-11-08 09:05')))->toBe(1); // today
+    expect(PaymentReminderNotifier::run(Carbon::parse('2026-11-09 09:05')))->toBe(0);
+    expect(PaymentReminderNotifier::run(Carbon::parse('2026-11-10 09:05')))->toBe(1); // still unpaid
+
+    // paid: no late push next month
+    movement('Renda dezembro', '2026-12-08');
+    expect(PaymentReminderNotifier::run(Carbon::parse('2026-12-10 09:05')))->toBe(0);
+    expect($titles())->toBe(3);
+});
+
+it('does not notify the day before unless asked', function () {
+    Http::fake(['push.example.com/*' => Http::response('', 201)]);
+    subscribe();
+    PaymentReminder::create(['name' => 'Renda', 'day' => 8]);
+
+    expect(PaymentReminderNotifier::run(Carbon::parse('2026-11-07 09:05')))->toBe(0);
+});
+
+it('fills the new reminder from an expense', function () {
+    movement('DD SEGURADORA XPTO 12345678', '2026-11-03', -32.5);
+    $movement = App\Models\FinancialMovement::first();
+
+    $url = PaymentReminder::urlFromMovement($movement);
+    expect($url)->toContain('day=3')->toContain('amount=32.50')->toContain('reference=DD%20SEGURADORA%20XPTO');
+
+    $this->get(route('financial-movements.index'))->assertSee('Criar lembrete', false);
+    $this->get($url)->assertOk()->assertSee('value="DD SEGURADORA XPTO"', false);
+});

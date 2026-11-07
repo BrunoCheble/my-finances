@@ -801,5 +801,12 @@
     "Reminder updated.": "Lembrete atualizado.",
     ":name not paid yet": ":name ainda não pago",
     "Due on :date, no movement with its reference yet.": "Vencia a :date e ainda não há movimento com a referência.",
-    "See reminders": "Ver lembretes"
+    "See reminders": "Ver lembretes",
+    "Payment tomorrow: :name": "Pagamento amanhã: :name",
+    "Due tomorrow": "Vence amanhã",
+    "It was due on :date.": "Vencia a :date.",
+    "Also notify the day before": "Avisar também na véspera",
+    "also the day before": "também na véspera",
+    "Not paid 2 days after its day, it notifies again.": "Se não estiver pago 2 dias depois, avisa outra vez.",
+    "Create reminder": "Criar lembrete"
 }
