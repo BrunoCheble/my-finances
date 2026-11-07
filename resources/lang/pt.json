@@ -811,5 +811,6 @@
     "Create reminder": "Criar lembrete",
     "Qty.": "Qtd.",
     "Movements in :month": "Movimentos em :month",
-    ":count mov.": ":count mov."
+    ":count mov.": ":count mov.",
+    "Forecast balance": "Saldo previsto"
 }
