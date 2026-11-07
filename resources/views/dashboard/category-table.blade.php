@@ -19,15 +19,15 @@
             <nav class="inline-flex rounded-lg bg-slate-100 p-1 text-sm font-medium" aria-label="{{ __('Period') }}">
                 @foreach (\App\Services\CategoryMonthlyService::RANGES as $option)
                     <a href="{{ route('dashboard', ['month' => $selectedKey, 'range' => $option]) }}#categories-title"
-                        @class(['rounded-md px-3 py-1.5', 'bg-white text-slate-900 shadow-sm' => $range === $option, 'text-slate-600 hover:text-slate-900' => $range !== $option])
+                        @class(['rounded-md px-2.5 py-1.5 sm:px-3', 'bg-white text-slate-900 shadow-sm' => $range === $option, 'text-slate-600 hover:text-slate-900' => $range !== $option])
                         @if ($range === $option) aria-current="page" @endif>{{ __(':count months', ['count' => $option]) }}</a>
                 @endforeach
             </nav>
             <div class="inline-flex rounded-lg bg-slate-100 p-1 text-sm font-medium" role="tablist">
                 <button type="button" role="tab" :aria-selected="view === 'amount'" @click="view = 'amount'"
-                    :class="view === 'amount' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'" class="rounded-md px-3 py-1.5">€</button>
+                    :class="view === 'amount' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'" class="rounded-md px-2.5 py-1.5 sm:px-3">€</button>
                 <button type="button" role="tab" :aria-selected="view === 'share'" @click="view = 'share'"
-                    :class="view === 'share' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'" class="rounded-md px-3 py-1.5">{{ __('% of total') }}</button>
+                    :class="view === 'share' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'" class="rounded-md px-2.5 py-1.5 sm:px-3" aria-label="{{ __('% of total') }}"><span class="sm:hidden">%</span><span class="hidden sm:inline">{{ __('% of total') }}</span></button>
             </div>
         </div>
     </div>
