@@ -29,6 +29,9 @@ Route::post('/statement-imports/share', fn () => redirect()->route('statement-im
 // Payment reminders: the scheduled trigger sends today's pushes (once per reminder and day)
 Route::post('/payment-reminders/run', [PaymentReminderController::class, 'run'])->middleware('throttle:10,1')->name('payment-reminders.run');
 
+// Scheduled system backup (GitHub Actions): the whole database, encrypted with the backup public key
+Route::post('/system-backup', \App\Http\Controllers\SystemBackupController::class)->middleware('throttle:5,1')->name('system-backup');
+
 Route::get('/dashboard',[DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 
