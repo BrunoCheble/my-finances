@@ -24,10 +24,18 @@ jobs:
       UP: ${{ vars.APP_URL }}/up
 
     steps:
+      # The repository is private: the server pulls with a read-only token (secret CPANEL_GIT_TOKEN, a
+      # fine-grained token with Contents: read on this repository), set as the remote URL on every update so
+      # a renewed token takes effect on the next deploy.
       - name: Update from Remote
+        env:
+          GIT_TOKEN: ${{ secrets.CPANEL_GIT_TOKEN }}
         run: |
+          [ -n "$GIT_TOKEN" ] || { echo "::error::Set the CPANEL_GIT_TOKEN secret (read-only token for this repository)"; exit 1; }
+          remote=$(jq -cn --arg url "https://x-access-token:$GIT_TOKEN@github.com/${{ github.repository }}.git" '{remote_name: "origin", url: $url}')
           response=$(curl -sS --fail -H "$AUTH" -G "$API/VersionControl/update" \
-            --data-urlencode "repository_root=$REPO" --data-urlencode "branch=main")
+            --data-urlencode "repository_root=$REPO" --data-urlencode "branch=main" \
+            --data-urlencode "source_repository=$remote")
           echo "$response" | jq '{status, errors, head: .data.last_update}'
           [ "$(echo "$response" | jq -r '.status')" = "1" ]
 
