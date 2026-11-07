@@ -32,7 +32,6 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'google_id',
-        'backup_token_hash',
     ];
 
     /**
