@@ -1,0 +1,23 @@
+ID:  ,doc20260901000000-TESTE
+Data de emissão: 10:00 01-09-2026
+Consultar saldos e movimentos à ordem
+Cliente CLIENTE DE TESTE
+Nº de identificação Fiscal 000000000
+Dados da conta
+Conta 0000000000000 - EUR - Conta à ordem
+Saldo contabilístico2.237,45 EUR
+Saldo disponível 2.200,00 EUR
+Dados da consulta
+Período Outro
+Intervalo de a 01-08-202631-08-2026
+Tipos de movimento Todos
+Data mov. Data-valor Descrição	Montante
+Saldo contabilístico após 
+movimento
+20-08-2026 20-08-2026 UBER   TRIP 9876543210	-12,30	2.237,45
+10-08-2026 10-08-2026 TRF PARA POUPANCA	-200,00	2.249,75
+05-08-2026 06-08-2026 SALARIO EMPRESA X	1.500,00	2.449,75
+02-08-2026 02-08-2026 PINGO DOCE LISBOA 1234567890	-50,25	949,75
+Caso necessite de obter alguma informação adicional, contacte:
+Serviço Caixadirecta Particulares pelo telefone 00 000 00 00
+Caixa Geral de Depósitos, S.A. - Sede Social: Lisboa

@@ -3,6 +3,7 @@
 namespace App\Statements;
 
 use App\Statements\Parsers\ActivoBankStatementParser;
+use App\Statements\Parsers\CgdMovementsQueryParser;
 use App\Statements\Parsers\CgdStatementParser;
 
 class StatementParserRegistry
@@ -12,6 +13,7 @@ class StatementParserRegistry
      */
     private const PARSERS = [
         CgdStatementParser::class,
+        CgdMovementsQueryParser::class,
         ActivoBankStatementParser::class,
     ];
 
