@@ -85,7 +85,7 @@
                             <td class="td whitespace-nowrap border-l border-slate-200 text-right tabular-nums text-slate-500">
                                 {{ $row->average !== null && $row->average != 0 ? format_currency($row->average) : '—' }}
                             </td>
-                            <td class="td whitespace-nowrap text-right tabular-nums text-slate-500">{{ $counts[$row->id] ?? '—' }}</td>
+                            <td class="td whitespace-nowrap text-right tabular-nums text-slate-500">{{ $counts[$row->id] ?? '' }}</td>
                             <td class="td whitespace-nowrap text-right">
                                 <div class="flex items-center justify-end gap-1">
                                     @if ($row->average)
@@ -158,7 +158,7 @@
                     </div>
                     <div class="mt-2 flex items-center justify-between gap-2 text-xs text-slate-500">
                         <span>{{ __('Average') }} {{ $row->average ? format_currency($row->average) : '—' }}</span>
-                        <span>{{ __('Qty.') }} {{ $counts[$row->id] ?? 0 }}</span>
+                        <span>@if ($counts[$row->id] ?? 0){{ __('Qty.') }} {{ $counts[$row->id] }}@endif</span>
                         <label class="flex items-center gap-1.5">
                             {{ __('Forecast') }}
                             <input type="number" step="0.01" min="0" inputmode="decimal" placeholder="—"
