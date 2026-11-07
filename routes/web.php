@@ -29,8 +29,8 @@ Route::post('/statement-imports/share', fn () => redirect()->route('statement-im
 // Payment reminders: the scheduled trigger sends today's pushes (once per reminder and day)
 Route::post('/payment-reminders/run', [PaymentReminderController::class, 'run'])->middleware('throttle:10,1')->name('payment-reminders.run');
 
-// Scheduled backup (GitHub Actions): the user's data for their backup token
-Route::post('/backup/auto', [\App\Http\Controllers\BackupController::class, 'auto'])->middleware('throttle:10,1')->name('backup.auto');
+// Scheduled system backup (GitHub Actions): the whole database, encrypted with the backup public key
+Route::post('/system-backup', \App\Http\Controllers\SystemBackupController::class)->middleware('throttle:5,1')->name('system-backup');
 
 Route::get('/dashboard',[DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -83,8 +83,6 @@ Route::middleware('auth')->group(function () {
     Route::resource('statement-imports', StatementImportController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
 
     Route::post('/api/backup/save', [\App\Http\Controllers\BackupController::class, 'save'])->name('backup.save');
-    Route::post('/backup/token', [\App\Http\Controllers\BackupController::class, 'token'])->name('backup.token');
-    Route::delete('/backup/token', [\App\Http\Controllers\BackupController::class, 'revoke'])->name('backup.revoke');
 
     // Fingerprint / Face ID: this device registered on the profile, and the app's lock.
     Route::post('/passkeys/options', [PasskeyController::class, 'options'])->middleware('throttle:10,1,passkeys-options')->name('passkeys.options');
