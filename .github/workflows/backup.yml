@@ -1,0 +1,71 @@
+name: Backup (encrypted)
+
+# Every night: asks the app for the data of the BACKUP_TOKEN's user and, only when it changed since the last
+# backup, encrypts it with BACKUP_PASSPHRASE (gpg, AES-256) and keeps it as an artifact of the run for 90 days.
+# "Changed" = the fingerprint of the data (without its creation time) isn't in the Actions cache yet; GitHub
+# drops cache entries unused for 7 days, so an unchanged account still gets a fresh copy about once a week
+# and never runs out of backups. The plain JSON never leaves the runner.
+# To restore: gh run download <run-id> -n escudo-backup, then gpg -d escudo-backup-*.json.gpg > backup.json
+on:
+  schedule:
+    - cron: '30 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download
+        env:
+          TOKEN: ${{ secrets.BACKUP_TOKEN }}
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          [ -n "$TOKEN" ] && [ -n "$PASSPHRASE" ] || { echo "::error::Set the BACKUP_TOKEN and BACKUP_PASSPHRASE secrets"; exit 1; }
+          umask 077
+          curl -sS --fail -X POST -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" \
+            "${{ vars.APP_URL }}/backup/auto" -o backup.json
+          # a real backup, not an error page
+          jq -e '.format and .tables' backup.json > /dev/null
+          jq -c '.counts' backup.json
+          echo "FINGERPRINT=$(jq -S -c 'del(.created_at)' backup.json | sha256sum | cut -c1-32)" >> "$GITHUB_ENV"
+          echo "NAME=escudo-backup-$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
+
+      - name: Same data as the last backup?
+        id: seen
+        uses: actions/cache/restore@v4
+        with:
+          path: .backup-seen
+          key: escudo-backup-${{ env.FINGERPRINT }}
+          lookup-only: true
+
+      - name: Nothing changed
+        if: steps.seen.outputs.cache-hit == 'true'
+        run: |
+          rm backup.json
+          echo "No changes since the last backup: nothing saved."
+
+      - name: Encrypt
+        if: steps.seen.outputs.cache-hit != 'true'
+        env:
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$PASSPHRASE" \
+            --symmetric --cipher-algo AES256 -o "$NAME.json.gpg" backup.json
+          rm backup.json
+          echo "$FINGERPRINT" > .backup-seen
+
+      - name: Keep the backup
+        if: steps.seen.outputs.cache-hit != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: escudo-backup
+          path: ${{ env.NAME }}.json.gpg
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Remember the data of this backup
+        if: steps.seen.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .backup-seen
+          key: escudo-backup-${{ env.FINGERPRINT }}

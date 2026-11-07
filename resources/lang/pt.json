@@ -812,5 +812,17 @@
     "Qty.": "Qtd.",
     "Movements in :month": "Movimentos em :month",
     ":count mov.": ":count mov.",
-    "Forecast balance": "Saldo previsto"
+    "Forecast balance": "Saldo previsto",
+    "Automatic backup": "Backup automático",
+    "On": "Ativo",
+    "Every day a scheduled job checks your data and, when something changed, keeps an encrypted copy outside this server for 90 days.": "Todos os dias uma tarefa agendada verifica os seus dados e, quando algo mudou, guarda uma cópia cifrada fora deste servidor durante 90 dias.",
+    "Copy the token now: it is shown only once.": "Copie o token agora: só é mostrado uma vez.",
+    "Backup token": "Token de backup",
+    "Copy": "Copiar",
+    "Save it in the repository secret BACKUP_TOKEN:": "Guarde-o no secret BACKUP_TOKEN do repositório:",
+    "The current token stops working. Continue?": "O token atual deixa de funcionar. Continuar?",
+    "New token": "Novo token",
+    "Create token": "Criar token",
+    "Turn off the automatic backup?": "Desligar o backup automático?",
+    "Turn off": "Desligar"
 }
