@@ -182,7 +182,7 @@
                                     <span>{{ round($spent / max($spendingTotal, 0.01) * 100) }}% {{ __('of spending') }}<span class="block">{{ trans_choice(':count movement|:count movements', $spendingCounts[$row->id] ?? 0, ['count' => $spendingCounts[$row->id] ?? 0]) }}</span></span>
                                     @if ($forecast)
                                         <span @class(['font-medium text-rose-700' => $over])>
-                                            @if ($over)<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> {{ __('above forecast') }} · @endif
+                                            @if ($over)<i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><span class="sr-only">{{ __('above forecast') }}</span> @endif
                                             {{ __('forecast') }} {{ format_currency($forecast) }}
                                         </span>
                                     @endif
