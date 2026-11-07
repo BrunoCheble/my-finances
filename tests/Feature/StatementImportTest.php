@@ -506,3 +506,35 @@ it('lets the amounts of a pasted JSON be corrected on the review', function () {
     expect((float) $line->fresh()->amount)->toBe(-9.9);
     $this->get(route('statement-imports.show', $import))->assertSee('"amount_text":"9,90"', false);
 });
+
+it('reads the CGD "Consultar saldos e movimentos" export', function () {
+    $text = file_get_contents(__DIR__ . '/../Fixtures/cgd-movements-query.txt');
+    $parser = app(App\Statements\StatementParserRegistry::class)->detect($text);
+    $statement = $parser->parse($text);
+
+    expect($parser)->toBeInstanceOf(App\Statements\Parsers\CgdMovementsQueryParser::class)
+        ->and($statement->bank)->toBe('cgd')
+        ->and($statement->periodStart)->toBe('2026-08-01')
+        ->and($statement->periodEnd)->toBe('2026-08-31')
+        ->and($statement->openingBalance)->toBe(1000.0)
+        ->and($statement->closingBalance)->toBe(2237.45)
+        ->and($statement->availableBalance)->toBe(2200.0)
+        ->and($statement->account)->toBe('0000000000000')
+        ->and($statement->reconciles())->toBeTrue()
+        // oldest first
+        ->and(array_map(fn ($line) => [$line->date, $line->amount, $line->description], $statement->lines))->toBe([
+            ['2026-08-02', -50.25, 'PINGO DOCE LISBOA 1234567890'],
+            ['2026-08-05', 1500.0, 'SALARIO EMPRESA X'],
+            ['2026-08-10', -200.0, 'TRF PARA POUPANCA'],
+            ['2026-08-20', -12.3, 'UBER TRIP 9876543210'],
+        ])
+        ->and($statement->lines[1]->valueDate)->toBe('2026-08-06');
+});
+
+it('imports the CGD movements export like the statement', function () {
+    fakeStatementText(file_get_contents(__DIR__ . '/../Fixtures/cgd-movements-query.txt'));
+    uploadStatement($this, $this->bank)->assertRedirect();
+
+    $import = StatementImport::sole();
+    expect($import->bank)->toBe('cgd')->and($import->lines()->count())->toBe(4);
+});
