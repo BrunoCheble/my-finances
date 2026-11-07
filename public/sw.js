@@ -62,3 +62,24 @@ self.addEventListener('fetch', (event) => {
         }));
     }
 });
+
+// payment reminders (Web Push): show the notification, open the app on tap
+self.addEventListener('push', (event) => {
+    const data = event.data ? event.data.json() : {};
+    event.waitUntil(self.registration.showNotification(data.title || 'Escudo', {
+        body: data.body || '',
+        tag: data.tag,
+        icon: new URL('icons/icon-v2-192.png', self.registration.scope).href,
+        badge: new URL('icons/icon-v2-192.png', self.registration.scope).href,
+        data: { url: data.url || self.registration.scope },
+    }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const url = event.notification.data && event.notification.data.url;
+    event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+        const open = windows.find((client) => 'focus' in client);
+        return open ? open.navigate(url).then((client) => (client || open).focus()) : self.clients.openWindow(url);
+    }));
+});
