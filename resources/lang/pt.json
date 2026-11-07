@@ -808,5 +808,7 @@
     "Also notify the day before": "Avisar também na véspera",
     "also the day before": "também na véspera",
     "Not paid 2 days after its day, it notifies again.": "Se não estiver pago 2 dias depois, avisa outra vez.",
-    "Create reminder": "Criar lembrete"
+    "Create reminder": "Criar lembrete",
+    "Qty.": "Qtd.",
+    "Movements in :month": "Movimentos em :month"
 }
