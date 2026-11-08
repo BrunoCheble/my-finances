@@ -9,7 +9,7 @@ use Carbon\Carbon;
 /**
  * Categories x months for the dashboard: last N months up to the selected one,
  * grouped by expense / income, positive amounts, average of the complete months
- * and the forecast (expected_total, stored with the sign of its type).
+ * and the forecast (in the category's direction, see FinancialCategory::forecast).
  */
 class CategoryMonthlyService
 {
@@ -58,7 +58,8 @@ class CategoryMonthlyService
                 'type' => $type,
                 'values' => $values,
                 'average' => $complete ? round(array_sum($complete) / count($complete), 2) : null,
-                'forecast' => (float) $category->expected_total != 0 ? abs((float) $category->expected_total) : null,
+                // usually positive; negative = the opposite of the category (e.g. a loss on an income)
+                'forecast' => $category->forecast(),
                 'empty' => !array_filter($values) && (float) $category->expected_total == 0,
             ];
         }

@@ -152,12 +152,12 @@ class FinancialCategoryController extends Controller
     }
 
     /**
-     * The form takes a positive monthly forecast; expenses are stored negative.
+     * The form takes the forecast in the category's direction (negative = the opposite, e.g. a loss on
+     * an income); expenses are stored negative.
      */
     private static function withSignedForecast(array $data, Request $request): array
     {
-        $forecast = abs((float) ($data['expected_total'] ?? 0));
-        $data['expected_total'] = $data['type'] === 'expense' ? -$forecast : $forecast;
+        $data['expected_total'] = FinancialCategory::storedForecast($data['type'], (float) ($data['expected_total'] ?? 0));
         $data['active'] = $request->boolean('active');
         return $data;
     }

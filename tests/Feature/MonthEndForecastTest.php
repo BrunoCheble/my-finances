@@ -39,3 +39,28 @@ it('forecasts the balance at the end of the current month', function () {
     expect($render('2026-10'))->not->toContain('Previsão no fim de');
     Carbon::setTestNow();
 });
+
+it('takes a negative forecast as the opposite of the category (a loss on an income)', function () {
+    Carbon::setTestNow('2026-11-10 12:00');
+    $this->actingAs(User::factory()->create());
+    $room = FinancialCategory::create(['name' => 'Sala Dayana', 'type' => 'income']);
+    $food = FinancialCategory::create(['name' => 'Supermercado', 'type' => 'expense']);
+
+    $this->putJson(route('financial-categories.expected-values.bulk'), ['expected_values' => [$room->id => -130, $food->id => -300]])->assertOk();
+    expect((float) $room->fresh()->expected_total)->toBe(-130.0)
+        ->and($room->fresh()->forecast())->toBe(-130.0)
+        ->and($food->fresh()->forecast())->toBe(300.0);
+
+    // the category form keeps the sign too
+    $this->patch(route('financial-categories.update', $room), ['name' => 'Sala Dayana', 'type' => 'income', 'expected_total' => '-130', 'active' => 1]);
+    expect((float) $room->fresh()->expected_total)->toBe(-130.0);
+
+    $table = App\Services\CategoryMonthlyService::build('2026-11', 6);
+    $row = collect($table['groups']['income'])->firstWhere('name', 'Sala Dayana');
+    expect($row->forecast)->toBe(-130.0);
+
+    // the loss still to come lowers the month-end forecast: 0 in banks - 130 - 300
+    $html = view('dashboard.category-table', ['categoryTable' => $table, 'kpis' => App\Services\DashboardKpiService::for('2026-11', []), 'range' => 6])->render();
+    expect($html)->toContain('falta receber −130,00')->toContain('falta gastar −300,00')->toContain('-430,00');
+    Carbon::setTestNow();
+});

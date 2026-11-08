@@ -37,4 +37,21 @@ class FinancialCategory extends Model
     {
         return $query->where('active', true);
     }
+
+    /**
+     * Monthly forecast in the category's own direction: positive is the usual (spend for an expense,
+     * receive for an income), negative the opposite (e.g. -130 on an income = a loss). Stored with the
+     * sign of the money (expenses negative). Null without a forecast.
+     */
+    public function forecast(): ?float
+    {
+        $value = (float) $this->expected_total;
+        return $value != 0 ? ($this->type === 'expense' ? -$value : $value) : null;
+    }
+
+    /** The stored expected_total for a forecast typed in the category's direction. */
+    public static function storedForecast(string $type, float $forecast): float
+    {
+        return $type === 'expense' ? -$forecast : $forecast;
+    }
 }
