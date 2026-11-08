@@ -1,6 +1,21 @@
 @php
     // one edit/delete modal per movement; a transfer mirror acts on its original movement
     $targets = $financials->map(fn ($financial) => $financial->originalMovement ?? $financial)->unique('id');
+
+    // sortable headers: a click sorts by the column, a second click turns the order around
+    $sort = request('sort', 'date');
+    $order = strtolower(request('order', 'desc')) === 'asc' ? 'asc' : 'desc';
+    $sortable = function (string $column, string $label, string $class = '') use ($sort, $order) {
+        $active = $sort === $column;
+        $next = $active ? ($order === 'asc' ? 'desc' : 'asc') : ($column === 'date' || $column === 'amount' ? 'desc' : 'asc');
+        $url = request()->fullUrlWithQuery(['sort' => $column, 'order' => $next, 'page' => null]);
+        $icon = $active ? ($order === 'asc' ? 'arrow-up-short-wide' : 'arrow-down-wide-short') : 'sort';
+        $aria = $active ? ($order === 'asc' ? 'ascending' : 'descending') : 'none';
+        $justify = str_contains($class, 'text-right') ? ' justify-end' : '';
+        return '<th scope="col" class="th ' . e($class) . '" aria-sort="' . $aria . '">'
+            . '<a href="' . e($url) . '" class="inline-flex items-center gap-1.5 hover:text-slate-900' . $justify . ($active ? ' text-slate-900' : '') . '">'
+            . e($label) . '<i class="fa-solid fa-' . $icon . ' text-[10px] ' . ($active ? 'text-brand-600' : 'text-slate-300') . '" aria-hidden="true"></i></a></th>';
+    };
 @endphp
 
 <div x-data="deleteSelected()" class="card mb-20 overflow-hidden md:mb-0">
@@ -29,13 +44,13 @@
                         <th scope="col" class="w-10 py-2.5 pl-4 pr-1">
                             <span class="sr-only">{{ __('Select') }}</span>
                         </th>
-                        <th scope="col" class="th">{{ __('Date') }}</th>
-                        <th scope="col" class="th">{{ __('Description') }}</th>
-                        <th scope="col" class="th hidden lg:table-cell">{{ __('Category') }}</th>
+                        {!! $sortable('date', __('Date')) !!}
+                        {!! $sortable('description', __('Description')) !!}
+                        {!! $sortable('category_id', __('Category'), 'hidden lg:table-cell') !!}
                         @if (!$walletSection)
-                            <th scope="col" class="th hidden xl:table-cell">{{ __('Wallet') }}</th>
+                            {!! $sortable('wallet_id', __('Wallet'), 'hidden xl:table-cell') !!}
                         @endif
-                        <th scope="col" class="th text-right">{{ __('Amount') }}</th>
+                        {!! $sortable('amount', __('Amount'), 'text-right') !!}
                         <th scope="col" class="w-24 py-2.5 pr-4"><span class="sr-only">{{ __('Actions') }}</span></th>
                     </tr>
                 </thead>

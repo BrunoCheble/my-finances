@@ -67,3 +67,23 @@ it('renders both screens', function () {
     $this->get(route('wallets.index'))->assertOk()->assertSee('Banco');
     $this->get(route('wallets.create'))->assertRedirect(route('wallets.index', ['modal' => 'wallet-new']));
 });
+
+it('sorts the movements by the column of the header, category and wallet by name', function () {
+    $this->actingAs(App\Models\User::factory()->create());
+    $zeta = App\Models\Wallet::create(['name' => 'Zeta', 'type' => 'debit', 'active' => true]);
+    $alfa = App\Models\Wallet::create(['name' => 'Alfa', 'type' => 'debit', 'active' => true]);
+    foreach ([['Café', 2, $zeta], ['Renda', 750, $alfa], ['Pão', 1, $zeta]] as [$description, $amount, $wallet]) {
+        $this->postJson(route('financial-movements.store'), [
+            'description' => $description, 'date' => '2026-11-05', 'wallet_id' => $wallet->id, 'amount' => $amount, 'type' => 'expense',
+        ])->assertCreated();
+    }
+    $order = fn (array $query) => App\Services\GetFinancialMovementService::execute(null, null, $query['sort'], $query['order'], null, null, null)->pluck('description')->all();
+
+    expect($order(['sort' => 'amount', 'order' => 'asc']))->toBe(['Renda', 'Café', 'Pão'])
+        ->and($order(['sort' => 'description', 'order' => 'asc']))->toBe(['Café', 'Pão', 'Renda'])
+        ->and($order(['sort' => 'wallet_id', 'order' => 'asc'])[0])->toBe('Renda');
+
+    $this->get(route('financial-movements.index', ['sort' => 'amount', 'order' => 'asc']))->assertOk()
+        ->assertSee('aria-sort="ascending"', false)
+        ->assertSee('sort=amount&amp;order=desc', false);
+});
