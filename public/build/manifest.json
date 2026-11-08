@@ -5,9 +5,18 @@
     "isEntry": true
   },
   "resources/js/app.js": {
-    "file": "assets/app-ASlwyEKB.js",
+    "file": "assets/app-DW17XJ99.js",
     "name": "app",
     "src": "resources/js/app.js",
-    "isEntry": true
+    "isEntry": true,
+    "dynamicImports": [
+      "resources/js/charts.js"
+    ]
+  },
+  "resources/js/charts.js": {
+    "file": "assets/charts-DYZei8jm.js",
+    "name": "charts",
+    "src": "resources/js/charts.js",
+    "isDynamicEntry": true
   }
 }

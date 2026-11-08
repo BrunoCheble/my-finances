@@ -33,7 +33,6 @@
 @endphp
 
 <x-app-layout>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <x-slot name="header">
         <x-page-header :title="__('Net worth')" :subtitle="__('How your money evolves over time, wallet by wallet.')">
@@ -192,7 +191,8 @@
 
     @if ($hasHistory)
         <script>
-            (() => {
+            // the bundle (module, run before DOMContentLoaded) loads Chart.js on demand
+            document.addEventListener('DOMContentLoaded', () => window.withChart((Chart) => {
                 const money = (value) => Number(value).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
                 const compact = (value) => Number(value).toLocaleString('pt-PT', { notation: 'compact', maximumFractionDigits: 1 });
                 const labels = @json(array_map($monthName, $months));
@@ -252,7 +252,7 @@
                 };
                 render();
                 window.addEventListener('theme-changed', render);
-            })();
+            }));
         </script>
     @endif
 </x-app-layout>

@@ -41,7 +41,6 @@
 @endphp
 
 <x-app-layout>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <x-slot name="header">
         <x-page-header :title="__('Dashboard')" :subtitle="$monthLabel">
@@ -211,7 +210,8 @@
     </div>
 
     <script>
-        (() => {
+        // the bundle (module, run before DOMContentLoaded) loads Chart.js on demand
+        document.addEventListener('DOMContentLoaded', () => window.withChart((Chart) => {
             const money = (value) => Number(value).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
             const compact = (value) => Number(value).toLocaleString('pt-PT', { notation: 'compact', maximumFractionDigits: 1 });
             const flow = @json($chart);
@@ -277,6 +277,6 @@
             };
             render();
             window.addEventListener('theme-changed', render);
-        })();
+        }));
     </script>
 </x-app-layout>

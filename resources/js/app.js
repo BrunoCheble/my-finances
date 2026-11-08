@@ -6,6 +6,9 @@ import { parseSpokenMovement, speechSupported, listen } from './voice-movement';
 // filling a movement by voice (see voice-movement.js)
 window.escudoVoice = { parse: parseSpokenMovement, supported: speechSupported, listen };
 
+// pages with charts: Chart.js comes in its own chunk, only where it is used, after the page is drawn
+window.withChart = (draw) => import('./charts').then(({ default: Chart }) => draw(Chart));
+
 window.Alpine = Alpine;
 
 /**
