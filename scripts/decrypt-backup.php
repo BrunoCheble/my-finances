@@ -1,6 +1,7 @@
 <?php
 /**
  * Opens a backup made by App\Services\SystemBackupService with the private key and writes the JSON.
+ * The scheduled backup runs in the private repository BrunoCheble/escudo-backups (the backups stay there).
  *
  *   php scripts/decrypt-backup.php escudo-backup-2026-11-08.bin ~/Escudo-backup-private.pem > backup.json
  *
