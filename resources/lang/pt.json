@@ -812,5 +812,8 @@
     "Qty.": "Qtd.",
     "Movements in :month": "Movimentos em :month",
     ":count mov.": ":count mov.",
-    "Forecast balance": "Saldo previsto"
+    "Forecast balance": "Saldo previsto",
+    "Forecast at the end of :month": "Previsão no fim de :month",
+    "still to receive": "falta receber",
+    "still to spend": "falta gastar"
 }

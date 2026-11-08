@@ -10,6 +10,16 @@
     $forecastTotals = collect($categoryTable['groups'])->map(fn ($rows) => collect($rows)->sum(fn ($row) => (float) $row->forecast));
     // forecast income minus forecast expenses
     $forecastBalance = ($forecastTotals['income'] ?? 0) - ($forecastTotals['expense'] ?? 0);
+    // current month only: money in the banks now, plus what is still to come in and go out by the forecasts
+    // (a category already above its forecast adds nothing more)
+    $isCurrentMonth = $selectedKey === now()->format('Y-m');
+    $stillToCome = fn ($type) => collect($categoryTable['groups'][$type] ?? [])
+        ->sum(fn ($row) => $row->forecast ? max(0, (float) $row->forecast - (float) $row->values[$selectedKey]) : 0);
+    $monthEnd = $isCurrentMonth && $forecastBalance != 0 ? [
+        'balance' => (float) $kpis['in_banks'],
+        'income' => $stillToCome('income'),
+        'expense' => $stillToCome('expense'),
+    ] : null;
     // how many movements each category had in the selected month
     $selectedStart = \Carbon\Carbon::createFromFormat('Y-m-d', $selectedKey . '-01');
     $counts = \App\Models\FinancialMovement::whereBetween('date', [$selectedStart->toDateString(), $selectedStart->copy()->endOfMonth()->toDateString()])
@@ -183,6 +193,20 @@
             </div>
         @endif
     </div>
+
+    @if ($monthEnd)
+        <div class="flex flex-col gap-1 border-t border-slate-200 bg-brand-50/40 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div>
+                <p class="font-semibold text-slate-900">{{ __('Forecast at the end of :month', ['month' => now()->translatedFormat('F')]) }}</p>
+                <p class="text-xs text-slate-500">
+                    {{ __('In banks') }} {{ format_currency($monthEnd['balance']) }}
+                    · {{ __('still to receive') }} +{{ format_currency($monthEnd['income']) }}
+                    · {{ __('still to spend') }} −{{ format_currency($monthEnd['expense']) }}
+                </p>
+            </div>
+            <x-money :value="$monthEnd['balance'] + $monthEnd['income'] - $monthEnd['expense']" :sign="false" class="text-base font-semibold" />
+        </div>
+    @endif
 
     <div class="flex flex-col-reverse gap-3 border-t border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         @if ($hidden)
