@@ -12,7 +12,13 @@ class GetFinancialMovementService
         $order = in_array(strtolower((string) $order), ['asc', 'desc'], true) ? $order : 'desc';
         $attribute = in_array($attribute, ['description', 'type', 'category_id', 'wallet_id', 'amount'], true) ? $attribute : null;
 
-        $transacations = FinancialMovement::orderBy($sort, $order)->orderBy('created_at', 'desc');
+        // category and wallet sort by their name, not by the id
+        $column = match ($sort) {
+            'category_id' => \App\Models\FinancialCategory::select('name')->whereColumn('financial_categories.id', 'financial_movements.category_id'),
+            'wallet_id' => \App\Models\Wallet::select('name')->whereColumn('wallets.id', 'financial_movements.wallet_id'),
+            default => $sort,
+        };
+        $transacations = FinancialMovement::orderBy($column, $order)->orderBy('date', 'desc')->orderBy('created_at', 'desc');
 
         $foreignKeys = ['category_id', 'wallet_id'];
 
