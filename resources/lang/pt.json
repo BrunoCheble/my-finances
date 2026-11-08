@@ -815,5 +815,6 @@
     "Forecast balance": "Saldo previsto",
     "Forecast at the end of :month": "Previsão no fim de :month",
     "still to receive": "falta receber",
-    "still to spend": "falta gastar"
+    "still to spend": "falta gastar",
+    "How much you expect to receive per month (negative for a loss).": "Quanto espera receber por mês (negativo para um prejuízo)."
 }

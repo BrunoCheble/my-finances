@@ -14,7 +14,7 @@ class BudgetAlerts
         $alerts = [];
         foreach (AlertContext::spendingByCategory($context->movements) as $categoryId => $spent) {
             $category = $context->categories->get($categoryId);
-            $budget = $category ? abs((float) $category->expected_total) : 0;
+            $budget = $category ? max(0, (float) $category->forecast()) : 0;
             if (!$category || $category->type !== 'expense' || $budget <= 0 || $spent <= 0) {
                 continue;
             }

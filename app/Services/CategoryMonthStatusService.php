@@ -26,7 +26,8 @@ class CategoryMonthStatusService
 
         $type = $category->type === 'income' ? 'income' : 'expense';
         $total = round(($type === 'expense' ? -1 : 1) * (float) $movements->sum('amount'), 2);
-        $forecast = (float) $category->expected_total != 0 ? abs((float) $category->expected_total) : null;
+        // a negative forecast (the opposite of the category) has no budget to compare with
+        $forecast = $category->forecast() > 0 ? $category->forecast() : null;
         $ratio = $forecast ? $total / $forecast : null;
 
         $status = [
