@@ -1,6 +1,6 @@
 {{--
     Categories x months: expenses and income in separate groups, last N months up to the
-    selected one, average of the complete months and editable forecasts (always positive here).
+    selected one, average of the complete months and editable forecasts (positive = the usual of the category, negative = the opposite, e.g. a loss).
 --}}
 @php
     $months = $categoryTable['months'];
@@ -13,8 +13,15 @@
     // current month only: money in the banks now, plus what is still to come in and go out by the forecasts
     // (a category already above its forecast adds nothing more)
     $isCurrentMonth = $selectedKey === now()->format('Y-m');
+    // what is left to reach the forecast, never past it (a negative forecast = a loss still to come)
     $stillToCome = fn ($type) => collect($categoryTable['groups'][$type] ?? [])
-        ->sum(fn ($row) => $row->forecast ? max(0, (float) $row->forecast - (float) $row->values[$selectedKey]) : 0);
+        ->sum(function ($row) use ($selectedKey) {
+            if (!$row->forecast) {
+                return 0;
+            }
+            $left = (float) $row->forecast - (float) $row->values[$selectedKey];
+            return $row->forecast > 0 ? max(0, $left) : min(0, $left);
+        });
     $monthEnd = $isCurrentMonth && $forecastBalance != 0 ? [
         'balance' => (float) $kpis['in_banks'],
         'income' => $stillToCome('income'),
@@ -78,7 +85,7 @@
                             @foreach ($months as $m)
                                 @php
                                     $value = $row->values[$m['key']];
-                                    $over = $type === 'expense' && $row->forecast && $value > $row->forecast;
+                                    $over = $type === 'expense' && $row->forecast > 0 && $value > $row->forecast;
                                     $share = $categoryTable['totals'][$type][$m['key']] > 0 ? round($value / $categoryTable['totals'][$type][$m['key']] * 100) : 0;
                                 @endphp
                                 <td @class(['td whitespace-nowrap text-right tabular-nums', 'bg-brand-50/40' => $m['key'] === $selectedKey])>
@@ -108,7 +115,7 @@
                                             <span class="sr-only">{{ __('Use average') }} {{ $row->name }}</span>
                                         </button>
                                     @endif
-                                    <input type="number" step="0.01" min="0" inputmode="decimal" placeholder="—"
+                                    <input type="number" step="0.01" inputmode="decimal" placeholder="—"
                                         id="forecast-{{ $row->id }}" data-forecast data-category="{{ $row->id }}" data-type="{{ $type }}"
                                         aria-label="{{ __('Forecast') }} {{ $row->name }}" value="{{ $row->forecast !== null ? number_format($row->forecast, 2, '.', '') : '' }}"
                                         @input="dirty = true" class="input w-28 py-1 text-right tabular-nums">
@@ -156,7 +163,7 @@
                 @php
                     $current = $row->values[$selectedKey];
                     $max = max(max($row->values), $row->forecast ?? 0) ?: 1;
-                    $over = $type === 'expense' && $row->forecast && $current > $row->forecast;
+                    $over = $type === 'expense' && $row->forecast > 0 && $current > $row->forecast;
                 @endphp
                 <div class="px-4 py-3" @if ($row->empty) x-show="showEmpty" x-cloak @endif>
                     <div class="flex items-baseline justify-between gap-3">
@@ -177,7 +184,7 @@
                         <span>{{ __('Average') }} {{ $row->average ? format_currency($row->average) : '—' }}</span>
                         <label class="flex items-center gap-1.5">
                             {{ __('Forecast') }}
-                            <input type="number" step="0.01" min="0" inputmode="decimal" placeholder="—"
+                            <input type="number" step="0.01" inputmode="decimal" placeholder="—"
                                 data-forecast data-category="{{ $row->id }}" data-type="{{ $type }}" data-mobile
                                 value="{{ $row->forecast !== null ? number_format($row->forecast, 2, '.', '') : '' }}"
                                 @input="dirty = true; syncForecast({{ $row->id }}, $event.target.value)" class="input w-24 py-1 text-right text-xs tabular-nums">
@@ -200,8 +207,8 @@
                 <p class="font-semibold text-slate-900">{{ __('Forecast at the end of :month', ['month' => now()->translatedFormat('F')]) }}</p>
                 <p class="text-xs text-slate-500">
                     {{ __('In banks') }} {{ format_currency($monthEnd['balance']) }}
-                    · {{ __('still to receive') }} +{{ format_currency($monthEnd['income']) }}
-                    · {{ __('still to spend') }} −{{ format_currency($monthEnd['expense']) }}
+                    · {{ __('still to receive') }} {{ $monthEnd['income'] < 0 ? '−' : '+' }}{{ format_currency(abs($monthEnd['income'])) }}
+                    · {{ __('still to spend') }} {{ $monthEnd['expense'] > 0 ? '−' : '+' }}{{ format_currency(abs($monthEnd['expense'])) }}
                 </p>
             </div>
             <x-money :value="$monthEnd['balance'] + $monthEnd['income'] - $monthEnd['expense']" :sign="false" class="text-base font-semibold" />
@@ -296,10 +303,11 @@
                 this.detail.loading = false;
             },
             async saveForecasts() {
-                // forecasts are typed as positive amounts; expenses are stored as negative
+                // expenses are stored as negative
                 const payload = {};
                 document.querySelectorAll('input[data-forecast]:not([data-mobile])').forEach((input) => {
-                    const value = Math.abs(Number(input.value || 0));
+                    // typed in the category's direction: negative = the opposite (e.g. a loss on an income)
+                    const value = Number(input.value || 0);
                     payload[input.dataset.category] = input.dataset.type === 'expense' ? -value : value;
                 });
                 this.saving = true;

@@ -5,7 +5,7 @@
     $useOld = old('_modal') === $modal;
     $value = fn ($field, $default) => $useOld ? old($field, $default) : $default;
     $type = $value('type', $category?->type ?? ($defaultType ?? 'expense'));
-    $forecast = $value('expected_total', $category && (float) $category->expected_total != 0 ? number_format(abs($category->expected_total), 2, '.', '') : '');
+    $forecast = $value('expected_total', $category && (float) $category->expected_total != 0 ? number_format($category->forecast(), 2, '.', '') : '');
     $active = (bool) $value('active', $category?->active ?? true);
 @endphp
 
@@ -44,11 +44,11 @@
         <div>
             <x-input-label for="{{ $modal }}-forecast" :value="__('Monthly forecast')" />
             <div class="relative mt-1">
-                <x-text-input id="{{ $modal }}-forecast" name="expected_total" type="number" step="0.01" min="0" inputmode="decimal"
+                <x-text-input id="{{ $modal }}-forecast" name="expected_total" type="number" step="0.01" inputmode="decimal"
                     class="block w-full pr-8 tabular-nums" :value="$forecast" placeholder="0,00" />
                 <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-slate-400">€</span>
             </div>
-            <p class="mt-1 text-xs text-slate-500" x-text="type === 'expense' ? @js(__('How much you plan to spend per month. Alerts warn at 80% and 100%.')) : @js(__('How much you expect to receive per month.'))"></p>
+            <p class="mt-1 text-xs text-slate-500" x-text="type === 'expense' ? @js(__('How much you plan to spend per month. Alerts warn at 80% and 100%.')) : @js(__('How much you expect to receive per month (negative for a loss).'))"></p>
             @if ($useOld)<x-input-error class="mt-2" :messages="$errors->get('expected_total')" />@endif
         </div>
 
